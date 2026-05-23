@@ -1,0 +1,7 @@
+.vercel
+deploy.bat
+server.log
+server.err
+.claude/
+ProntoAgent/build/
+ProntoAgent/dist/

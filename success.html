@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html class="dark" lang="en" style="scroll-behavior: smooth;">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Payment Confirmed — Pronto PC Repair</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "background": "#051424",
+        "surface": "#051424",
+        "surface-container": "#122131",
+        "surface-container-low": "#0d1c2d",
+        "surface-container-lowest": "#010f1f",
+        "on-surface": "#d4e4fa",
+        "on-surface-variant": "#c6c6cd",
+        "secondary": "#ffb95f",
+        "on-secondary": "#472a00",
+        "secondary-container": "#ee9800",
+        "on-secondary-container": "#5b3800",
+        "primary": "#bec6e0",
+        "tertiary": "#91db2a",
+      }
+    }
+  }
+}
+</script>
+<style>
+  body { background-color: #051424; color: #d4e4fa; font-family: 'Inter', sans-serif; }
+  .step-line { position: absolute; left: 1.75rem; top: 3.5rem; bottom: -1rem; width: 2px; background: linear-gradient(to bottom, #ffb95f40, transparent); }
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<!-- Nav -->
+<nav class="border-b border-white/10 bg-background/95 backdrop-blur px-6 py-4 flex items-center gap-3">
+  <img alt="Logo" class="h-9 w-auto" src="./logo.png">
+  <span class="font-bold tracking-tighter text-on-surface text-lg">PRONTO PC REPAIR</span>
+</nav>
+
+<!-- Hero confirmation -->
+<main class="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
+
+  <!-- Success badge -->
+  <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-tertiary/10 border border-tertiary/30 mb-8">
+    <span class="material-symbols-outlined text-tertiary text-lg" style="font-variation-settings:'FILL' 1;">check_circle</span>
+    <span class="text-tertiary font-mono text-sm tracking-widest uppercase">Payment Confirmed</span>
+  </div>
+
+  <h1 class="text-4xl md:text-5xl font-black text-on-surface mb-4 leading-tight">
+    You're all set.<br>
+    <span class="text-secondary">Let's fix your PC.</span>
+  </h1>
+  <p class="text-on-surface-variant max-w-lg mx-auto mb-12 text-lg leading-relaxed">
+    Download the Pronto PC agent below, run it, and it will scan, plan, and repair your system automatically. The whole process takes about 5–10 minutes.
+  </p>
+
+  <!-- Download CTA — shown after payment verification -->
+  <div id="download-verifying" class="flex flex-col items-center gap-3 mb-8">
+    <div class="inline-flex items-center gap-3 bg-white/10 text-on-surface-variant font-bold text-lg px-8 py-4 rounded-xl">
+      <span class="material-symbols-outlined animate-spin">progress_activity</span>
+      Verifying payment…
+    </div>
+  </div>
+
+  <div id="download-ready" class="hidden flex-col items-center gap-3 mb-8">
+    <a id="download-btn" href="#"
+       class="inline-flex items-center gap-3 bg-secondary text-on-secondary font-bold text-lg px-8 py-4 rounded-xl hover:shadow-[0_0_24px_rgba(255,185,95,0.4)] transition-all">
+      <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">download</span>
+      Download ProntoPC.exe
+    </a>
+    <p class="text-on-surface-variant text-sm font-mono">Windows 10 / 11 &nbsp;·&nbsp; ~16 MB &nbsp;·&nbsp; No install required &nbsp;·&nbsp; Deletes itself when done</p>
+  </div>
+
+  <div id="download-error" class="hidden flex-col items-center gap-3 mb-8">
+    <div class="inline-flex items-center gap-3 bg-red-900/30 border border-red-500/30 text-red-300 font-bold text-sm px-6 py-4 rounded-xl max-w-md text-center">
+      <span class="material-symbols-outlined shrink-0">error</span>
+      <span id="download-error-msg">Could not verify payment. Please contact support@prontopc.online</span>
+    </div>
+  </div>
+
+  <!-- Browser open hint -->
+  <div class="bg-white/5 border border-white/10 rounded-xl p-5 max-w-md w-full text-left">
+    <p class="text-xs font-mono text-secondary uppercase tracking-widest mb-3">After clicking Download</p>
+    <div class="space-y-3">
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-secondary shrink-0 mt-0.5" style="font-variation-settings:'FILL' 1;">arrow_downward</span>
+        <p class="text-sm text-on-surface-variant"><strong class="text-on-surface">Chrome / Edge:</strong> A download bar appears at the top-right. Click <strong class="text-secondary">Open file</strong>.</p>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-secondary shrink-0 mt-0.5" style="font-variation-settings:'FILL' 1;">arrow_downward</span>
+        <p class="text-sm text-on-surface-variant"><strong class="text-on-surface">Firefox:</strong> Click <strong class="text-secondary">Open</strong> in the download popup at the top of the page.</p>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-on-surface-variant shrink-0 mt-0.5">shield</span>
+        <p class="text-sm text-on-surface-variant">Windows will ask <strong class="text-on-surface">"Do you want to allow this app to make changes?"</strong> — click <strong class="text-secondary">Yes</strong> to start the repair.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <div class="mt-16 w-full max-w-lg text-left space-y-8">
+    <h2 class="text-xs font-mono tracking-widest uppercase text-on-surface-variant mb-6">What happens next</h2>
+
+    <!-- Step 1 -->
+    <div class="flex gap-5 relative">
+      <div class="shrink-0 w-9 h-9 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center font-bold text-secondary text-sm relative z-10">1</div>
+      <div class="step-line"></div>
+      <div>
+        <h3 class="font-bold text-on-surface mb-1">Let it scan</h3>
+        <p class="text-on-surface-variant text-sm leading-relaxed">The agent scans your system — temp files, browser caches, startup programs, registry, disk space. This takes about 30 seconds. Nothing is changed yet.</p>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="flex gap-5 relative">
+      <div class="shrink-0 w-9 h-9 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center font-bold text-secondary text-sm relative z-10">2</div>
+      <div class="step-line"></div>
+      <div>
+        <h3 class="font-bold text-on-surface mb-1">Review and confirm</h3>
+        <p class="text-on-surface-variant text-sm leading-relaxed">The AI builds a repair plan and shows you exactly what it will do. You type <span class="font-mono bg-white/5 px-1.5 py-0.5 rounded text-xs">yes</span> to approve, or <span class="font-mono bg-white/5 px-1.5 py-0.5 rounded text-xs">no</span> to cancel. Nothing runs without your confirmation.</p>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="flex gap-5">
+      <div class="shrink-0 w-9 h-9 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center font-bold text-secondary text-sm">3</div>
+      <div>
+        <h3 class="font-bold text-on-surface mb-1">Check your Desktop</h3>
+        <p class="text-on-surface-variant text-sm leading-relaxed">When done, a <span class="font-mono bg-white/5 px-1.5 py-0.5 rounded text-xs">ProntoPC_Report_[date].html</span> file opens in your browser — a full audit log of everything that was touched. Keep it as your record.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SmartScreen note -->
+  <div class="mt-6 p-5 rounded-xl border border-secondary/20 bg-secondary/5 max-w-lg w-full text-left">
+    <div class="flex items-start gap-3">
+      <span class="material-symbols-outlined text-secondary shrink-0 mt-0.5" style="font-variation-settings:'FILL' 1;">warning</span>
+      <div>
+        <p class="font-bold text-on-surface text-sm mb-1">Windows may flag the file as unrecognized</p>
+        <p class="text-on-surface-variant text-sm leading-relaxed">If you see a blue "Windows protected your PC" screen, click <strong class="text-on-surface">More info</strong> then <strong class="text-secondary">Run anyway</strong>. This happens because our software is new — it is safe, and every action it takes is shown to you before it runs.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Support note -->
+  <div class="mt-16 p-6 rounded-xl border border-white/10 bg-white/5 max-w-lg w-full text-left">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="material-symbols-outlined text-secondary text-xl">support_agent</span>
+      <span class="font-bold text-on-surface text-sm">Need help?</span>
+    </div>
+    <p class="text-on-surface-variant text-sm">Email us at <a href="mailto:support@prontopc.online" class="text-secondary hover:underline">support@prontopc.online</a> — we respond within a few hours. If anything goes wrong during the repair, we'll fix it again free under our 30-day guarantee.</p>
+  </div>
+
+</main>
+
+<!-- Footer -->
+<footer class="border-t border-white/10 py-6 px-6 text-center text-on-surface-variant text-xs font-mono">
+  © 2026 Pronto PC Repair &nbsp;·&nbsp; <a href="./index.html" class="hover:text-secondary transition-colors">Back to home</a>
+</footer>
+
+<script>
+const CLOUD_RUN = "https://pronto-pc-108655745293.us-central1.run.app";
+
+async function verifyAndUnlock() {
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get("session");
+
+  // No session param — direct visit, just show download without gate
+  if (!sessionId) {
+    showDownload(null);
+    return;
+  }
+
+  try {
+    const resp = await fetch(`${CLOUD_RUN}/api/verify-payment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId })
+    });
+    const data = await resp.json();
+    if (data.ok && data.token) {
+      showDownload(data.token);
+    } else {
+      showError(data.error || "Payment could not be verified.");
+    }
+  } catch (e) {
+    showError("Could not reach verification server. Please contact support@prontopc.online");
+  }
+}
+
+function showDownload(token) {
+  document.getElementById("download-verifying").classList.add("hidden");
+  const btn = document.getElementById("download-btn");
+  btn.href = token
+    ? `${CLOUD_RUN}/download?token=${token}`
+    : "https://prontopc.online/ProntoAgent/dist/ProntoPC.exe";
+  document.getElementById("download-ready").classList.remove("hidden");
+  document.getElementById("download-ready").classList.add("flex");
+}
+
+function showError(msg) {
+  document.getElementById("download-verifying").classList.add("hidden");
+  document.getElementById("download-error-msg").textContent = msg;
+  document.getElementById("download-error").classList.remove("hidden");
+  document.getElementById("download-error").classList.add("flex");
+}
+
+verifyAndUnlock();
+</script>
+</body>
+</html>
