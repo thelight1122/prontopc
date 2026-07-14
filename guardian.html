@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Guardian Active — Pronto PC</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: { extend: { colors: { "background": "#051424", "surface-container": "#122131", "on-surface": "#d4e4fa", "on-surface-variant": "#c6c6cd", "secondary": "#ffb95f", "on-secondary": "#472a00", "tertiary": "#91db2a" } } }
+}
+</script>
+<style>body { background-color: #051424; color: #d4e4fa; font-family: 'Inter', sans-serif; } .cmd-box { font-family: 'JetBrains Mono', monospace; }</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<nav class="border-b border-white/10 bg-background/95 backdrop-blur px-6 py-4 flex items-center gap-3">
+  <a href="./index.html" class="font-bold tracking-tighter text-on-surface text-lg hover:text-secondary transition-colors">PRONTO PC</a>
+  <span class="text-on-surface-variant/40 text-sm ml-auto font-mono" id="status-badge"></span>
+</nav>
+
+<main class="flex-1 flex flex-col items-center px-6 py-12">
+
+  <!-- Loading state -->
+  <div id="state-loading" class="flex flex-col items-center text-center max-w-lg">
+    <div class="inline-flex items-center gap-3 bg-white/10 text-on-surface-variant font-bold text-lg px-8 py-4 rounded-xl mb-4">
+      <span class="material-symbols-outlined animate-spin">progress_activity</span>
+      Activating Guardian...
+    </div>
+  </div>
+
+  <!-- Error state -->
+  <div id="state-error" class="hidden flex flex-col items-center text-center max-w-lg">
+    <div class="inline-flex items-center gap-3 bg-red-900/30 border border-red-500/30 text-red-300 font-bold text-sm px-6 py-4 rounded-xl mb-4">
+      <span class="material-symbols-outlined shrink-0">error</span>
+      <span id="error-msg">Could not activate Guardian.</span>
+    </div>
+    <p class="text-on-surface-variant text-sm mt-2">Contact <a href="mailto:support@prontopc.online" class="text-secondary hover:underline">support@prontopc.online</a></p>
+  </div>
+
+  <!-- Active state -->
+  <div id="state-active" class="hidden w-full max-w-2xl space-y-8">
+
+    <div class="text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-tertiary/10 border border-tertiary/30 mb-4">
+        <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1;">shield</span>
+        <span class="text-tertiary font-mono text-sm tracking-widest uppercase">Guardian Active</span>
+      </div>
+      <h1 class="text-3xl font-black text-on-surface mb-3">You're protected.</h1>
+      <p class="text-on-surface-variant max-w-md mx-auto" id="activation-msg">Your Guardian subscription is active.</p>
+    </div>
+
+    <!-- Details card -->
+    <div class="bg-surface-container border border-white/10 rounded-2xl p-6 space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p class="text-xs font-mono uppercase tracking-widest text-on-surface-variant/60 mb-1">Frequency</p>
+          <p class="font-bold text-on-surface" id="detail-frequency">—</p>
+        </div>
+        <div>
+          <p class="text-xs font-mono uppercase tracking-widest text-on-surface-variant/60 mb-1">Execution</p>
+          <p class="font-bold text-on-surface" id="detail-execution">—</p>
+        </div>
+        <div>
+          <p class="text-xs font-mono uppercase tracking-widest text-on-surface-variant/60 mb-1">Next Scan</p>
+          <p class="font-bold text-on-surface" id="detail-next-scan">—</p>
+        </div>
+        <div>
+          <p class="text-xs font-mono uppercase tracking-widest text-on-surface-variant/60 mb-1">Status</p>
+          <p class="font-bold text-tertiary" id="detail-status">Active</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Automatic: first scan command -->
+    <div id="auto-setup" class="hidden bg-surface-container border border-white/10 rounded-2xl p-6">
+      <h3 class="font-bold text-on-surface text-lg mb-2">One-time setup</h3>
+      <p class="text-on-surface-variant text-sm mb-4">Run this command once in PowerShell (as Administrator) to install the scheduled task. After this, scans run automatically.</p>
+      <div class="relative">
+        <div id="setup-command" class="cmd-box bg-black/40 border border-white/10 rounded-xl p-4 pr-14 text-sm text-secondary break-all select-all cursor-text">Loading...</div>
+        <button onclick="copyCmd()" class="absolute top-3 right-3 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+          <span class="material-symbols-outlined text-on-surface-variant text-lg">content_copy</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Manual: next steps -->
+    <div id="manual-info" class="hidden bg-surface-container border border-white/10 rounded-2xl p-6">
+      <h3 class="font-bold text-on-surface text-lg mb-2">How it works</h3>
+      <p class="text-on-surface-variant text-sm">You'll receive an email at your chosen interval with your personal scan command. Just paste it into PowerShell when it suits you — your Custodian handles the rest.</p>
+      <p class="text-on-surface-variant text-sm mt-3">Your first health check email will arrive <strong class="text-on-surface" id="first-email-time">soon</strong>.</p>
+    </div>
+
+    <!-- Manage -->
+    <div class="bg-white/5 border border-white/10 rounded-xl p-5 text-center space-y-3">
+      <p class="text-on-surface-variant text-sm">Manage your subscription, update payment, or cancel anytime:</p>
+      <a id="portal-link" href="#" class="inline-flex items-center gap-2 text-secondary hover:underline text-sm font-medium">
+        <span class="material-symbols-outlined text-sm">open_in_new</span>
+        Manage Subscription
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer class="border-t border-white/10 py-6 px-6 text-center text-on-surface-variant text-xs">
+  &copy; 2026 5D Service Solutions Global LLC &middot;
+  <a href="./privacy.html" class="hover:text-secondary transition-colors">Privacy</a> &middot;
+  <a href="./terms.html" class="hover:text-secondary transition-colors">Terms</a> &middot;
+  <a href="./index.html" class="hover:text-secondary transition-colors">Home</a>
+</footer>
+
+<script>
+const CLOUD_RUN = "https://pronto-pc-108655745293.us-central1.run.app";
+
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const session = params.get("session");
+
+  if (!session) { showError("No subscription session found."); return; }
+
+  try {
+    const resp = await fetch(`${CLOUD_RUN}/api/guardian/activate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stripeSessionId: session })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      showActive(data);
+    } else {
+      showError(data.error || "Could not activate subscription.");
+    }
+  } catch (e) {
+    showError("Could not reach server. Please try again.");
+  }
+}
+
+function showActive(data) {
+  document.getElementById("state-loading").classList.add("hidden");
+  document.getElementById("state-active").classList.remove("hidden");
+  document.getElementById("status-badge").textContent = "Guardian active";
+
+  const freq = data.frequency === "weekly" ? "Weekly (every 7 days)" : "Monthly (every 30 days)";
+  const exec = data.execution === "automatic" ? "Automatic (Scheduled Task)" : "Manual (Email Reminder)";
+  document.getElementById("detail-frequency").textContent = freq;
+  document.getElementById("detail-execution").textContent = exec;
+  document.getElementById("detail-status").textContent = "Active";
+
+  if (data.nextScanAt) {
+    const d = new Date(data.nextScanAt);
+    document.getElementById("detail-next-scan").textContent = d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+    document.getElementById("first-email-time").textContent = d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+  }
+
+  if (data.execution === "automatic" && data.setupCommand) {
+    document.getElementById("auto-setup").classList.remove("hidden");
+    document.getElementById("setup-command").textContent = data.setupCommand;
+  } else {
+    document.getElementById("manual-info").classList.remove("hidden");
+  }
+
+  if (data.portalUrl) {
+    document.getElementById("portal-link").href = data.portalUrl;
+  }
+
+  document.getElementById("activation-msg").textContent =
+    `Your ${data.frequency} Guardian is active. ${data.execution === "automatic" ? "Run the setup command below to install automatic scanning." : "Watch your inbox for scan reminders."}`;
+}
+
+function showError(msg) {
+  document.getElementById("state-loading").classList.add("hidden");
+  document.getElementById("error-msg").textContent = msg;
+  document.getElementById("state-error").classList.remove("hidden");
+}
+
+function copyCmd() {
+  navigator.clipboard.writeText(document.getElementById("setup-command").textContent);
+}
+
+init();
+</script>
+</body>
+</html>

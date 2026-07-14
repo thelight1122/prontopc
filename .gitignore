@@ -3,5 +3,9 @@ deploy.bat
 server.log
 server.err
 .claude/
+node_modules/
 ProntoAgent/build/
 ProntoAgent/dist/
+GEMINI-API.txt
+*.env
+*.key

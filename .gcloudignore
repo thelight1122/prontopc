@@ -6,3 +6,11 @@ ProntoAgent
 node_modules
 server.log
 server.err
+docs
+index.html
+privacy.html
+terms.html
+success.html
+guardian-offer.html
+guardian.html
+logo.png

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>ProntoPC Guardian — Keep Your System Healthy</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: { extend: { colors: { "background": "#051424", "surface-container": "#122131", "on-surface": "#d4e4fa", "on-surface-variant": "#c6c6cd", "secondary": "#ffb95f", "on-secondary": "#472a00", "tertiary": "#91db2a" } } }
+}
+</script>
+<style>
+  body { background-color: #051424; color: #d4e4fa; font-family: 'Inter', sans-serif; }
+  .option-card { transition: all 0.2s; }
+  .option-card.selected { border-color: #ffb95f; background: rgba(255,185,95,0.05); }
+  .option-card:hover { border-color: rgba(255,185,95,0.5); }
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<nav class="border-b border-white/10 bg-background/95 backdrop-blur px-6 py-4 flex items-center gap-3">
+  <a href="./index.html" class="font-bold tracking-tighter text-on-surface text-lg hover:text-secondary transition-colors">PRONTO PC</a>
+</nav>
+
+<main class="flex-1 flex flex-col items-center px-6 py-16">
+  <div class="max-w-2xl w-full space-y-10">
+
+    <!-- Header -->
+    <div class="text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-tertiary/10 border border-tertiary/30 mb-6">
+        <span class="material-symbols-outlined text-tertiary" style="font-variation-settings:'FILL' 1;">shield</span>
+        <span class="text-tertiary font-mono text-sm tracking-widest uppercase">Guardian</span>
+      </div>
+      <h1 class="text-3xl md:text-4xl font-black text-on-surface leading-tight mb-4">
+        Keep your system<br><span class="text-secondary">in this condition.</span>
+      </h1>
+      <p class="text-on-surface-variant max-w-md mx-auto text-lg">Your PC is healthy now. Guardian keeps it that way — automated diagnostics, emailed reports, and your Custodian on standby if anything comes up.</p>
+    </div>
+
+    <!-- Price -->
+    <div class="text-center">
+      <div class="inline-flex gap-6 flex-wrap justify-center">
+        <div class="bg-surface-container border border-white/10 rounded-2xl px-8 py-5 text-center">
+          <p class="text-on-surface-variant text-xs uppercase tracking-widest mb-1">Monthly</p>
+          <span class="text-4xl font-black text-secondary">$5</span>
+          <span class="text-on-surface-variant text-lg">/month</span>
+        </div>
+        <div class="bg-surface-container border border-white/10 rounded-2xl px-8 py-5 text-center">
+          <p class="text-on-surface-variant text-xs uppercase tracking-widest mb-1">Weekly</p>
+          <span class="text-4xl font-black text-secondary">$10</span>
+          <span class="text-on-surface-variant text-lg">/month</span>
+        </div>
+      </div>
+      <p class="text-tertiary font-bold text-sm mt-3">30 days free — no charge until you've seen the value.</p>
+      <p class="text-on-surface-variant text-xs mt-1">Cancel anytime. No contracts.</p>
+    </div>
+
+    <!-- What's Included -->
+    <div class="bg-surface-container border border-white/10 rounded-2xl p-6">
+      <h2 class="font-bold text-on-surface text-lg mb-4">What Guardian includes</h2>
+      <div class="space-y-3">
+        <div class="flex items-start gap-3">
+          <span class="material-symbols-outlined text-tertiary shrink-0 mt-0.5" style="font-variation-settings:'FILL' 1;">check_circle</span>
+          <p class="text-on-surface-variant text-sm">Full 35+ category diagnostic scan at your chosen frequency</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="material-symbols-outlined text-tertiary shrink-0 mt-0.5" style="font-variation-settings:'FILL' 1;">check_circle</span>
+          <p class="text-on-surface-variant text-sm">Professional health report emailed to you and saved to Desktop</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="material-symbols-outlined text-tertiary shrink-0 mt-0.5" style="font-variation-settings:'FILL' 1;">check_circle</span>
+          <p class="text-on-surface-variant text-sm">"Changes since last scan" — see what shifted, what's trending, what's new</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="material-symbols-outlined text-tertiary shrink-0 mt-0.5" style="font-variation-settings:'FILL' 1;">check_circle</span>
+          <p class="text-on-surface-variant text-sm">Your Custodian Technician on standby — if issues appear, guided repair at no extra cost</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="material-symbols-outlined text-tertiary shrink-0 mt-0.5" style="font-variation-settings:'FILL' 1;">check_circle</span>
+          <p class="text-on-surface-variant text-sm">Nothing runs without your knowledge. Scans only — never automatic repairs.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Frequency Choice -->
+    <div>
+      <h2 class="font-bold text-on-surface text-lg mb-3">How often?</h2>
+      <p class="text-on-surface-variant text-sm mb-4">Weekly scans catch issues faster — choose what suits you.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button onclick="selectFrequency('weekly')" id="freq-weekly" class="option-card border border-white/10 rounded-xl p-5 text-left cursor-pointer">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="material-symbols-outlined text-secondary">calendar_view_week</span>
+            <h3 class="font-bold text-on-surface">Weekly</h3>
+          </div>
+          <p class="text-on-surface-variant text-sm">Every 7 days. Catches issues before they compound. Best for systems under heavy daily use.</p>
+          <p class="text-secondary font-bold text-sm mt-2">$10/month</p>
+        </button>
+        <button onclick="selectFrequency('monthly')" id="freq-monthly" class="option-card border border-white/10 rounded-xl p-5 text-left cursor-pointer">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="material-symbols-outlined text-secondary">calendar_month</span>
+            <h3 class="font-bold text-on-surface">Monthly</h3>
+          </div>
+          <p class="text-on-surface-variant text-sm">Every 30 days. A regular check-up without the noise. Best for stable, lightly-used systems.</p>
+          <p class="text-secondary font-bold text-sm mt-2">$5/month</p>
+        </button>
+      </div>
+    </div>
+
+    <!-- Execution Choice -->
+    <div>
+      <h2 class="font-bold text-on-surface text-lg mb-3">How should it run?</h2>
+      <p class="text-on-surface-variant text-sm mb-4">You can switch between these at any time.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button onclick="selectExecution('manual')" id="exec-manual" class="option-card border border-white/10 rounded-xl p-5 text-left cursor-pointer">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="material-symbols-outlined text-secondary">mail</span>
+            <h3 class="font-bold text-on-surface">Email Reminder</h3>
+          </div>
+          <p class="text-on-surface-variant text-sm">We email you when it's time. You paste the command when it suits you. Nothing runs without you.</p>
+        </button>
+        <button onclick="selectExecution('automatic')" id="exec-automatic" class="option-card border border-white/10 rounded-xl p-5 text-left cursor-pointer">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="material-symbols-outlined text-secondary">schedule</span>
+            <h3 class="font-bold text-on-surface">Automatic</h3>
+          </div>
+          <p class="text-on-surface-variant text-sm">A Windows Scheduled Task runs the scan for you. Report emailed and saved to Desktop automatically.</p>
+        </button>
+      </div>
+    </div>
+
+    <!-- Subscribe Button -->
+    <div class="text-center pt-4">
+      <button onclick="subscribe()" id="subscribe-btn" disabled class="inline-flex items-center gap-3 bg-secondary/30 text-on-surface font-bold text-lg px-8 py-4 rounded-xl cursor-not-allowed transition-all">
+        <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">shield</span>
+        Choose your options above
+      </button>
+      <p class="text-on-surface-variant text-xs mt-3">Secure payment via Stripe. Cancel anytime from your account portal.</p>
+    </div>
+
+    <!-- No-pressure note -->
+    <div class="bg-white/5 border border-white/10 rounded-xl p-5 text-center">
+      <p class="text-on-surface-variant text-sm">Not interested? No problem. Your one-time repair is complete and your report is yours to keep. This page won't follow you around.</p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="border-t border-white/10 py-6 px-6 text-center text-on-surface-variant text-xs">
+  &copy; 2026 5D Service Solutions Global LLC &middot;
+  <a href="./privacy.html" class="hover:text-secondary transition-colors">Privacy</a> &middot;
+  <a href="./terms.html" class="hover:text-secondary transition-colors">Terms</a> &middot;
+  <a href="./index.html" class="hover:text-secondary transition-colors">Home</a>
+</footer>
+
+<script>
+const CLOUD_RUN = "https://pronto-pc-108655745293.us-central1.run.app";
+let selectedFrequency = null;
+let selectedExecution = null;
+
+function selectFrequency(freq) {
+  selectedFrequency = freq;
+  document.getElementById("freq-weekly").classList.toggle("selected", freq === "weekly");
+  document.getElementById("freq-monthly").classList.toggle("selected", freq === "monthly");
+  updateButton();
+}
+
+function selectExecution(exec) {
+  selectedExecution = exec;
+  document.getElementById("exec-manual").classList.toggle("selected", exec === "manual");
+  document.getElementById("exec-automatic").classList.toggle("selected", exec === "automatic");
+  updateButton();
+}
+
+function updateButton() {
+  const btn = document.getElementById("subscribe-btn");
+  if (selectedFrequency && selectedExecution) {
+    btn.disabled = false;
+    btn.className = "inline-flex items-center gap-3 bg-secondary text-on-secondary font-bold text-lg px-8 py-4 rounded-xl hover:shadow-[0_0_24px_rgba(255,185,95,0.4)] transition-all cursor-pointer";
+    const price = selectedFrequency === "weekly" ? "$10" : "$5";
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1;">shield</span> Start free trial — then ' + price + '/month';
+  }
+}
+
+async function subscribe() {
+  if (!selectedFrequency || !selectedExecution) return;
+  const btn = document.getElementById("subscribe-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> Redirecting to Stripe...';
+
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token") || "";
+
+  try {
+    const resp = await fetch(`${CLOUD_RUN}/api/guardian/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, frequency: selectedFrequency, execution: selectedExecution })
+    });
+    const data = await resp.json();
+    if (data.checkoutUrl) {
+      window.location.href = data.checkoutUrl;
+    } else {
+      btn.innerHTML = '<span class="material-symbols-outlined">error</span> ' + (data.error || "Something went wrong");
+      btn.disabled = false;
+    }
+  } catch (e) {
+    btn.innerHTML = '<span class="material-symbols-outlined">error</span> Could not connect. Try again.';
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

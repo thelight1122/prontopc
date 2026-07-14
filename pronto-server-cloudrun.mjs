@@ -1,89 +1,361 @@
 /**
- * Pronto PC — Cloud Run Service
- * Uses Gemini Flash for repair plan generation.
- * Stripe payment verification + one-time download tokens.
+ * Pronto PC — Cloud Run Service v2.0
+ * Custodian Technician backend: session management, Gemini AI repair plans,
+ * dynamic PowerShell script serving, and report generation.
+ * 5D Service Solutions Global LLC
  */
 
 import http from "node:http";
 import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
 
 const PORT = process.env.PORT || 8080;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-const EXE_DOWNLOAD_URL = "https://prontopc.online/ProntoAgent/dist/ProntoPC.exe";
+const CLOUD_RUN_URL = process.env.CLOUD_RUN_URL || "https://pronto-pc-108655745293.us-central1.run.app";
+const SESSION_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 
-// ─── Stores ──────────────────────────────────────────────────────────────────
+// ─── CORS ───────────────────────────────────────────────────────────────────
 
-const progressStore = new Map();
-const downloadTokenStore = new Map(); // token -> { sessionId, email, used, createdAt }
-const SESSION_TTL_MS  = 2  * 60 * 60 * 1000;  // 2 hours
-const TOKEN_TTL_MS    = 7  * 24 * 60 * 60 * 1000; // 7 days
+const ALLOWED_ORIGINS = [
+  "https://prontopc.online",
+  "https://www.prontopc.online",
+];
 
-// Cleanup expired entries every 10 minutes
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (/\.powervirtualagents\.com$/.test(origin)) return true;
+  if (/\.botframework\.com$/.test(origin)) return true;
+  if (/\.api\.powerplatform\.com$/.test(origin)) return true;
+  return false;
+}
+
+function corsOrigin(req) {
+  const origin = req.headers.origin || "";
+  return isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
+}
+
+// ─── Session Store ──────────────────────────────────────────────────────────
+// In-memory for beta; migrate to Firestore for production (min-instances=1 on Cloud Run).
+
+const sessionStore = new Map();
+
+// States: created → scan_served → diagnosed → consented → repair_served → completed
+const VALID_TRANSITIONS = {
+  created: ["scan_served"],
+  scan_served: ["diagnosed"],
+  diagnosed: ["consented"],
+  consented: ["repair_served"],
+  repair_served: ["completed"],
+};
+
+function createSession(stripeSessionId, email) {
+  const token = crypto.randomBytes(32).toString("hex");
+  sessionStore.set(token, {
+    token,
+    stripeSessionId,
+    email,
+    state: "created",
+    hostname: null,
+    diagnostics: null,
+    repairPlan: null,
+    repairResults: null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+  return token;
+}
+
+function getSession(token) {
+  const s = sessionStore.get(token);
+  if (!s) return null;
+  if (Date.now() - s.createdAt > SESSION_TTL_MS) {
+    sessionStore.delete(token);
+    return null;
+  }
+  return s;
+}
+
+function transitionState(token, newState) {
+  const s = getSession(token);
+  if (!s) return null;
+  const allowed = VALID_TRANSITIONS[s.state];
+  if (!allowed || !allowed.includes(newState)) return null;
+  s.state = newState;
+  s.updatedAt = Date.now();
+  sessionStore.set(token, s);
+  return s;
+}
+
+// Cleanup expired sessions every 10 minutes
 setInterval(() => {
   const now = Date.now();
-  for (const [k, v] of progressStore.entries())
-    if (now - v.createdAt > SESSION_TTL_MS) progressStore.delete(k);
-  for (const [k, v] of downloadTokenStore.entries())
-    if (now - v.createdAt > TOKEN_TTL_MS) downloadTokenStore.delete(k);
+  for (const [k, v] of sessionStore.entries()) {
+    if (now - v.createdAt > SESSION_TTL_MS) sessionStore.delete(k);
+  }
 }, 10 * 60 * 1000);
 
-// ─── Gemini ──────────────────────────────────────────────────────────────────
+// ─── Guardian Store ─────────────────────────────────────────────────────────
+// In-memory for beta; migrate to Firestore for production.
 
-const REPAIR_SYSTEM_PROMPT = `You are the Pronto PC repair engine. You receive Windows system diagnostic data and return a structured JSON repair plan.
+const guardianStore = new Map();
+
+function createGuardian(email, stripeSubscriptionId, frequency, execution) {
+  const scanToken = crypto.randomBytes(32).toString("hex");
+  const intervalMs = frequency === "weekly" ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+  guardianStore.set(scanToken, {
+    email,
+    stripeSubscriptionId,
+    frequency,
+    execution,
+    nextScanAt: Date.now() + intervalMs,
+    lastScanAt: null,
+    scanHistory: [],
+    status: "active",
+    createdAt: Date.now(),
+  });
+  return scanToken;
+}
+
+function getGuardian(scanToken) {
+  const g = guardianStore.get(scanToken);
+  if (!g || g.status === "cancelled") return null;
+  return g;
+}
+
+function findGuardianBySubscription(stripeSubscriptionId) {
+  for (const [token, data] of guardianStore.entries()) {
+    if (data.stripeSubscriptionId === stripeSubscriptionId) return { token, data };
+  }
+  return null;
+}
+
+// ─── Gemini AI Engine ───────────────────────────────────────────────────────
+
+const REPAIR_SYSTEM_PROMPT = `You are the Pronto PC Custodian Technician AI engine. You receive comprehensive Windows system diagnostic data covering 35+ categories and return a structured JSON repair plan.
 
 Rules:
 - Only recommend safe, reversible actions
 - Never delete user documents, photos, music, videos, or personal files
-- Never touch System32 unless fixing a known integrity issue
+- Never touch System32 unless fixing a known integrity issue (SFC/DISM)
 - Prioritize by impact: disk space recovery first, then performance, then stability
 - Each action needs a friendly_name a non-technical person can understand
+- Identify hardware issues that require physical service — these go in hardware_notes, NOT actions
+- Assess overall security posture briefly
 - Return ONLY valid JSON. No markdown fences. No explanation before or after.
+
+You will receive data covering these diagnostic categories:
+- OS info, system uptime, CPU, memory, page file, battery health
+- Disk health (partitions, usage, SMART failure prediction, fragmentation)
+- Temp files, browser caches (Chrome, Edge, Firefox, Brave, Opera + Code Caches), Windows caches (thumbnail, icon, font, prefetch, Store), Recycle Bin
+- Large files (>100MB in user directories)
+- Startup programs (registry Run keys + WMI)
+- Scheduled tasks (non-Microsoft)
+- Registry MRU entries
+- Driver audit: total, signed, unsigned, outdated (>2 years), third-party, recently updated, problem devices with error codes
+- BSOD/crash history (Minidump files + EventLog)
+- Network: active adapters, IP config, gateway, DNS, internet reachability, DNS cache
+- Security: Windows Defender status (real-time, antivirus, antispyware, signature freshness, scan dates), firewall profiles, Windows activation
+- Windows Update: recent hotfixes, pending updates count
+- Services audit: stopped critical services, recent SCM failures
+- Installed programs: full inventory with version/publisher/size
+- User accounts: local accounts with enabled/disabled
+- Power plan, visual effects setting
+- Event errors (System + Application logs), event warnings
 
 Return exactly:
 {
-  "summary": "1-2 warm, plain English sentences about what you found",
+  "summary": "2-3 warm, plain English sentences about overall system health and what you recommend",
+  "hardware_notes": "Plain English note about any hardware issues requiring physical service, or empty string if none",
+  "security_assessment": "1-2 sentences about the security posture — Defender, firewall, activation status",
   "actions": [
     {
-      "id": "snake_case_id",
-      "category": "cleanup|registry|startup|browser|system",
-      "friendly_name": "What the customer sees",
+      "id": "snake_case_id matching one of the known repair action IDs",
+      "category": "cleanup|drivers|startup|browser|system|network|performance|security",
+      "friendly_name": "What the customer sees in plain English",
       "technical_description": "What actually runs",
-      "command_type": "builtin|powershell|subprocess",
-      "command": "function name or command",
       "risk": "low|medium",
-      "estimated_mb_recovered": 0
+      "estimated_mb_recovered": 0,
+      "target_name": "optional — name of specific item (e.g. startup item name)",
+      "target_hive": "optional — HKCU or HKLM for startup items"
+    }
+  ],
+  "deferred_actions": [
+    {
+      "id": "snake_case_id",
+      "friendly_name": "What the customer sees",
+      "reason": "Why this should be done later or by a technician"
     }
   ]
-}`;
+}
+
+Known repair action IDs you may use:
+clear_temp_files, clear_all_browser_caches, clear_chrome_cache, clear_edge_cache, clear_firefox_cache, clear_brave_cache, clear_opera_cache, clear_windows_caches, empty_recycle_bin, disk_cleanup, clear_windows_store_cache, sfc_scan, dism_restore, chkdsk_scan, flush_dns, reset_network_stack, disable_startup_item (requires target_name + target_hive), optimize_power_plan, optimize_visual_effects, reset_windows_update, driver_report, hardware_report`;
 
 function buildDiagnosticText(diag) {
   const lines = [];
+  const add = (label, data) => { if (data !== undefined && data !== null) lines.push(`${label}: ${typeof data === "object" ? JSON.stringify(data) : data}`); };
+
+  // OS & Uptime
+  const os = diag.os || {};
+  lines.push(`OS: ${os.edition || ""} ${os.release || ""} Build ${os.build || ""} (${os.machine || ""})`);
+  lines.push(`Hostname: ${os.hostname || "unknown"}`);
+  const uptime = diag.uptime || {};
+  if (uptime.uptime_days !== undefined) lines.push(`Uptime: ${uptime.uptime_days} days (${uptime.uptime_hours}h) — needs reboot: ${uptime.needs_reboot || false}`);
+
+  // CPU
+  const cpu = diag.cpu || {};
+  if (cpu.processor_name) lines.push(`CPU: ${cpu.processor_name} — ${cpu.physical_cores}c/${cpu.logical_cores}t — ${cpu.current_percent}% load`);
+
+  // Memory
+  const mem = diag.memory || {};
+  lines.push(`Memory: ${mem.used_gb || 0}/${mem.total_gb || 0} GB (${mem.percent_used || 0}%) — ${mem.health_status || "unknown"}`);
+
+  // Page file
+  const pf = diag.page_file || {};
+  if (pf.files?.length) lines.push(`Page file: ${pf.files.map(f => `${f.current_usage_mb}/${f.allocated_mb} MB`).join(", ")}`);
+
+  // Battery
+  const bat = diag.battery || {};
+  if (bat.present) lines.push(`Battery: ${bat.percent}% ${bat.plugged_in ? "(plugged)" : "(on battery)"}${bat.wear_percent ? ` — ${bat.wear_percent}% wear` : ""}`);
+
+  // Disk
+  for (const d of (diag.disk || []))
+    lines.push(`Drive ${d.device}: ${d.percent_used}% used (${d.free_gb} GB free of ${d.total_gb} GB) — ${d.health_status}`);
+
+  // SMART
+  for (const s of (diag.smart_health || []))
+    if (s.failure_predicted) lines.push(`⚠ SMART FAILURE PREDICTED: ${s.drive}`);
+
+  // Fragmentation
+  for (const f of (diag.fragmentation || []))
+    if (f.AnalysisOutput) lines.push(`Drive ${f.Drive}: fragmentation analysis: ${f.AnalysisOutput.substring(0, 200)}`);
+
+  // Temp files
   const temp = diag.temp_files || [];
   if (temp.length) {
     const mb = temp.reduce((s, t) => s + (t.size_mb || 0), 0);
-    lines.push(`Temp files: ${mb.toFixed(0)} MB across ${temp.length} locations`);
+    lines.push(`Temp files: ${mb.toFixed(0)} MB across ${temp.length} locations (${temp.reduce((s, t) => s + (t.file_count || 0), 0)} files)`);
   }
+
+  // Recycle bin
+  const rb = diag.recycle_bin || {};
+  if (rb.size_mb) lines.push(`Recycle Bin: ${rb.item_count} items, ${rb.size_mb} MB`);
+
+  // Browser caches
   for (const b of (diag.browser_caches || []))
-    lines.push(`${b.browser} cache: ${b.size_mb} MB`);
+    lines.push(`${b.browser} cache: ${b.size_mb} MB (${b.file_count} files)`);
+
+  // Windows caches
+  const wc = diag.windows_caches || {};
+  const wcItems = Object.entries(wc).map(([k, v]) => `${k}: ${v.size_mb} MB`);
+  if (wcItems.length) lines.push(`Windows caches: ${wcItems.join(", ")}`);
+
+  // Large files
+  const lf = diag.large_files || [];
+  if (lf.length) lines.push(`Large files (>100MB): ${lf.length} found, largest: ${lf[0]?.size_mb} MB (${lf[0]?.extension})`);
+
+  // Startup
   const startup = diag.startup_programs || [];
   lines.push(`Startup programs: ${startup.length} registered`);
+  if (startup.length > 0) {
+    const preview = startup.slice(0, 10).map(s => `  ${s.name} (${s.hive})`).join("\n");
+    lines.push(preview);
+  }
+
+  // Scheduled tasks
+  const tasks = diag.scheduled_tasks || [];
+  if (tasks.length) lines.push(`Non-Microsoft scheduled tasks: ${tasks.length}`);
+
+  // Registry
   const reg = diag.registry || {};
   lines.push(`Registry MRU entries: ${reg.mru_entries || 0}`);
-  for (const d of (diag.disk || []))
-    lines.push(`Drive ${d.device}: ${d.percent_used}% used (${d.free_gb} GB free of ${d.total_gb} GB)`);
-  const mem = diag.memory || {};
-  lines.push(`Memory: ${mem.percent_used || 0}% used, ${mem.available_gb || 0} GB available`);
+
+  // Drivers
+  const drv = diag.drivers || {};
+  lines.push(`Drivers: ${drv.total || 0} total, ${drv.signed || 0} signed, ${(drv.unsigned || []).length} unsigned, ${(drv.outdated || []).length} outdated (>2yr)`);
+  if ((drv.unsigned || []).length > 0)
+    lines.push(`Unsigned drivers: ${drv.unsigned.map(d => d.device).join(", ")}`);
+  if ((drv.outdated || []).length > 0)
+    lines.push(`Outdated drivers: ${drv.outdated.slice(0, 5).map(d => `${d.device} (${d.date}, ${d.age_days}d old)`).join(", ")}`);
+
+  // Device errors
+  const devErr = diag.device_errors || [];
+  if (devErr.length) {
+    lines.push(`Device Manager problems: ${devErr.length}`);
+    for (const d of devErr.slice(0, 5))
+      lines.push(`  ${d.device}: Code ${d.error_code} — ${d.error_description}`);
+  }
+
+  // BSOD
+  const bsod = diag.bsod_history || [];
+  if (bsod.length) lines.push(`BSOD/crash history: ${bsod.length} records (most recent: ${bsod[0]?.date || "unknown"})`);
+
+  // Network
+  const net = diag.network || {};
+  if (net.adapters?.length) lines.push(`Network adapters (up): ${net.adapters.map(a => `${a.name} (${a.speed})`).join(", ")}`);
+  if (net.connectivity?.internet_reachable !== undefined)
+    lines.push(`Internet connectivity: ${net.connectivity.internet_reachable ? "OK" : "UNREACHABLE"}`);
+
+  // DNS
+  const dns = diag.dns_cache || {};
+  if (dns.entries) lines.push(`DNS cache: ${dns.entries} entries`);
+
+  // Security
+  const sec = diag.security || {};
+  const def = sec.defender || {};
+  if (def.real_time_protection !== undefined) {
+    lines.push(`Defender: real-time=${def.real_time_protection}, antivirus=${def.antivirus_enabled}, antispyware=${def.antispyware_enabled}`);
+    if (def.signature_last_updated) lines.push(`Defender signatures: ${def.signature_last_updated}`);
+  }
+  const fw = sec.firewall || {};
+  if (fw.profiles?.length)
+    lines.push(`Firewall: ${fw.profiles.map(p => `${p.name}=${p.enabled ? "ON" : "OFF"}`).join(", ")}`);
+
+  // Activation
+  const act = diag.activation || {};
+  if (act.status) lines.push(`Windows activation: ${act.status} (${act.product || ""})`);
+
+  // Windows Update
+  const wu = diag.windows_update || {};
+  if (wu.pending_updates !== undefined) lines.push(`Pending Windows updates: ${wu.pending_updates}`);
+  if (wu.last_update_date) lines.push(`Last Windows update: ${wu.last_update_date}`);
+
+  // Services
+  const svc = diag.services || {};
+  if ((svc.stopped_critical || []).length)
+    lines.push(`Stopped critical services: ${svc.stopped_critical.map(s => s.name).join(", ")}`);
+  if ((svc.failed || []).length)
+    lines.push(`Recent service failures: ${svc.failed.length}`);
+
+  // Installed programs
+  const progs = diag.installed_programs || {};
+  lines.push(`Installed programs: ${progs.total_count || 0}`);
+
+  // User accounts
+  const users = diag.user_accounts || [];
+  if (users.length) lines.push(`Local user accounts: ${users.map(u => `${u.name} (${u.enabled ? "enabled" : "disabled"})`).join(", ")}`);
+
+  // Power & Visual
+  const pp = diag.power_plan || {};
+  if (pp.active_plan) lines.push(`Power plan: ${pp.active_plan}`);
+  const ve = diag.visual_effects || {};
+  if (ve.setting) lines.push(`Visual effects: ${ve.setting}`);
+
+  // Event errors
   const errors = diag.event_errors || [];
   if (errors.length) {
-    lines.push(`Windows event errors: ${errors.length} found`);
-    for (const e of errors.slice(0, 3))
-      lines.push(`  - ${e.source}: ${(e.message || "").substring(0, 100)}`);
+    lines.push(`Windows event errors: ${errors.length}`);
+    for (const e of errors.slice(0, 5))
+      lines.push(`  [${e.source}] ${(e.message || "").substring(0, 120)}`);
   }
+
+  // Event warnings
+  const warnings = diag.event_warnings || [];
+  if (warnings.length) lines.push(`Windows event warnings: ${warnings.length}`);
+
   return lines.join("\n");
 }
 
@@ -94,9 +366,9 @@ async function queryGemini(diagnosticText) {
     body: JSON.stringify({
       system_instruction: { parts: [{ text: REPAIR_SYSTEM_PROMPT }] },
       contents: [{ parts: [{ text: `DIAGNOSTIC REPORT:\n${diagnosticText}` }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+      generationConfig: { temperature: 0.1, maxOutputTokens: 4096 }
     }),
-    signal: AbortSignal.timeout(60_000)
+    signal: AbortSignal.timeout(90_000)
   });
 
   if (!response.ok) {
@@ -112,233 +384,1422 @@ async function queryGemini(diagnosticText) {
   return JSON.parse(raw.slice(start, end));
 }
 
-// ─── Stripe ──────────────────────────────────────────────────────────────────
+// ─── Stripe ─────────────────────────────────────────────────────────────────
 
 async function verifyStripeSession(sessionId) {
   if (!STRIPE_SECRET_KEY) throw new Error("Stripe not configured");
-
   const resp = await fetch(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
-    headers: { "Authorization": `Bearer ${STRIPE_SECRET_KEY}` },
+    headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` },
     signal: AbortSignal.timeout(15_000)
   });
-
-  if (!resp.ok) {
-    const err = await resp.text();
-    throw new Error(`Stripe error ${resp.status}: ${err}`);
-  }
-
+  if (!resp.ok) throw new Error(`Stripe error ${resp.status}: ${await resp.text()}`);
   const session = await resp.json();
-  if (session.payment_status !== "paid") {
-    throw new Error(`Payment not completed (status: ${session.payment_status})`);
-  }
+  if (session.payment_status !== "paid") throw new Error(`Payment not completed (status: ${session.payment_status})`);
   return session;
 }
 
-function findTokenBySession(sessionId) {
-  for (const [token, data] of downloadTokenStore.entries()) {
-    if (data.sessionId === sessionId) return { token, data };
+function findSessionByStripeId(stripeSessionId) {
+  for (const [token, data] of sessionStore.entries()) {
+    if (data.stripeSessionId === stripeSessionId) return { token, data };
   }
   return null;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
-    req.on("data", c => { body += c; });
-    req.on("end", () => {
-      try { resolve(body ? JSON.parse(body) : {}); }
-      catch { reject(new Error("Invalid JSON")); }
-    });
+    req.on("data", c => { body += c; if (body.length > 5_000_000) reject(new Error("Body too large")); });
+    req.on("end", () => { try { resolve(body ? JSON.parse(body) : {}); } catch { reject(new Error("Invalid JSON")); } });
     req.on("error", reject);
   });
 }
 
-function json(res, status, data) {
+function json(res, req, status, data) {
+  const origin = corsOrigin(req);
   res.writeHead(status, {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "https://prontopc.online",
+    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Vary": "Origin"
   });
   res.end(JSON.stringify(data));
 }
 
-function sessionKey(token) { return token.substring(0, 16); }
-
-function isValidSession(req) {
-  const auth = req.headers["authorization"] || "";
-  if (!auth.toLowerCase().startsWith("bearer ")) return false;
-  return auth.slice(7).trim().length > 8;
+function text(res, req, status, content, contentType = "text/plain") {
+  const origin = corsOrigin(req);
+  res.writeHead(status, {
+    "Content-Type": contentType,
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Vary": "Origin"
+  });
+  res.end(content);
 }
 
-// ─── Handlers ────────────────────────────────────────────────────────────────
+// ─── Handlers ───────────────────────────────────────────────────────────────
 
 async function handleVerifyPayment(req, res) {
   let body;
-  try { body = await readBody(req); }
-  catch { return json(res, 400, { ok: false, error: "Invalid request body" }); }
-
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid request body" }); }
   const { sessionId } = body;
-  if (!sessionId) return json(res, 400, { ok: false, error: "sessionId required" });
+  if (!sessionId) return json(res, req, 400, { ok: false, error: "sessionId required" });
 
-  // Return existing token if already issued for this session
-  const existing = findTokenBySession(sessionId);
-  if (existing && !existing.data.used) {
-    return json(res, 200, { ok: true, token: existing.token });
-  }
+  const existing = findSessionByStripeId(sessionId);
+  if (existing) return json(res, req, 200, { ok: true, token: existing.token });
 
   try {
     const session = await verifyStripeSession(sessionId);
-    const token = crypto.randomBytes(32).toString("hex");
-    downloadTokenStore.set(token, {
-      sessionId,
-      email: session.customer_details?.email || "",
-      used: false,
-      createdAt: Date.now()
-    });
-    console.log(`[verify-payment] Token issued for session ${sessionId.substring(0, 12)}…`);
-    return json(res, 200, { ok: true, token });
+    const token = createSession(sessionId, session.customer_details?.email || "");
+    console.log(`[verify-payment] Session created for Stripe ${sessionId.substring(0, 12)}…`);
+    return json(res, req, 200, { ok: true, token });
   } catch (e) {
     console.error("[verify-payment] Error:", e.message);
-    return json(res, 402, { ok: false, error: e.message });
+    return json(res, req, 402, { ok: false, error: e.message });
   }
 }
 
-function handleDownload(req, res, token) {
-  const data = downloadTokenStore.get(token);
-
-  if (!data) {
-    res.writeHead(404, { "Content-Type": "text/html" });
-    return res.end("<h2>Invalid download link.</h2><p>Please contact support@prontopc.online</p>");
-  }
-  if (data.used) {
-    res.writeHead(410, { "Content-Type": "text/html" });
-    return res.end("<h2>This download link has already been used.</h2><p>Each payment includes one download. Contact support@prontopc.online if you need help.</p>");
-  }
-
-  // Mark as used
-  data.used = true;
-  downloadTokenStore.set(token, data);
-  console.log(`[download] Token consumed for session ${data.sessionId?.substring(0, 12)}… email: ${data.email}`);
-
-  // Redirect to the actual EXE on Vercel
-  res.writeHead(302, { "Location": EXE_DOWNLOAD_URL });
-  res.end();
-}
-
-async function handleRepairPlan(req, res) {
-  if (!isValidSession(req)) return json(res, 401, { ok: false, error: "Valid session required" });
-
+async function handleCreateSession(req, res) {
   let body;
-  try { body = await readBody(req); }
-  catch { return json(res, 400, { ok: false, error: "Invalid request body" }); }
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { token } = body;
+  if (!token) return json(res, req, 400, { ok: false, error: "token required" });
 
-  const { session, diagnostics } = body;
-  if (!session || !diagnostics)
-    return json(res, 400, { ok: false, error: "session and diagnostics required" });
+  const session = getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, error: "Invalid or expired session" });
 
-  console.log(`[repair-plan] Session ${session.substring(0, 8)}…`);
+  const scanUrl = `${CLOUD_RUN_URL}/scan?token=${token}`;
+  const scanCommand = `powershell -ExecutionPolicy Bypass -Command "irm '${scanUrl}' | iex"`;
+  return json(res, req, 200, { ok: true, sessionToken: token, scanUrl, scanCommand });
+}
+
+function handleScanScript(req, res, token) {
+  const session = getSession(token);
+  if (!session) return text(res, req, 404, "Write-Host 'Session expired or invalid. Please visit prontopc.online to start a new session.' -ForegroundColor Red");
+
+  if (session.state === "created") transitionState(token, "scan_served");
+
+  const script = generateDiagnosticScript(token);
+  return text(res, req, 200, script, "text/plain; charset=utf-8");
+}
+
+function handleRepairScript(req, res, token) {
+  const session = getSession(token);
+  if (!session) return text(res, req, 404, "Write-Host 'Session expired or invalid.' -ForegroundColor Red");
+  if (session.state !== "consented" && session.state !== "repair_served")
+    return text(res, req, 403, "Write-Host 'Repairs have not been approved for this session.' -ForegroundColor Red");
+
+  if (session.state === "consented") transitionState(token, "repair_served");
+
+  const script = generateRepairScript(token, session.repairPlan);
+  return text(res, req, 200, script, "text/plain; charset=utf-8");
+}
+
+async function handleSubmitDiagnostics(req, res) {
+  let body;
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { token, diagnostics } = body;
+  if (!token || !diagnostics) return json(res, req, 400, { ok: false, error: "token and diagnostics required" });
+
+  const session = getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, error: "Invalid or expired session" });
+
+  console.log(`[submit-diagnostics] Token ${token.substring(0, 8)}…`);
 
   try {
-    const text = buildDiagnosticText(diagnostics);
-    const plan = await queryGemini(text);
+    session.diagnostics = diagnostics;
+    session.hostname = diagnostics.os?.hostname || "Unknown PC";
+    const diagText = buildDiagnosticText(diagnostics);
+    const plan = await queryGemini(diagText);
+    session.repairPlan = plan;
+    transitionState(token, "diagnosed");
+    console.log(`[submit-diagnostics] Done — ${plan.actions?.length || 0} actions`);
+    return json(res, req, 200, { ok: true, plan });
+  } catch (e) {
+    console.error("[submit-diagnostics] Error:", e.message);
+    return json(res, req, 500, { ok: false, error: e.message });
+  }
+}
 
-    progressStore.set(sessionKey(session), {
-      session, status: "planned", plan, progress: 30,
-      currentAction: "Repair plan ready", log: [],
-      createdAt: Date.now(), updatedAt: Date.now()
-    });
+function handleSessionStatus(req, res, token) {
+  const session = getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, state: "expired" });
+  return json(res, req, 200, {
+    ok: true,
+    state: session.state,
+    hostname: session.hostname,
+    diagnosedAt: session.state !== "created" && session.state !== "scan_served" ? new Date(session.updatedAt).toISOString() : null,
+    createdAt: new Date(session.createdAt).toISOString(),
+    email: session.email,
+  });
+}
 
-    console.log(`[repair-plan] Done — ${plan.actions?.length || 0} actions`);
-    return json(res, 200, { ok: true, plan });
+function handleSessionFindings(req, res, token) {
+  const session = getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
+  if (!session.repairPlan) return json(res, req, 404, { ok: false, error: "Diagnostics not yet complete" });
+
+  const plan = session.repairPlan;
+  return json(res, req, 200, {
+    ok: true,
+    hostname: session.hostname,
+    summary: plan.summary || "",
+    hardware_notes: plan.hardware_notes || "",
+    security_assessment: plan.security_assessment || "",
+    actions: plan.actions || [],
+    deferred_actions: plan.deferred_actions || [],
+  });
+}
+
+function handleSessionConsent(req, res, token) {
+  const session = getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
+  if (session.state !== "diagnosed") return json(res, req, 400, { ok: false, error: `Cannot consent in state: ${session.state}` });
+
+  transitionState(token, "consented");
+  const repairUrl = `${CLOUD_RUN_URL}/repair?token=${token}`;
+  const repairCommand = `powershell -ExecutionPolicy Bypass -Command "irm '${repairUrl}' | iex"`;
+  return json(res, req, 200, { ok: true, repairUrl, repairCommand });
+}
+
+async function handleSubmitRepairResults(req, res) {
+  let body;
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { token, results } = body;
+  if (!token) return json(res, req, 400, { ok: false, error: "token required" });
+
+  const session = getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
+
+  session.repairResults = results;
+  transitionState(token, "completed");
+  console.log(`[submit-repair-results] Session ${token.substring(0, 8)}… completed`);
+  return json(res, req, 200, { ok: true });
+}
+
+function handleSessionReport(req, res, token) {
+  const session = getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
+  if (!session.diagnostics) return json(res, req, 404, { ok: false, error: "No diagnostics available" });
+
+  const html = generateReportHtml(session);
+  return text(res, req, 200, html, "text/html; charset=utf-8");
+}
+
+// Legacy endpoint — kept for backward compatibility with existing Python agent
+async function handleRepairPlan(req, res) {
+  let body;
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { session, diagnostics } = body;
+  if (!session || !diagnostics) return json(res, req, 400, { ok: false, error: "session and diagnostics required" });
+
+  try {
+    const diagText = buildDiagnosticText(diagnostics);
+    const plan = await queryGemini(diagText);
+    console.log(`[repair-plan] Legacy call — ${plan.actions?.length || 0} actions`);
+    return json(res, req, 200, { ok: true, plan });
   } catch (e) {
     console.error("[repair-plan] Error:", e.message);
-    return json(res, 500, { ok: false, error: e.message });
+    return json(res, req, 500, { ok: false, error: e.message });
   }
 }
 
-async function handleProgressPost(req, res) {
-  if (!isValidSession(req)) return json(res, 401, { ok: false, error: "Valid session required" });
+// ─── PowerShell Script Generation ───────────────────────────────────────────
 
+function generateDiagnosticScript(token) {
+  return `# ProntoPC Custodian Technician — Diagnostic Scan
+# 5D Service Solutions Global LLC
+# This script runs in memory — no files are installed on your system.
+# It reads system information only — nothing is changed.
+
+$ErrorActionPreference = 'SilentlyContinue'
+$token = '${token}'
+$serverUrl = '${CLOUD_RUN_URL}'
+
+function Write-Banner {
+    Write-Host ""
+    Write-Host "  ================================================================" -ForegroundColor DarkYellow
+    Write-Host "    Pronto PC — Custodian Technician Diagnostic Scan" -ForegroundColor Yellow
+    Write-Host "    5D Service Solutions Global LLC" -ForegroundColor DarkYellow
+    Write-Host "  ================================================================" -ForegroundColor DarkYellow
+    Write-Host ""
+    Write-Host "  This scan reads your system information to generate a" -ForegroundColor Gray
+    Write-Host "  professional diagnostic report. Nothing is changed." -ForegroundColor Gray
+    Write-Host ""
+}
+
+function Write-Step($n, $total, $msg) {
+    Write-Host "  [$n/$total] $msg..." -ForegroundColor Cyan
+}
+
+function Get-SafeJson($cmd, $timeout = 15) {
+    try {
+        $result = powershell -NoProfile -NonInteractive -Command $cmd 2>$null
+        if ($result) { return $result | ConvertFrom-Json }
+    } catch {}
+    return $null
+}
+
+Write-Banner
+
+# Validate session
+try {
+    $status = Invoke-RestMethod -Uri "$serverUrl/api/session/$token/status" -TimeoutSec 10
+    if (-not $status.ok) {
+        Write-Host "  Session invalid or expired. Please visit prontopc.online" -ForegroundColor Red
+        Read-Host "  Press Enter to close"
+        exit
+    }
+} catch {
+    Write-Host "  Could not reach the diagnostic server. Please check your" -ForegroundColor Red
+    Write-Host "  internet connection and try again." -ForegroundColor Red
+    Read-Host "  Press Enter to close"
+    exit
+}
+
+Write-Host "  Session verified. Starting comprehensive diagnostic scan..." -ForegroundColor Green
+Write-Host ""
+
+$totalSteps = 18
+$diag = @{}
+
+# 1. OS Info
+Write-Step 1 $totalSteps "Gathering system information"
+try {
+    $os = Get-CimInstance Win32_OperatingSystem
+    $proc = Get-CimInstance Win32_Processor
+    $diag.os = @{
+        version = [System.Environment]::OSVersion.Version.ToString()
+        release = [System.Environment]::OSVersion.Version.Major.ToString()
+        edition = $os.Caption
+        build = $os.BuildNumber
+        machine = $env:PROCESSOR_ARCHITECTURE
+        processor = $proc.Name
+        hostname = $env:COMPUTERNAME
+    }
+} catch { $diag.os = @{ hostname = $env:COMPUTERNAME; error = $_.Exception.Message } }
+
+# 2. Uptime
+Write-Step 2 $totalSteps "Checking system uptime"
+try {
+    $boot = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime
+    $uptime = (Get-Date) - $boot
+    $diag.uptime = @{
+        boot_time = $boot.ToString("o")
+        uptime_hours = [math]::Round($uptime.TotalHours, 1)
+        uptime_days = $uptime.Days
+        needs_reboot = ($uptime.Days -gt 14)
+    }
+} catch { $diag.uptime = @{ error = "Could not determine" } }
+
+# 3. CPU
+Write-Step 3 $totalSteps "Analyzing CPU"
+try {
+    $proc = Get-CimInstance Win32_Processor
+    $diag.cpu = @{
+        processor_name = $proc.Name
+        physical_cores = $proc.NumberOfCores
+        logical_cores = $proc.ThreadCount
+        current_percent = $proc.LoadPercentage
+        current_clock_mhz = $proc.CurrentClockSpeed
+        max_clock_mhz = $proc.MaxClockSpeed
+    }
+} catch { $diag.cpu = @{ error = $_.Exception.Message } }
+
+# 4. Memory
+Write-Step 4 $totalSteps "Checking memory"
+try {
+    $mem = Get-CimInstance Win32_OperatingSystem
+    $totalGB = [math]::Round($mem.TotalVisibleMemorySize / 1MB, 1)
+    $freeGB = [math]::Round($mem.FreePhysicalMemory / 1MB, 1)
+    $usedGB = $totalGB - $freeGB
+    $pct = [math]::Round(($usedGB / $totalGB) * 100, 0)
+    $diag.memory = @{
+        total_gb = $totalGB; available_gb = $freeGB; used_gb = $usedGB; percent_used = $pct
+        health_status = if ($pct -gt 90) { "critical" } elseif ($pct -gt 80) { "warning" } else { "healthy" }
+    }
+} catch { $diag.memory = @{ percent_used = 0; error = $_.Exception.Message } }
+
+# 5. Disk
+Write-Step 5 $totalSteps "Scanning drives"
+try {
+    $disks = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3"
+    $diag.disk = @($disks | ForEach-Object {
+        $pct = [math]::Round(($_.Size - $_.FreeSpace) / $_.Size * 100, 0)
+        @{
+            device = $_.DeviceID; total_gb = [math]::Round($_.Size/1GB,1)
+            used_gb = [math]::Round(($_.Size - $_.FreeSpace)/1GB,1); free_gb = [math]::Round($_.FreeSpace/1GB,1)
+            percent_used = $pct; fstype = $_.FileSystem
+            health_status = if ($pct -gt 95) {"critical"} elseif ($pct -gt 85) {"warning"} else {"healthy"}
+        }
+    })
+} catch { $diag.disk = @() }
+
+# 6. SMART Health
+try {
+    $smart = Get-CimInstance -Namespace root\\wmi -ClassName MSStorageDriver_FailurePredictStatus 2>$null
+    $diag.smart_health = @($smart | ForEach-Object {
+        @{ drive = $_.InstanceName.Substring(0, [math]::Min(40, $_.InstanceName.Length)); failure_predicted = $_.PredictFailure; reason = $_.Reason }
+    })
+} catch { $diag.smart_health = @() }
+
+# 7. Temp files & caches
+Write-Step 6 $totalSteps "Measuring temp files and caches"
+try {
+    $tempPaths = @($env:TEMP, "C:\\Windows\\Temp", "$env:USERPROFILE\\AppData\\Local\\Temp") | Select-Object -Unique | Where-Object { Test-Path $_ }
+    $diag.temp_files = @($tempPaths | ForEach-Object {
+        $files = Get-ChildItem $_ -Recurse -File -ErrorAction SilentlyContinue
+        $totalBytes = ($files | Measure-Object -Property Length -Sum).Sum
+        @{ path = $_; file_count = $files.Count; size_mb = [math]::Round($totalBytes/1MB, 1) }
+    })
+} catch { $diag.temp_files = @() }
+
+# Recycle Bin
+try {
+    $shell = New-Object -ComObject Shell.Application
+    $rb = $shell.NameSpace(10).Items()
+    $rbSize = ($rb | Measure-Object -Property Size -Sum).Sum
+    $diag.recycle_bin = @{ item_count = $rb.Count; size_mb = [math]::Round($rbSize/1MB, 1) }
+} catch { $diag.recycle_bin = @{ item_count = 0; size_mb = 0 } }
+
+# 8. Browser caches
+Write-Step 7 $totalSteps "Checking browser caches"
+$cachePaths = @{
+    "Chrome" = "$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Cache"
+    "Chrome (Code Cache)" = "$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Code Cache"
+    "Edge" = "$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Cache"
+    "Edge (Code Cache)" = "$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Code Cache"
+    "Brave" = "$env:LOCALAPPDATA\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Cache"
+    "Opera" = "$env:APPDATA\\Opera Software\\Opera Stable\\Cache"
+    "Firefox" = "$env:LOCALAPPDATA\\Mozilla\\Firefox\\Profiles"
+}
+$diag.browser_caches = @()
+foreach ($browser in $cachePaths.Keys) {
+    $p = $cachePaths[$browser]
+    if (Test-Path $p) {
+        try {
+            $files = Get-ChildItem $p -Recurse -File -ErrorAction SilentlyContinue
+            $sz = ($files | Measure-Object -Property Length -Sum).Sum
+            if ($sz -gt 0) {
+                $diag.browser_caches += @{ browser = $browser; path = $p; size_mb = [math]::Round($sz/1MB,1); file_count = $files.Count }
+            }
+        } catch {}
+    }
+}
+
+# 9. Windows caches
+$diag.windows_caches = @{}
+$wcPaths = @{
+    thumbnail_cache = @{ path = "$env:LOCALAPPDATA\\Microsoft\\Windows\\Explorer"; pattern = "thumbcache_*.db" }
+    icon_cache = @{ path = "$env:LOCALAPPDATA"; pattern = "iconcache_*.db" }
+    prefetch = @{ path = "C:\\Windows\\Prefetch"; pattern = "*.pf" }
+}
+foreach ($name in $wcPaths.Keys) {
+    $wc = $wcPaths[$name]
+    if (Test-Path $wc.path) {
+        try {
+            $files = Get-ChildItem "$($wc.path)\\$($wc.pattern)" -ErrorAction SilentlyContinue
+            $sz = ($files | Measure-Object -Property Length -Sum).Sum
+            if ($sz -gt 0) { $diag.windows_caches[$name] = @{ size_mb = [math]::Round($sz/1MB,1); file_count = $files.Count } }
+        } catch {}
+    }
+}
+
+# 10. Drivers
+Write-Step 8 $totalSteps "Auditing drivers"
+try {
+    $allDrivers = Get-CimInstance Win32_PnPSignedDriver
+    $unsigned = @($allDrivers | Where-Object { -not $_.IsSigned } | Select-Object -First 10 | ForEach-Object {
+        @{ device = $_.DeviceName; manufacturer = $_.Manufacturer; version = $_.DriverVersion }
+    })
+    $cutoff = (Get-Date).AddYears(-2)
+    $outdated = @($allDrivers | Where-Object { $_.DriverDate -and $_.DriverDate -lt $cutoff -and $_.DriverProviderName -ne 'Microsoft' } | Select-Object -First 15 | ForEach-Object {
+        @{ device = $_.DeviceName; version = $_.DriverVersion; date = $_.DriverDate.ToString("yyyy-MM-dd"); provider = $_.DriverProviderName; age_days = ((Get-Date) - $_.DriverDate).Days }
+    })
+    $diag.drivers = @{
+        total = $allDrivers.Count; signed = @($allDrivers | Where-Object { $_.IsSigned }).Count
+        unsigned = $unsigned; outdated = $outdated
+    }
+} catch { $diag.drivers = @{ total = 0; error = $_.Exception.Message } }
+
+# 11. Device errors
+Write-Step 9 $totalSteps "Checking Device Manager"
+try {
+    $problems = Get-CimInstance Win32_PnPEntity | Where-Object { $_.ConfigManagerErrorCode -ne 0 }
+    $diag.device_errors = @($problems | ForEach-Object {
+        @{ device = $_.Name; error_code = $_.ConfigManagerErrorCode; status = $_.Status; manufacturer = $_.Manufacturer
+           error_description = switch ($_.ConfigManagerErrorCode) {
+               1 {"Not configured correctly"} 3 {"Driver corrupted"} 10 {"Cannot start"} 22 {"Disabled"}
+               28 {"Drivers not installed"} 31 {"Not working properly"} 43 {"Driver reported problem"}
+               default {"Error code $($_.ConfigManagerErrorCode)"}
+           }
+        }
+    })
+} catch { $diag.device_errors = @() }
+
+# 12. BSOD history
+try {
+    $dumps = Get-ChildItem "C:\\Windows\\Minidump\\*.dmp" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 10
+    $diag.bsod_history = @($dumps | ForEach-Object {
+        @{ file = $_.Name; date = $_.LastWriteTime.ToString("o"); size_kb = [math]::Round($_.Length/1KB,1) }
+    })
+} catch { $diag.bsod_history = @() }
+
+# 13. Network
+Write-Step 10 $totalSteps "Testing network"
+try {
+    $adapters = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' }
+    $diag.network = @{
+        adapters = @($adapters | ForEach-Object { @{ name = $_.Name; description = $_.InterfaceDescription; speed = $_.LinkSpeed } })
+        connectivity = @{
+            internet_reachable = (Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -ErrorAction SilentlyContinue)
+            interfaces = @(Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway } | ForEach-Object {
+                @{ name = $_.InterfaceAlias; ipv4 = $_.IPv4Address.IPAddress; gateway = $_.IPv4DefaultGateway.NextHop
+                   dns_servers = ($_.DNSServer.ServerAddresses -join ',') }
+            })
+        }
+    }
+} catch { $diag.network = @{ adapters = @(); connectivity = @{ internet_reachable = $null } } }
+
+try { $diag.dns_cache = @{ entries = (Get-DnsClientCache | Measure-Object).Count } } catch { $diag.dns_cache = @{ entries = 0 } }
+
+# 14. Security
+Write-Step 11 $totalSteps "Checking security status"
+try {
+    $mp = Get-MpComputerStatus -ErrorAction Stop
+    $diag.security = @{
+        defender = @{
+            real_time_protection = $mp.RealTimeProtectionEnabled; antivirus_enabled = $mp.AntivirusEnabled
+            antispyware_enabled = $mp.AntispywareEnabled; behavior_monitor = $mp.BehaviorMonitorEnabled
+            signature_last_updated = $mp.AntivirusSignatureLastUpdated.ToString("o")
+            last_quick_scan = $mp.QuickScanEndTime.ToString("o"); last_full_scan = $mp.FullScanEndTime.ToString("o")
+        }
+    }
+} catch { $diag.security = @{ defender = @{ error = "Could not query Defender" } } }
+
+try {
+    $fw = Get-NetFirewallProfile
+    $diag.security.firewall = @{ profiles = @($fw | ForEach-Object { @{ name = $_.Name; enabled = $_.Enabled } }) }
+} catch { $diag.security.firewall = @{ error = "Could not query firewall" } }
+
+# Activation
+try {
+    $lic = Get-CimInstance SoftwareLicensingProduct | Where-Object { $_.PartialProductKey -and $_.Name -like '*Windows*' } | Select-Object -First 1
+    $statusMap = @{ 0="Unlicensed"; 1="Licensed"; 2="OOBGrace"; 3="OOTGrace"; 4="NonGenuine"; 5="Notification" }
+    $diag.activation = @{ product = $lic.Name; status_code = $lic.LicenseStatus; status = $statusMap[[int]$lic.LicenseStatus]; is_activated = ($lic.LicenseStatus -eq 1) }
+} catch { $diag.activation = @{ is_activated = $null } }
+
+# 15. Windows Update
+Write-Step 12 $totalSteps "Checking Windows Update"
+try {
+    $hotfixes = Get-HotFix | Sort-Object InstalledOn -Descending -ErrorAction SilentlyContinue | Select-Object -First 5
+    $diag.windows_update = @{
+        recent_updates = @($hotfixes | ForEach-Object { @{ id = $_.HotFixID; installed = $_.InstalledOn.ToString("o"); type = $_.Description } })
+        last_update_date = if ($hotfixes) { $hotfixes[0].InstalledOn.ToString("o") } else { "" }
+    }
+} catch { $diag.windows_update = @{ error = "Could not query" } }
+
+try {
+    $updateSession = New-Object -ComObject Microsoft.Update.Session
+    $searcher = $updateSession.CreateUpdateSearcher()
+    $result = $searcher.Search('IsInstalled=0 and IsHidden=0')
+    $diag.windows_update.pending_updates = $result.Updates.Count
+} catch { $diag.windows_update.pending_updates = $null }
+
+# 16. Startup programs
+Write-Step 13 $totalSteps "Listing startup programs"
+$diag.startup_programs = @()
+$regPaths = @(
+    @{ hive = "HKCU"; path = "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" }
+    @{ hive = "HKLM"; path = "HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" }
+)
+foreach ($rp in $regPaths) {
+    try {
+        $props = Get-ItemProperty $rp.path -ErrorAction SilentlyContinue
+        if ($props) {
+            $props.PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object {
+                $diag.startup_programs += @{ name = $_.Name; command = $_.Value; hive = $rp.hive; key = $rp.path }
+            }
+        }
+    } catch {}
+}
+
+# 17. Services
+Write-Step 14 $totalSteps "Auditing services"
+$criticalSvcs = @("wuauserv","WinDefend","mpssvc","EventLog","Dhcp","Dnscache","RpcSs","Schedule","Winmgmt")
+try {
+    $allSvcs = Get-Service -ErrorAction SilentlyContinue
+    $diag.services = @{
+        stopped_critical = @($allSvcs | Where-Object { $criticalSvcs -contains $_.Name -and $_.Status -ne 'Running' } | ForEach-Object {
+            @{ name = $_.Name; display_name = $_.DisplayName; status = $_.Status.ToString(); start_type = $_.StartType.ToString() }
+        })
+    }
+} catch { $diag.services = @{ stopped_critical = @() } }
+
+try {
+    $svcErrors = Get-EventLog -LogName System -EntryType Error -Source 'Service Control Manager' -Newest 10 -ErrorAction SilentlyContinue
+    $diag.services.failed = @($svcErrors | ForEach-Object {
+        @{ time = $_.TimeGenerated.ToString("o"); message = $_.Message.Substring(0, [math]::Min(200, $_.Message.Length)) }
+    })
+} catch { $diag.services.failed = @() }
+
+# 18. Installed programs
+Write-Step 15 $totalSteps "Cataloguing installed programs"
+$programs = @()
+$regProgramPaths = @(
+    "HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*"
+    "HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*"
+    "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*"
+)
+foreach ($rpp in $regProgramPaths) {
+    try {
+        Get-ItemProperty $rpp -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName } | ForEach-Object {
+            $programs += @{
+                name = $_.DisplayName; version = $_.DisplayVersion; publisher = $_.Publisher
+                install_date = $_.InstallDate; size_kb = $_.EstimatedSize
+            }
+        }
+    } catch {}
+}
+$seen = @{}; $unique = @()
+foreach ($p in $programs) { $k = $p.name.ToLower(); if (-not $seen[$k]) { $seen[$k] = $true; $unique += $p } }
+$diag.installed_programs = @{ total_count = $unique.Count; programs = $unique }
+
+# Event logs
+Write-Step 16 $totalSteps "Reading event logs"
+try {
+    $sysErrors = Get-EventLog -LogName System -EntryType Error -Newest 20 -ErrorAction SilentlyContinue
+    $appErrors = Get-EventLog -LogName Application -EntryType Error -Newest 10 -ErrorAction SilentlyContinue
+    $diag.event_errors = @(($sysErrors + $appErrors) | ForEach-Object {
+        @{ time = $_.TimeGenerated.ToString("o"); source = $_.Source; event_id = $_.EventID; message = $_.Message.Substring(0, [math]::Min(300, $_.Message.Length)) }
+    })
+} catch { $diag.event_errors = @() }
+
+try {
+    $warnings = Get-EventLog -LogName System -EntryType Warning -Newest 15 -ErrorAction SilentlyContinue
+    $diag.event_warnings = @($warnings | ForEach-Object {
+        @{ time = $_.TimeGenerated.ToString("o"); source = $_.Source; event_id = $_.EventID; message = $_.Message.Substring(0, [math]::Min(300, $_.Message.Length)) }
+    })
+} catch { $diag.event_warnings = @() }
+
+# User accounts
+Write-Step 17 $totalSteps "Checking user accounts"
+try {
+    $diag.user_accounts = @(Get-LocalUser -ErrorAction SilentlyContinue | ForEach-Object {
+        @{ name = $_.Name; enabled = $_.Enabled; last_logon = $_.LastLogon.ToString("o"); description = $_.Description }
+    })
+} catch { $diag.user_accounts = @() }
+
+# Power plan, visual effects, battery, large files
+try { $pp = Get-CimInstance -Namespace root\\cimv2\\power -ClassName Win32_PowerPlan | Where-Object { $_.IsActive }; $diag.power_plan = @{ active_plan = $pp.ElementName } } catch { $diag.power_plan = @{ active_plan = "Unknown" } }
+try {
+    $vfx = Get-ItemProperty "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" -Name VisualFXSetting -ErrorAction SilentlyContinue
+    $vfxMap = @{ 0="Let Windows choose"; 1="Best appearance"; 2="Best performance"; 3="Custom" }
+    $diag.visual_effects = @{ setting = $vfxMap[[int]$vfx.VisualFXSetting]; code = $vfx.VisualFXSetting }
+} catch { $diag.visual_effects = @{ setting = "Default"; code = $null } }
+
+try {
+    $bat = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue
+    if ($bat) {
+        $diag.battery = @{ present = $true; percent = $bat.EstimatedChargeRemaining; plugged_in = ($bat.BatteryStatus -eq 2) }
+        if ($bat.DesignCapacity -and $bat.FullChargeCapacity -and $bat.DesignCapacity -gt 0) {
+            $diag.battery.wear_percent = [math]::Round((1 - $bat.FullChargeCapacity / $bat.DesignCapacity) * 100, 1)
+        }
+    } else { $diag.battery = @{ present = $false } }
+} catch { $diag.battery = @{ present = $false } }
+
+Write-Step 18 $totalSteps "Finding large files"
+$diag.large_files = @()
+$scanDirs = @("$env:USERPROFILE\\Downloads", "$env:USERPROFILE\\Documents", "$env:USERPROFILE\\Desktop", "$env:USERPROFILE\\Videos")
+foreach ($dir in $scanDirs) {
+    if (Test-Path $dir) {
+        try {
+            Get-ChildItem $dir -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Length -gt 100MB } | Select-Object -First 5 | ForEach-Object {
+                $diag.large_files += @{ path = $_.FullName; size_mb = [math]::Round($_.Length/1MB,1); extension = $_.Extension.ToLower() }
+            }
+        } catch {}
+    }
+}
+$diag.large_files = @($diag.large_files | Sort-Object { $_.size_mb } -Descending | Select-Object -First 20)
+
+# Add scan timestamp
+$diag.scanned_at = (Get-Date).ToUniversalTime().ToString("o")
+
+Write-Host ""
+Write-Host "  Scan complete. Sending data for AI analysis..." -ForegroundColor Green
+Write-Host ""
+
+# Submit diagnostics
+try {
+    $body = @{ token = $token; diagnostics = $diag } | ConvertTo-Json -Depth 10 -Compress
+    $response = Invoke-RestMethod -Uri "$serverUrl/api/submit-diagnostics" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 90
+
+    if ($response.ok) {
+        $plan = $response.plan
+        Write-Host "  ================================================================" -ForegroundColor DarkYellow
+        Write-Host "    DIAGNOSTIC FINDINGS" -ForegroundColor Yellow
+        Write-Host "  ================================================================" -ForegroundColor DarkYellow
+        Write-Host ""
+        Write-Host "  $($plan.summary)" -ForegroundColor White
+        Write-Host ""
+
+        if ($plan.hardware_notes) {
+            Write-Host "  HARDWARE NOTES:" -ForegroundColor Red
+            Write-Host "  $($plan.hardware_notes)" -ForegroundColor Gray
+            Write-Host ""
+        }
+
+        if ($plan.security_assessment) {
+            Write-Host "  SECURITY: $($plan.security_assessment)" -ForegroundColor Cyan
+            Write-Host ""
+        }
+
+        $actionCount = ($plan.actions | Measure-Object).Count
+        Write-Host "  $actionCount recommended repair actions identified." -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "  Your Custodian Technician has your full results." -ForegroundColor Green
+        Write-Host "  Return to the chat to continue." -ForegroundColor Green
+    } else {
+        Write-Host "  Analysis returned an error: $($response.error)" -ForegroundColor Red
+    }
+} catch {
+    Write-Host "  Could not submit diagnostics: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# Download and save report
+Write-Host ""
+Write-Host "  Saving your diagnostic report..." -ForegroundColor Cyan
+try {
+    $report = Invoke-RestMethod -Uri "$serverUrl/api/session/$token/report" -TimeoutSec 15
+    $reportPath = "$env:USERPROFILE\\Desktop\\ProntoPC_Report_$(Get-Date -Format 'yyyyMMdd_HHmm').html"
+    $report | Out-File -FilePath $reportPath -Encoding utf8
+    Write-Host "  Report saved to: $reportPath" -ForegroundColor Green
+    Start-Process $reportPath
+} catch {
+    Write-Host "  Could not save report: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
+Write-Host ""
+Write-Host "  ================================================================" -ForegroundColor DarkYellow
+Write-Host "  You can close this window now." -ForegroundColor Gray
+Write-Host "  ================================================================" -ForegroundColor DarkYellow
+Read-Host "  Press Enter to close"
+`;
+}
+
+function generateRepairScript(token, repairPlan) {
+  const actionsJson = JSON.stringify(repairPlan?.actions || []);
+  return `# ProntoPC Custodian Technician — Repair Execution
+# 5D Service Solutions Global LLC
+# Approved repairs only — every action was consented to by the client.
+
+$ErrorActionPreference = 'SilentlyContinue'
+$token = '${token}'
+$serverUrl = '${CLOUD_RUN_URL}'
+$actions = '${actionsJson.replace(/'/g, "''")}' | ConvertFrom-Json
+
+Write-Host ""
+Write-Host "  ================================================================" -ForegroundColor DarkYellow
+Write-Host "    Pronto PC — Executing Approved Repairs" -ForegroundColor Yellow
+Write-Host "    5D Service Solutions Global LLC" -ForegroundColor DarkYellow
+Write-Host "  ================================================================" -ForegroundColor DarkYellow
+Write-Host ""
+
+$results = @()
+$totalActions = ($actions | Measure-Object).Count
+$current = 0
+
+foreach ($action in $actions) {
+    $current++
+    $id = $action.id
+    $name = $action.friendly_name
+    Write-Host "  [$current/$totalActions] $name..." -ForegroundColor Cyan
+    $result = @{ action = $id; name = $name; status = "skipped"; mb_freed = 0; detail = "" }
+
+    try {
+        switch -Wildcard ($id) {
+            "clear_temp_files" {
+                $freed = 0
+                @($env:TEMP, "C:\\Windows\\Temp") | Select-Object -Unique | Where-Object { Test-Path $_ } | ForEach-Object {
+                    Get-ChildItem $_ -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+                        try { $freed += $_.Length; Remove-Item $_.FullName -Force } catch {}
+                    }
+                }
+                $result.status = "done"; $result.mb_freed = [math]::Round($freed/1MB)
+            }
+            "clear_*_cache" {
+                $browser = switch ($id) { "clear_chrome_cache"{"Chrome"} "clear_edge_cache"{"Edge"} "clear_firefox_cache"{"Firefox"} "clear_brave_cache"{"Brave"} "clear_opera_cache"{"Opera"} default{""} }
+                if ($browser) {
+                    $paths = switch ($browser) {
+                        "Chrome" { @("$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Cache","$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Code Cache") }
+                        "Edge" { @("$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Cache","$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Code Cache") }
+                        "Firefox" { @("$env:LOCALAPPDATA\\Mozilla\\Firefox\\Profiles") }
+                        "Brave" { @("$env:LOCALAPPDATA\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Cache") }
+                        "Opera" { @("$env:APPDATA\\Opera Software\\Opera Stable\\Cache") }
+                    }
+                    $freed = 0
+                    foreach ($p in $paths) { if (Test-Path $p) { Get-ChildItem $p -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { try { $freed += $_.Length; Remove-Item $_.FullName -Force } catch {} } } }
+                    $result.status = "done"; $result.mb_freed = [math]::Round($freed/1MB)
+                }
+            }
+            "clear_all_browser_caches" {
+                $freed = 0
+                $allCachePaths = @(
+                    "$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Cache",
+                    "$env:LOCALAPPDATA\\Google\\Chrome\\User Data\\Default\\Code Cache",
+                    "$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Cache",
+                    "$env:LOCALAPPDATA\\Microsoft\\Edge\\User Data\\Default\\Code Cache",
+                    "$env:LOCALAPPDATA\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Cache",
+                    "$env:APPDATA\\Opera Software\\Opera Stable\\Cache"
+                )
+                foreach ($p in $allCachePaths) { if (Test-Path $p) { Get-ChildItem $p -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { try { $freed += $_.Length; Remove-Item $_.FullName -Force } catch {} } } }
+                $result.status = "done"; $result.mb_freed = [math]::Round($freed/1MB)
+            }
+            "clear_windows_caches" {
+                $freed = 0
+                Get-ChildItem "$env:LOCALAPPDATA\\Microsoft\\Windows\\Explorer\\thumbcache_*.db" -ErrorAction SilentlyContinue | ForEach-Object { try { $freed += $_.Length; Remove-Item $_.FullName -Force } catch {} }
+                Get-ChildItem "$env:LOCALAPPDATA\\iconcache_*.db" -ErrorAction SilentlyContinue | ForEach-Object { try { $freed += $_.Length; Remove-Item $_.FullName -Force } catch {} }
+                Get-ChildItem "C:\\Windows\\Prefetch\\*.pf" -ErrorAction SilentlyContinue | ForEach-Object { try { $freed += $_.Length; Remove-Item $_.FullName -Force } catch {} }
+                $result.status = "done"; $result.mb_freed = [math]::Round($freed/1MB)
+            }
+            "empty_recycle_bin" {
+                Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+                $result.status = "done"; $result.detail = "Recycle Bin emptied"
+            }
+            "flush_dns" {
+                ipconfig /flushdns | Out-Null
+                $result.status = "done"; $result.detail = "DNS cache flushed"
+            }
+            "sfc_scan" {
+                Write-Host "    Running System File Checker (this may take several minutes)..." -ForegroundColor Gray
+                $sfcOut = & sfc /scannow 2>&1 | Out-String
+                $result.status = "done"; $result.detail = $sfcOut.Substring([math]::Max(0, $sfcOut.Length - 300))
+            }
+            "dism_restore" {
+                Write-Host "    Running DISM health restore (this may take several minutes)..." -ForegroundColor Gray
+                $dismOut = & DISM /Online /Cleanup-Image /RestoreHealth 2>&1 | Out-String
+                $result.status = "done"; $result.detail = $dismOut.Substring([math]::Max(0, $dismOut.Length - 300))
+            }
+            "disk_cleanup" {
+                & cleanmgr /sagerun:1 2>$null
+                $result.status = "done"; $result.detail = "Windows Disk Cleanup completed"
+            }
+            "chkdsk_scan" {
+                $chkOut = & chkdsk C: /scan 2>&1 | Out-String
+                $result.status = "done"; $result.detail = $chkOut.Substring([math]::Max(0, $chkOut.Length - 300))
+            }
+            "reset_network_stack" {
+                netsh winsock reset | Out-Null; netsh int ip reset | Out-Null
+                ipconfig /release | Out-Null; ipconfig /renew | Out-Null; ipconfig /flushdns | Out-Null
+                $result.status = "done"; $result.detail = "Network stack reset (winsock, IP, DNS)"
+            }
+            "disable_startup_item" {
+                $itemName = $action.target_name
+                $hive = if ($action.target_hive -eq "HKLM") { "HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" } else { "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" }
+                try { Remove-ItemProperty -Path $hive -Name $itemName -ErrorAction Stop; $result.status = "done"; $result.detail = "Disabled: $itemName" }
+                catch { $result.status = "error"; $result.detail = "Could not disable: $($_.Exception.Message)" }
+            }
+            "optimize_power_plan" {
+                powercfg /setactive SCHEME_BALANCED
+                $result.status = "done"; $result.detail = "Power plan set to Balanced"
+            }
+            "optimize_visual_effects" {
+                Set-ItemProperty "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects" -Name VisualFXSetting -Value 2 -Type DWord
+                $result.status = "done"; $result.detail = "Visual effects set to Best Performance"
+            }
+            "reset_windows_update" {
+                Write-Host "    Resetting Windows Update components..." -ForegroundColor Gray
+                @("wuauserv","cryptSvc","bits","msiserver") | ForEach-Object { Stop-Service $_ -Force -ErrorAction SilentlyContinue }
+                $sd = "C:\\Windows\\SoftwareDistribution"; $cr = "C:\\Windows\\System32\\catroot2"
+                if (Test-Path $sd) { try { Rename-Item $sd "$sd.bak" -Force } catch {} }
+                if (Test-Path $cr) { try { Rename-Item $cr "$cr.bak" -Force } catch {} }
+                @("wuauserv","cryptSvc","bits","msiserver") | ForEach-Object { Start-Service $_ -ErrorAction SilentlyContinue }
+                $result.status = "done"; $result.detail = "Windows Update components reset"
+            }
+            "clear_windows_store_cache" {
+                Start-Process wsreset.exe -Wait -ErrorAction SilentlyContinue
+                $result.status = "done"; $result.detail = "Windows Store cache cleared"
+            }
+            { $_ -in @("driver_report","hardware_report") } {
+                $result.status = "noted"; $result.detail = "Documented in report. Physical service may be recommended."
+            }
+            default {
+                $result.status = "noted"; $result.detail = "Action logged for review"
+            }
+        }
+
+        $icon = if ($result.status -eq "done") { "+" } elseif ($result.status -eq "noted") { "~" } else { "!" }
+        $freed = if ($result.mb_freed -gt 0) { " - $($result.mb_freed) MB freed" } else { "" }
+        Write-Host "    [$icon] $name$freed" -ForegroundColor $(if ($result.status -eq "done") { "Green" } elseif ($result.status -eq "noted") { "Yellow" } else { "Red" })
+    } catch {
+        $result.status = "error"; $result.detail = $_.Exception.Message
+        Write-Host "    [!] $name - $($_.Exception.Message)" -ForegroundColor Red
+    }
+
+    $results += $result
+}
+
+# Submit results
+Write-Host ""
+Write-Host "  Submitting repair results..." -ForegroundColor Cyan
+try {
+    $body = @{ token = $token; results = $results } | ConvertTo-Json -Depth 5 -Compress
+    Invoke-RestMethod -Uri "$serverUrl/api/submit-repair-results" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 15 | Out-Null
+} catch {}
+
+# Download updated report
+Write-Host "  Saving your complete repair report..." -ForegroundColor Cyan
+try {
+    $report = Invoke-RestMethod -Uri "$serverUrl/api/session/$token/report" -TimeoutSec 15
+    $reportPath = "$env:USERPROFILE\\Desktop\\ProntoPC_Report_$(Get-Date -Format 'yyyyMMdd_HHmm').html"
+    $report | Out-File -FilePath $reportPath -Encoding utf8
+    Write-Host "  Report saved to: $reportPath" -ForegroundColor Green
+    Start-Process $reportPath
+} catch { Write-Host "  Could not save report: $($_.Exception.Message)" -ForegroundColor Yellow }
+
+$completed = ($results | Where-Object { $_.status -eq "done" }).Count
+$totalFreed = ($results | Measure-Object -Property mb_freed -Sum).Sum
+
+Write-Host ""
+Write-Host "  ================================================================" -ForegroundColor DarkYellow
+Write-Host "    REPAIR COMPLETE" -ForegroundColor Green
+Write-Host "  ----------------------------------------------------------------" -ForegroundColor DarkYellow
+Write-Host "    $completed repairs completed" -ForegroundColor White
+if ($totalFreed -gt 0) {
+    if ($totalFreed -ge 1024) { Write-Host "    $([math]::Round($totalFreed/1024,1)) GB space recovered" -ForegroundColor White }
+    else { Write-Host "    $totalFreed MB space recovered" -ForegroundColor White }
+}
+Write-Host ""
+Write-Host "    Your report has been saved to your Desktop." -ForegroundColor Gray
+Write-Host "    30-day re-repair guarantee — support@prontopc.online" -ForegroundColor Gray
+Write-Host "  ================================================================" -ForegroundColor DarkYellow
+Read-Host "  Press Enter to close"
+`;
+}
+
+// ─── Report HTML Generation ─────────────────────────────────────────────────
+
+function generateReportHtml(session) {
+  const diag = session.diagnostics || {};
+  const plan = session.repairPlan || {};
+  const results = session.repairResults || [];
+  const hostname = session.hostname || "Your PC";
+  const now = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
+  const hasRepairs = results.length > 0 && results.some(r => r.status === "done");
+  const badgeText = hasRepairs ? "Repair Complete" : "Diagnostic Report";
+  const badgeColor = hasRepairs ? "#C8892A" : "#3B82F6";
+
+  const summary = plan.summary || "Your PC was scanned. See the details below.";
+  const hwNotes = plan.hardware_notes || "";
+  const secAssess = plan.security_assessment || "";
+
+  const mem = diag.memory || {};
+  const totalFreed = results.reduce((s, r) => s + (r.mb_freed || 0), 0);
+  const completedCount = results.filter(r => r.status === "done").length;
+
+  function fmtMb(mb) { return mb >= 1024 ? `${(mb/1024).toFixed(1)} GB` : `${mb} MB`; }
+  function statusLabel(s) { return { done: "✓ Completed", noted: "✓ Logged", skipped: "— Skipped", error: "✗ Error" }[s] || s; }
+  function statusColor(s) { return { done: "#2A7A4A", noted: "#2A7A4A", skipped: "#6B6560", error: "#C0392B" }[s] || "#1A1917"; }
+  function boolBadge(val, trueText = "Enabled", falseText = "Disabled") {
+    return val ? `<span style="color:#2A7A4A;font-weight:600">${trueText}</span>` : `<span style="color:#C0392B;font-weight:600">${falseText}</span>`;
+  }
+
+  let sections = "";
+
+  // Repair actions
+  if (results.length > 0) {
+    let rows = results.map(a => `<tr><td>${a.name || a.action}</td><td style="color:${statusColor(a.status)};font-weight:600">${statusLabel(a.status)}</td><td style="color:#2A7A4A;font-family:'Courier New',monospace">${a.mb_freed ? fmtMb(a.mb_freed) + " recovered" : ""}</td><td style="color:#6B6560;font-size:.85em">${(a.detail || "—").substring(0, 120)}</td></tr>`).join("");
+    sections += `<div class="section"><div class="section-head"><div class="dot"></div><h3>Repair Actions</h3></div><table><tr><th>Action</th><th>Result</th><th>Space</th><th>Notes</th></tr>${rows}</table></div>`;
+  }
+
+  // Drive health
+  const disks = diag.disk || [];
+  if (disks.length) {
+    let rows = disks.map(d => {
+      const pct = d.percent_used || 0;
+      const color = pct > 90 ? "#C0392B" : pct > 70 ? "#C8892A" : "#2A7A4A";
+      return `<tr><td>${d.device}</td><td>${d.total_gb} GB</td><td>${d.used_gb} GB</td><td>${d.free_gb} GB</td><td style="color:${color};font-weight:600">${pct}%</td></tr>`;
+    }).join("");
+    sections += `<div class="section"><div class="section-head"><div class="dot"></div><h3>Drive Health</h3></div><table><tr><th>Drive</th><th>Total</th><th>Used</th><th>Free</th><th>Usage</th></tr>${rows}</table></div>`;
+  }
+
+  // Drivers
+  const drv = diag.drivers || {};
+  if (drv.total) {
+    let content = `<div style="padding:16px 20px"><div class="stats" style="margin-bottom:12px"><div class="stat"><div class="num">${drv.total}</div><div class="lbl">total drivers</div></div><div class="stat"><div class="num">${drv.signed || 0}</div><div class="lbl">signed</div></div><div class="stat"><div class="num">${(drv.unsigned || []).length}</div><div class="lbl">unsigned</div></div><div class="stat"><div class="num">${(drv.outdated || []).length}</div><div class="lbl">outdated</div></div></div></div>`;
+    if ((drv.unsigned || []).length) {
+      content += `<table><tr><th>Unsigned Driver</th><th>Manufacturer</th><th>Version</th></tr>${drv.unsigned.map(d => `<tr><td style="color:#C0392B">${d.device}</td><td>${d.manufacturer || "—"}</td><td>${d.version || "—"}</td></tr>`).join("")}</table>`;
+    }
+    if ((drv.outdated || []).length) {
+      content += `<table><tr><th>Outdated Driver</th><th>Version</th><th>Date</th><th>Age</th></tr>${drv.outdated.map(d => `<tr><td>${d.device}</td><td>${d.version || "—"}</td><td>${d.date || "—"}</td><td style="color:#C8892A">${d.age_days}d</td></tr>`).join("")}</table>`;
+    }
+    const devErrors = diag.device_errors || [];
+    if (devErrors.length) {
+      content += `<table><tr><th>Problem Device</th><th>Code</th><th>Description</th></tr>${devErrors.map(d => `<tr><td style="color:#C0392B">${d.device}</td><td>${d.error_code}</td><td>${d.error_description}</td></tr>`).join("")}</table>`;
+    }
+    const bsod = diag.bsod_history || [];
+    if (bsod.length) {
+      content += `<table><tr><th>Crash Date</th><th>Details</th></tr>${bsod.map(b => `<tr><td>${(b.date || "").substring(0, 19)}</td><td>${b.file || b.message || "—"}</td></tr>`).join("")}</table>`;
+    }
+    sections += `<div class="section"><div class="section-head"><div class="dot"></div><h3>Driver Audit</h3></div>${content}</div>`;
+  }
+
+  // Security
+  const sec = diag.security || {};
+  const def = sec.defender || {};
+  const fw = sec.firewall || {};
+  const act = diag.activation || {};
+  if (def.real_time_protection !== undefined || fw.profiles?.length || act.status) {
+    let content = `<div style="padding:16px 20px">`;
+    if (def.real_time_protection !== undefined) {
+      content += `<div style="margin-bottom:12px"><strong style="font-size:.82rem;text-transform:uppercase;color:#6B6560">Windows Defender</strong><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px"><div>Real-time Protection: ${boolBadge(def.real_time_protection)}</div><div>Antivirus: ${boolBadge(def.antivirus_enabled)}</div><div>Antispyware: ${boolBadge(def.antispyware_enabled)}</div><div>Behavior Monitor: ${boolBadge(def.behavior_monitor)}</div></div></div>`;
+    }
+    if (fw.profiles?.length) {
+      content += `<div style="margin-bottom:12px"><strong style="font-size:.82rem;text-transform:uppercase;color:#6B6560">Firewall</strong><div style="margin-top:6px">${fw.profiles.map(p => `${p.name}: ${boolBadge(p.enabled, "ON", "OFF")}`).join(" &nbsp;·&nbsp; ")}</div></div>`;
+    }
+    if (act.status) {
+      content += `<div><strong style="font-size:.82rem;text-transform:uppercase;color:#6B6560">Activation</strong><div style="margin-top:6px">${boolBadge(act.is_activated, "Licensed", act.status)} — ${act.product || ""}</div></div>`;
+    }
+    content += `</div>`;
+    sections += `<div class="section"><div class="section-head"><div class="dot"></div><h3>Security Status</h3></div>${content}</div>`;
+  }
+
+  // Network
+  const net = diag.network || {};
+  if (net.adapters?.length || net.connectivity) {
+    let content = "";
+    if (net.adapters?.length) {
+      content += `<table><tr><th>Adapter</th><th>Description</th><th>Speed</th></tr>${net.adapters.map(a => `<tr><td>${a.name}</td><td>${a.description || "—"}</td><td>${a.speed || "—"}</td></tr>`).join("")}</table>`;
+    }
+    if (net.connectivity?.interfaces?.length) {
+      content += `<table><tr><th>Interface</th><th>IPv4</th><th>Gateway</th><th>DNS</th></tr>${net.connectivity.interfaces.map(i => `<tr><td>${i.name}</td><td>${i.ipv4}</td><td>${i.gateway}</td><td style="font-size:.82em">${i.dns_servers}</td></tr>`).join("")}</table>`;
+    }
+    const inet = net.connectivity?.internet_reachable;
+    if (inet !== undefined) {
+      content += `<div style="padding:12px 20px">Internet: ${boolBadge(inet, "Connected", "UNREACHABLE")}</div>`;
+    }
+    sections += `<div class="section"><div class="section-head"><div class="dot"></div><h3>Network Health</h3></div>${content}</div>`;
+  }
+
+  // Services
+  const svc = diag.services || {};
+  if ((svc.stopped_critical || []).length || (svc.failed || []).length) {
+    let content = "";
+    if (svc.stopped_critical?.length) {
+      content += `<table><tr><th>Service</th><th>Display Name</th><th>Status</th></tr>${svc.stopped_critical.map(s => `<tr><td style="color:#C0392B">${s.name}</td><td>${s.display_name}</td><td>${s.status}</td></tr>`).join("")}</table>`;
+    }
+    if (svc.failed?.length) {
+      content += `<table><tr><th>Time</th><th>Message</th></tr>${svc.failed.map(f => `<tr><td style="font-size:.82em">${(f.time || "").substring(0, 19)}</td><td style="font-size:.82em">${(f.message || "").substring(0, 150)}</td></tr>`).join("")}</table>`;
+    }
+    sections += `<div class="section"><div class="section-head"><div class="dot"></div><h3>Services Audit</h3></div>${content}</div>`;
+  }
+
+  // Event errors
+  const errors = diag.event_errors || [];
+  if (errors.length) {
+    let rows = errors.slice(0, 10).map(e => `<tr><td style="font-size:.82em;color:#6B6560">${(e.time || "").substring(0, 19)}</td><td style="font-weight:500">${e.source}</td><td style="font-size:.82em">${(e.message || "").substring(0, 120)}</td></tr>`).join("");
+    sections += `<div class="section"><div class="section-head"><div class="dot"></div><h3>Windows Event Errors</h3></div><table><tr><th>Time</th><th>Source</th><th>Message</th></tr>${rows}</table></div>`;
+  }
+
+  // System info
+  const osInfo = diag.os || {};
+  const uptimeInfo = diag.uptime || {};
+  const cpuInfo = diag.cpu || {};
+  const ppInfo = diag.power_plan || {};
+  sections += `<div class="section"><div class="section-head"><div class="dot"></div><h3>System Information</h3></div><div class="sysinfo"><div class="sysinfo-row"><span class="key">Computer</span><span class="val">${hostname}</span></div><div class="sysinfo-row"><span class="key">Windows</span><span class="val">${osInfo.edition || ""} (Build ${osInfo.build || ""})</span></div><div class="sysinfo-row"><span class="key">CPU</span><span class="val">${cpuInfo.processor_name || osInfo.processor || "—"}</span></div><div class="sysinfo-row"><span class="key">Memory</span><span class="val">${mem.total_gb || "—"} GB (${mem.percent_used || 0}% used)</span></div><div class="sysinfo-row"><span class="key">Uptime</span><span class="val">${uptimeInfo.uptime_days || 0} days${uptimeInfo.needs_reboot ? ' <span style="color:#C0392B">(reboot recommended)</span>' : ""}</span></div><div class="sysinfo-row"><span class="key">Power Plan</span><span class="val">${ppInfo.active_plan || "—"}</span></div></div></div>`;
+
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pronto PC — ${badgeText}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;background:#FDFAF4;color:#1A1917;font-size:15px;line-height:1.6}.page{max-width:860px;margin:0 auto;padding:40px 32px 60px}.header{background:#1A1917;color:#fff;border-radius:12px;padding:28px 32px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-start}.header-left h1{font-size:1.6rem;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}.header-left h1 span{color:#C8892A}.header-left p{color:rgba(255,255,255,.6);font-size:.85rem}.header-right{text-align:right}.header-right .badge{background:${badgeColor};color:#fff;font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:.3rem .7rem;border-radius:6px;display:inline-block;margin-bottom:6px}.header-right p{color:rgba(255,255,255,.5);font-size:.78rem}.summary-box{background:#fff;border:1px solid #E2DBD0;border-radius:10px;padding:20px 24px;margin-bottom:20px}.summary-box h2{font-size:1rem;font-weight:700;margin-bottom:8px}.summary-box p{color:#3A3835;line-height:1.7}.hw-notes{background:#FFF5F5;border:1px solid #FCA5A5;border-radius:10px;padding:16px 20px;margin-bottom:20px}.hw-notes strong{color:#C0392B}.sec-notes{background:#F0F9FF;border:1px solid #93C5FD;border-radius:10px;padding:16px 20px;margin-bottom:20px}.sec-notes strong{color:#1D4ED8}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-bottom:20px}.stat{background:#fff;border:1px solid #E2DBD0;border-radius:10px;padding:16px 20px;text-align:center}.stat .num{font-size:1.8rem;font-weight:700;color:#C8892A;font-family:Georgia,serif;line-height:1}.stat .lbl{font-size:.78rem;color:#6B6560;margin-top:4px;font-weight:500}.section{background:#fff;border:1px solid #E2DBD0;border-radius:10px;margin-bottom:20px;overflow:hidden}.section-head{background:#F5F0E8;padding:14px 20px;border-bottom:1px solid #E2DBD0;display:flex;align-items:center;gap:10px}.section-head h3{font-size:.9rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#1A1917}.section-head .dot{width:10px;height:10px;border-radius:50%;background:#C8892A;flex-shrink:0}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:.78rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6B6560;padding:10px 20px;border-bottom:1px solid #E2DBD0;background:#FDFAF4}td{padding:11px 20px;border-bottom:1px solid #F0EBE4;font-size:.88rem;vertical-align:top}tr:last-child td{border-bottom:none}tr:hover td{background:#FDFAF4}.sysinfo{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 24px}.sysinfo-row{display:flex;flex-direction:column}.sysinfo-row .key{font-size:.72rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#9B9590}.sysinfo-row .val{font-size:.88rem;color:#1A1917;font-weight:500}.footer{margin-top:32px;padding-top:20px;border-top:1px solid #E2DBD0;display:flex;justify-content:space-between;align-items:center}.footer p{font-size:.78rem;color:#9B9590}.footer strong{color:#1A1917}@media print{body{background:#fff}.page{padding:20px}.header{border-radius:0}}@media(max-width:600px){.stats{grid-template-columns:1fr 1fr}.header{flex-direction:column;gap:12px}.header-right{text-align:left}.sysinfo{grid-template-columns:1fr}}</style>
+</head><body><div class="page">
+<div class="header"><div class="header-left"><h1>Pronto <span>PC</span> — ${badgeText}</h1><p>Computer: ${hostname} · ${now}</p></div><div class="header-right"><div class="badge">${badgeText}</div><p>Custodian v2.0</p></div></div>
+<div class="summary-box"><h2>Summary</h2><p>${summary}</p></div>
+${hwNotes ? `<div class="hw-notes"><strong>Hardware Notes:</strong> ${hwNotes}</div>` : ""}
+${secAssess ? `<div class="sec-notes"><strong>Security:</strong> ${secAssess}</div>` : ""}
+<div class="stats"><div class="stat"><div class="num">${totalFreed ? fmtMb(totalFreed) : "—"}</div><div class="lbl">space recovered</div></div><div class="stat"><div class="num">${completedCount || "—"}</div><div class="lbl">repairs${hasRepairs ? " completed" : " recommended"}</div></div><div class="stat"><div class="num">${mem.percent_used || "—"}%</div><div class="lbl">memory in use</div></div></div>
+${sections}
+<div class="section" style="border-color:rgba(200,137,42,.25);background:linear-gradient(135deg,#FFFDF8,#FFF8ED)"><div style="padding:24px;text-align:center"><h3 style="font-size:1.1rem;font-weight:700;color:#1A1917;margin-bottom:8px">Keep your system in this condition</h3><p style="color:#6B6560;font-size:.9rem;max-width:440px;margin:0 auto 16px">ProntoPC Guardian runs automated health checks — weekly or monthly. Full report emailed. Your Custodian on standby if anything comes up.</p><p style="font-size:1.4rem;font-weight:700;color:#C8892A;margin-bottom:4px">30 days free — then from $5/month</p><p style="font-size:.78rem;color:#9B9590;margin-bottom:16px">Cancel anytime · No contracts · Scan only, never automatic repairs</p><a href="https://prontopc.online/guardian-offer" style="display:inline-block;background:#C8892A;color:#fff;font-weight:700;font-size:.9rem;padding:12px 28px;border-radius:8px;text-decoration:none">Learn More</a></div></div>
+<div class="footer"><p><strong>Pronto PC</strong> · prontopc.online · support@prontopc.online</p><p>5D Service Solutions Global LLC · 30-day re-repair guarantee</p></div>
+</div></body></html>`;
+}
+
+// ─── Guardian Subscription Handlers ─────────────────────────────────────────
+
+const GUARDIAN_PRICE_MONTHLY = process.env.GUARDIAN_PRICE_MONTHLY || "";
+const GUARDIAN_PRICE_WEEKLY = process.env.GUARDIAN_PRICE_WEEKLY || "";
+
+async function handleGuardianSubscribe(req, res) {
   let body;
-  try { body = await readBody(req); }
-  catch { return json(res, 400, { ok: false, error: "Invalid body" }); }
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { token, frequency, execution } = body;
+  if (!frequency || !execution) return json(res, req, 400, { ok: false, error: "frequency and execution required" });
+  if (!["weekly", "monthly"].includes(frequency)) return json(res, req, 400, { ok: false, error: "frequency must be weekly or monthly" });
+  if (!["manual", "automatic"].includes(execution)) return json(res, req, 400, { ok: false, error: "execution must be manual or automatic" });
+  if (!STRIPE_SECRET_KEY) return json(res, req, 500, { ok: false, error: "Stripe not configured" });
 
-  const { session, type, value, message } = body;
-  if (!session) return json(res, 400, { ok: false, error: "session required" });
-
-  const key = sessionKey(session);
-  const s = progressStore.get(key) || {
-    session, status: "running", progress: 0,
-    currentAction: "", log: [], createdAt: Date.now()
-  };
-
-  s.updatedAt = Date.now();
-  s.currentAction = message || s.currentAction;
-
-  if (type === "complete")      { s.status = "complete"; s.progress = 100; s.reportPath = message; }
-  else if (type === "error")    { s.status = "error"; s.errorMessage = message; }
-  else if (typeof value === "number") { s.progress = value; s.status = "running"; }
-
-  if (message && type !== "complete" && type !== "error") {
-    s.log.unshift({ time: new Date().toISOString(), type, message });
-    s.log = s.log.slice(0, 50);
+  let customerEmail = "";
+  if (token) {
+    const session = getSession(token);
+    if (session) customerEmail = session.email || "";
   }
 
-  progressStore.set(key, s);
-  return json(res, 200, { ok: true });
+  const checkoutParams = new URLSearchParams({
+    "mode": "subscription",
+    "line_items[0][price]": frequency === "weekly" ? GUARDIAN_PRICE_WEEKLY : GUARDIAN_PRICE_MONTHLY,
+    "line_items[0][quantity]": "1",
+    "success_url": `${CLOUD_RUN_URL.replace("https://pronto-pc-108655745293.us-central1.run.app", "https://prontopc.online")}/guardian?session={CHECKOUT_SESSION_ID}`,
+    "cancel_url": "https://prontopc.online/guardian-offer",
+    "metadata[frequency]": frequency,
+    "metadata[execution]": execution,
+    "subscription_data[trial_period_days]": "30",
+  });
+  if (customerEmail) checkoutParams.set("customer_email", customerEmail);
+
+  try {
+    const resp = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${STRIPE_SECRET_KEY}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: checkoutParams.toString(),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const session = await resp.json();
+    if (session.error) return json(res, req, 400, { ok: false, error: session.error.message });
+    return json(res, req, 200, { ok: true, checkoutUrl: session.url });
+  } catch (e) {
+    console.error("[guardian/subscribe] Error:", e.message);
+    return json(res, req, 500, { ok: false, error: "Could not create checkout session" });
+  }
 }
 
-function handleProgressGet(req, res, session) {
-  const data = progressStore.get(sessionKey(session));
-  if (!data) return json(res, 404, { ok: false, error: "Session not found" });
-  return json(res, 200, { ok: true, ...data });
+async function handleGuardianActivate(req, res) {
+  let body;
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { stripeSessionId } = body;
+  if (!stripeSessionId) return json(res, req, 400, { ok: false, error: "stripeSessionId required" });
+
+  try {
+    const sessionResp = await fetch(`https://api.stripe.com/v1/checkout/sessions/${stripeSessionId}`, {
+      headers: { "Authorization": `Bearer ${STRIPE_SECRET_KEY}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+    const stripeSession = await sessionResp.json();
+    if (stripeSession.error) return json(res, req, 400, { ok: false, error: stripeSession.error.message });
+    if (stripeSession.payment_status !== "paid" && stripeSession.status !== "complete") {
+      return json(res, req, 402, { ok: false, error: "Subscription payment not completed" });
+    }
+
+    const subscriptionId = stripeSession.subscription;
+    const email = stripeSession.customer_details?.email || "";
+    const frequency = stripeSession.metadata?.frequency || "monthly";
+    const execution = stripeSession.metadata?.execution || "manual";
+
+    const existing = findGuardianBySubscription(subscriptionId);
+    if (existing) {
+      const g = existing.data;
+      const intervalMs = g.frequency === "weekly" ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+      const scanUrl = `${CLOUD_RUN_URL}/api/guardian/scan?token=${existing.token}`;
+      const setupCommand = execution === "automatic"
+        ? `powershell -ExecutionPolicy Bypass -Command "irm '${scanUrl}' | iex"`
+        : null;
+      return json(res, req, 200, {
+        ok: true, scanToken: existing.token, frequency: g.frequency, execution: g.execution,
+        nextScanAt: g.nextScanAt, setupCommand, portalUrl: "https://billing.stripe.com/p/login/test",
+      });
+    }
+
+    const scanToken = createGuardian(email, subscriptionId, frequency, execution);
+    const g = getGuardian(scanToken);
+    const scanUrl = `${CLOUD_RUN_URL}/api/guardian/scan?token=${scanToken}`;
+    const setupCommand = execution === "automatic"
+      ? `powershell -ExecutionPolicy Bypass -Command "irm '${scanUrl}' | iex"`
+      : null;
+
+    console.log(`[guardian/activate] Guardian created: ${email}, ${frequency}, ${execution}`);
+    return json(res, req, 200, {
+      ok: true, scanToken, frequency, execution,
+      nextScanAt: g.nextScanAt, setupCommand, portalUrl: "https://billing.stripe.com/p/login/test",
+    });
+  } catch (e) {
+    console.error("[guardian/activate] Error:", e.message);
+    return json(res, req, 500, { ok: false, error: "Could not activate subscription" });
+  }
 }
 
-// ─── Server ──────────────────────────────────────────────────────────────────
+function handleGuardianScanScript(req, res, token) {
+  const g = getGuardian(token);
+  if (!g) return json(res, req, 404, { ok: false, error: "Invalid or cancelled guardian token" });
+
+  const isFirstRun = !g.lastScanAt;
+  const installTask = g.execution === "automatic" && isFirstRun;
+  const scanUrl = `${CLOUD_RUN_URL}/api/guardian/scan?token=${token}`;
+  const resultsUrl = `${CLOUD_RUN_URL}/api/guardian/results`;
+
+  const script = `
+# ═══════════════════════════════════════════════════════════════════
+# ProntoPC Guardian — Health Check
+# 5D Service Solutions Global LLC
+# ═══════════════════════════════════════════════════════════════════
+
+$ErrorActionPreference = 'SilentlyContinue'
+$token = '${token}'
+$serverUrl = '${CLOUD_RUN_URL}'
+
+Write-Host ""
+Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor DarkYellow
+Write-Host "  ║       ProntoPC Guardian — Health Check           ║" -ForegroundColor DarkYellow
+Write-Host "  ║       Scanning your system...                    ║" -ForegroundColor DarkYellow
+Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor DarkYellow
+Write-Host ""
+
+${installTask ? `
+# Install Scheduled Task for automatic scans
+$taskName = "ProntoPC Guardian"
+$existingTask = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+if (-not $existingTask) {
+  Write-Host "  [+] Installing scheduled task for automatic scans..." -ForegroundColor Cyan
+  $trigger = New-ScheduledTaskTrigger -${g.frequency === "weekly" ? "Weekly -DaysOfWeek Monday" : "Daily -DaysInterval 30"} -At 10am
+  $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -Command \`"irm '${scanUrl}' | iex\`""
+  Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Description "ProntoPC Guardian ${g.frequency} health check" -RunLevel Highest -Force | Out-Null
+  Write-Host "  [OK] Scheduled task installed. Scans will run ${g.frequency === "weekly" ? "every Monday at 10 AM" : "every 30 days at 10 AM"}." -ForegroundColor Green
+  Write-Host ""
+}
+` : ""}
+
+# ─── Diagnostic Collection (scan-only, no repairs) ───
+$diag = @{}
+
+Write-Host "  [1/8] System info..." -ForegroundColor Gray
+$os = Get-CimInstance Win32_OperatingSystem
+$cs = Get-CimInstance Win32_ComputerSystem
+$diag.os = @{ release = $os.Caption; version = $os.Version; machine = $cs.SystemType; processor = (Get-CimInstance Win32_Processor | Select-Object -First 1).Name; hostname = $env:COMPUTERNAME }
+$diag.uptime = @{ boot_time = $os.LastBootUpTime.ToString("o"); uptime_days = [math]::Floor(((Get-Date) - $os.LastBootUpTime).TotalDays); uptime_hours = [math]::Floor(((Get-Date) - $os.LastBootUpTime).TotalHours % 24) }
+
+Write-Host "  [2/8] Memory & CPU..." -ForegroundColor Gray
+$mem = Get-CimInstance Win32_OperatingSystem
+$totalMB = [math]::Round($mem.TotalVisibleMemorySize / 1024)
+$freeMB = [math]::Round($mem.FreePhysicalMemory / 1024)
+$diag.memory = @{ total_gb = [math]::Round($totalMB / 1024, 1); used_gb = [math]::Round(($totalMB - $freeMB) / 1024, 1); percent_used = [math]::Round((($totalMB - $freeMB) / $totalMB) * 100) }
+$diag.cpu = @{ processor_name = (Get-CimInstance Win32_Processor | Select-Object -First 1).Name; physical_cores = (Get-CimInstance Win32_Processor | Select-Object -First 1).NumberOfCores; logical_cores = (Get-CimInstance Win32_Processor | Select-Object -First 1).NumberOfLogicalProcessors }
+
+Write-Host "  [3/8] Disk health..." -ForegroundColor Gray
+$diag.disk = @(Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object { @{ device = $_.DeviceID; total_gb = [math]::Round($_.Size / 1GB, 1); free_gb = [math]::Round($_.FreeSpace / 1GB, 1); used_gb = [math]::Round(($_.Size - $_.FreeSpace) / 1GB, 1); percent_used = [math]::Round((($_.Size - $_.FreeSpace) / $_.Size) * 100) } })
+
+Write-Host "  [4/8] Security..." -ForegroundColor Gray
+$defender = Get-MpComputerStatus -ErrorAction SilentlyContinue
+if ($defender) { $diag.security = @{ real_time_protection = $defender.RealTimeProtectionEnabled; antivirus_enabled = $defender.AntivirusEnabled; antispyware_enabled = $defender.AntispywareEnabled; signature_last_updated = $defender.AntivirusSignatureLastUpdated.ToString("o") } }
+
+Write-Host "  [5/8] Drivers..." -ForegroundColor Gray
+$drivers = Get-CimInstance Win32_PnPSignedDriver -ErrorAction SilentlyContinue
+$unsigned = @($drivers | Where-Object { $_.IsSigned -eq $false })
+$diag.drivers = @{ total = $drivers.Count; signed = ($drivers | Where-Object { $_.IsSigned }).Count; unsigned = $unsigned.Count }
+
+Write-Host "  [6/8] Network..." -ForegroundColor Gray
+$adapters = Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq "Up" }
+$diag.network = @{ adapters = @($adapters | ForEach-Object { @{ name = $_.Name; description = $_.InterfaceDescription; speed = "$([math]::Round($_.LinkSpeed.Replace(' Gbps','').Replace(' Mbps','')))" } }); internet_reachable = (Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet -ErrorAction SilentlyContinue) }
+
+Write-Host "  [7/8] Services..." -ForegroundColor Gray
+$criticalSvcs = @("wuauserv","WinDefend","Spooler","BITS","Dnscache","Dhcp")
+$stoppedCritical = @(Get-Service | Where-Object { $criticalSvcs -contains $_.Name -and $_.Status -ne "Running" } | ForEach-Object { @{ name = $_.Name; display_name = $_.DisplayName; status = $_.Status.ToString() } })
+$diag.services = @{ stopped_critical = $stoppedCritical }
+
+Write-Host "  [8/8] Storage metrics..." -ForegroundColor Gray
+$tempSize = (Get-ChildItem $env:TEMP -Recurse -Force -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+$diag.temp_files = @{ size_mb = [math]::Round($tempSize / 1MB, 1) }
+$recycleBin = (New-Object -ComObject Shell.Application).NameSpace(0xA)
+$rbItems = $recycleBin.Items().Count
+$diag.recycle_bin = @{ item_count = $rbItems }
+
+Write-Host ""
+Write-Host "  Scan complete. Sending results..." -ForegroundColor Green
+
+# ─── Submit Results ───
+$payload = @{ token = $token; diagnostics = $diag; timestamp = (Get-Date).ToString("o") } | ConvertTo-Json -Depth 10
+try {
+  $response = Invoke-RestMethod -Uri "$serverUrl/api/guardian/results" -Method POST -Body $payload -ContentType "application/json" -TimeoutSec 30
+  if ($response.ok) {
+    Write-Host ""
+    Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Green
+    Write-Host "  ║  Guardian health check complete!                 ║" -ForegroundColor Green
+    Write-Host "  ║  Report emailed to you.                         ║" -ForegroundColor Green
+    Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Green
+    if ($response.issueCount -gt 0) {
+      Write-Host ""
+      Write-Host "  $($response.issueCount) item(s) need attention." -ForegroundColor Yellow
+      Write-Host "  Your Custodian is ready to help: https://prontopc.online/success" -ForegroundColor Yellow
+    } else {
+      Write-Host ""
+      Write-Host "  All clear — your system is healthy." -ForegroundColor Green
+    }
+  }
+} catch {
+  Write-Host "  [!] Could not submit results. Will retry next scan." -ForegroundColor Red
+}
+
+Write-Host ""
+Write-Host "  This window will close in 10 seconds..." -ForegroundColor Gray
+Start-Sleep -Seconds 10
+`;
+
+  const origin = corsOrigin(req);
+  res.writeHead(200, {
+    "Content-Type": "text/plain; charset=utf-8",
+    "Access-Control-Allow-Origin": origin,
+  });
+  res.end(script);
+}
+
+async function handleGuardianResults(req, res) {
+  let body;
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { token, diagnostics, timestamp } = body;
+  if (!token || !diagnostics) return json(res, req, 400, { ok: false, error: "token and diagnostics required" });
+
+  const g = getGuardian(token);
+  if (!g) return json(res, req, 404, { ok: false, error: "Invalid guardian token" });
+
+  const previousDiag = g.scanHistory.length > 0 ? g.scanHistory[g.scanHistory.length - 1] : null;
+
+  // Count issues
+  let issueCount = 0;
+  if (diagnostics.drivers?.unsigned > 0) issueCount++;
+  if (diagnostics.services?.stopped_critical?.length > 0) issueCount += diagnostics.services.stopped_critical.length;
+  if (diagnostics.security?.real_time_protection === false) issueCount++;
+  if (diagnostics.disk) {
+    for (const d of diagnostics.disk) { if (d.percent_used > 90) issueCount++; }
+  }
+  if (diagnostics.uptime?.uptime_days > 14) issueCount++;
+
+  // Update guardian record
+  const intervalMs = g.frequency === "weekly" ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
+  g.lastScanAt = Date.now();
+  g.nextScanAt = Date.now() + intervalMs;
+  g.scanHistory.push({ date: timestamp || new Date().toISOString(), issueCount, diagnostics });
+  if (g.scanHistory.length > 12) g.scanHistory.shift();
+  guardianStore.set(token, g);
+
+  // Send email report via Resend
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  const FROM_EMAIL = process.env.FROM_EMAIL || "support@prontopc.online";
+  if (RESEND_API_KEY && g.email) {
+    const subject = issueCount > 0
+      ? `ProntoPC Guardian: ${issueCount} item${issueCount > 1 ? "s" : ""} need attention`
+      : "ProntoPC Guardian: All clear — your system is healthy";
+
+    const hostname = diagnostics.os?.hostname || "Your PC";
+    const diskInfo = (diagnostics.disk || []).map(d => `${d.device} ${d.percent_used}% used`).join(", ");
+    const memPct = diagnostics.memory?.percent_used || "—";
+
+    const emailHtml = `
+<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#FDFAF4;border:1px solid #E2DBD0;border-radius:12px;overflow:hidden">
+  <div style="background:#1A1917;padding:20px 24px;color:#fff">
+    <h1 style="margin:0;font-size:1.2rem;font-weight:700">Pronto <span style="color:#C8892A">PC</span> — Guardian Report</h1>
+    <p style="margin:4px 0 0;color:rgba(255,255,255,.6);font-size:.85rem">${hostname} · ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
+  </div>
+  <div style="padding:24px">
+    <div style="background:${issueCount > 0 ? "#FFF3E0" : "#E8F5E9"};border:1px solid ${issueCount > 0 ? "#FFE0B2" : "#C8E6C9"};border-radius:8px;padding:16px;margin-bottom:16px">
+      <strong style="color:${issueCount > 0 ? "#E65100" : "#2E7D32"}">${issueCount > 0 ? `${issueCount} item${issueCount > 1 ? "s" : ""} need attention` : "All clear — your system is healthy"}</strong>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <tr><td style="padding:8px 0;color:#6B6560">Memory</td><td style="padding:8px 0;font-weight:600">${memPct}% used</td></tr>
+      <tr><td style="padding:8px 0;color:#6B6560">Storage</td><td style="padding:8px 0;font-weight:600">${diskInfo || "—"}</td></tr>
+      <tr><td style="padding:8px 0;color:#6B6560">Security</td><td style="padding:8px 0;font-weight:600;color:${diagnostics.security?.real_time_protection ? "#2E7D32" : "#C0392B"}">${diagnostics.security?.real_time_protection ? "Protected" : "Attention needed"}</td></tr>
+      <tr><td style="padding:8px 0;color:#6B6560">Unsigned Drivers</td><td style="padding:8px 0;font-weight:600">${diagnostics.drivers?.unsigned || 0}</td></tr>
+      <tr><td style="padding:8px 0;color:#6B6560">Uptime</td><td style="padding:8px 0;font-weight:600;color:${(diagnostics.uptime?.uptime_days || 0) > 14 ? "#C0392B" : "#1A1917"}">${diagnostics.uptime?.uptime_days || 0} days</td></tr>
+    </table>
+    ${issueCount > 0 ? '<p style="margin-top:16px"><a href="https://prontopc.online/success" style="color:#C8892A;font-weight:600">Talk to your Custodian Technician →</a></p>' : ""}
+    <hr style="border:none;border-top:1px solid #E2DBD0;margin:20px 0">
+    <p style="font-size:.78rem;color:#9B9590">Next scan: ${new Date(g.nextScanAt).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })} · <a href="https://prontopc.online/guardian" style="color:#C8892A">Manage subscription</a></p>
+  </div>
+</div>`;
+
+    try {
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: FROM_EMAIL, to: g.email, subject, html: emailHtml }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      console.log(`[guardian/results] Report emailed to ${g.email}`);
+    } catch (e) {
+      console.error("[guardian/results] Email failed:", e.message);
+    }
+  }
+
+  return json(res, req, 200, { ok: true, issueCount, nextScanAt: g.nextScanAt });
+}
+
+// ─── Server ─────────────────────────────────────────────────────────────────
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const pathname = url.pathname.replace(/\/$/, "");
   const method = req.method;
+  const origin = corsOrigin(req);
 
-  res.setHeader("Access-Control-Allow-Origin", "https://prontopc.online");
+  res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Vary", "Origin");
 
   if (method === "OPTIONS") { res.writeHead(204); return res.end(); }
 
   try {
+    // Health
     if (method === "GET" && pathname === "/health")
-      return json(res, 200, {
-        ok: true, service: "pronto-pc", model: GEMINI_MODEL,
-        sessions: progressStore.size, tokens: downloadTokenStore.size,
-        timestamp: new Date().toISOString()
-      });
+      return json(res, req, 200, { ok: true, service: "pronto-pc", version: "2.0.0", model: GEMINI_MODEL, sessions: sessionStore.size, timestamp: new Date().toISOString() });
 
+    // Stripe verification
     if (method === "POST" && pathname === "/api/verify-payment") return await handleVerifyPayment(req, res);
-    if (method === "POST" && pathname === "/api/repair-plan")    return await handleRepairPlan(req, res);
-    if (method === "POST" && pathname === "/api/repair-progress") return await handleProgressPost(req, res);
 
-    const progressMatch = pathname.match(/^\/api\/repair-progress\/(.+)$/);
-    if (method === "GET" && progressMatch) return handleProgressGet(req, res, progressMatch[1]);
+    // Session management
+    if (method === "POST" && pathname === "/api/create-session") return await handleCreateSession(req, res);
+    if (method === "POST" && pathname === "/api/submit-diagnostics") return await handleSubmitDiagnostics(req, res);
+    if (method === "POST" && pathname === "/api/submit-repair-results") return await handleSubmitRepairResults(req, res);
 
-    const downloadToken = url.searchParams.get("token");
-    if (method === "GET" && pathname === "/download" && downloadToken)
-      return handleDownload(req, res, downloadToken);
+    // Session status/findings/consent/report
+    const sessionMatch = pathname.match(/^\/api\/session\/([a-f0-9]{64})\/(status|findings|consent|report)$/);
+    if (sessionMatch) {
+      const [, token, action] = sessionMatch;
+      if (method === "GET" && action === "status") return handleSessionStatus(req, res, token);
+      if (method === "GET" && action === "findings") return handleSessionFindings(req, res, token);
+      if (method === "POST" && action === "consent") return handleSessionConsent(req, res, token);
+      if (method === "GET" && action === "report") return handleSessionReport(req, res, token);
+    }
 
-    return json(res, 404, { ok: false, error: "Not found" });
+    // Dynamic PowerShell scripts
+    const scanToken = method === "GET" && pathname === "/scan" && url.searchParams.get("token");
+    if (scanToken) return handleScanScript(req, res, scanToken);
+
+    const repairToken = method === "GET" && pathname === "/repair" && url.searchParams.get("token");
+    if (repairToken) return handleRepairScript(req, res, repairToken);
+
+    // Guardian subscription endpoints
+    if (method === "POST" && pathname === "/api/guardian/subscribe") return await handleGuardianSubscribe(req, res);
+    if (method === "POST" && pathname === "/api/guardian/activate") return await handleGuardianActivate(req, res);
+    if (method === "POST" && pathname === "/api/guardian/results") return await handleGuardianResults(req, res);
+
+    const guardianScanToken = method === "GET" && pathname === "/api/guardian/scan" && url.searchParams.get("token");
+    if (guardianScanToken) return handleGuardianScanScript(req, res, guardianScanToken);
+
+    // Legacy endpoint for existing Python agent
+    if (method === "POST" && pathname === "/api/repair-plan") return await handleRepairPlan(req, res);
+
+    return json(res, req, 404, { ok: false, error: "Not found" });
   } catch (e) {
     console.error("Unhandled:", e);
-    return json(res, 500, { ok: false, error: "Internal server error" });
+    return json(res, req, 500, { ok: false, error: "Internal server error" });
   }
 });
 
 server.listen(PORT, () => {
-  console.log(`Pronto PC running on port ${PORT}`);
+  console.log(`Pronto PC Custodian v2.0 running on port ${PORT}`);
   console.log(`Model: ${GEMINI_MODEL}`);
-  if (!GEMINI_API_KEY)     console.warn("WARNING: GEMINI_API_KEY not set");
-  if (!STRIPE_SECRET_KEY)  console.warn("WARNING: STRIPE_SECRET_KEY not set — payment verification disabled");
+  if (!GEMINI_API_KEY) console.warn("WARNING: GEMINI_API_KEY not set");
+  if (!STRIPE_SECRET_KEY) console.warn("WARNING: STRIPE_SECRET_KEY not set");
 });
