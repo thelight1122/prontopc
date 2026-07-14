@@ -392,9 +392,10 @@ async function verifyStripeSession(sessionId) {
     headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` },
     signal: AbortSignal.timeout(15_000)
   });
-  if (!resp.ok) throw new Error(`Stripe error ${resp.status}: ${await resp.text()}`);
+  if (resp.status === 404) throw new Error("Payment session not found. Please use the link from your confirmation email, or contact support@prontopc.online.");
+  if (!resp.ok) throw new Error("Could not verify payment. Please contact support@prontopc.online.");
   const session = await resp.json();
-  if (session.payment_status !== "paid") throw new Error(`Payment not completed (status: ${session.payment_status})`);
+  if (session.payment_status !== "paid") throw new Error("Payment is still processing. Please wait a moment and reload this page. If this continues, contact support@prontopc.online.");
   return session;
 }
 
