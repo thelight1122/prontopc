@@ -2,6 +2,7 @@
   "version": 2,
   "routes": [
     { "src": "/success", "dest": "/success.html" },
+    { "src": "/test-pay", "dest": "/test-pay.html" },
     { "src": "/privacy", "dest": "/privacy.html" },
     { "src": "/terms", "dest": "/terms.html" },
     { "src": "/guardian-offer", "dest": "/guardian-offer.html" },

