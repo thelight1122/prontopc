@@ -3,6 +3,7 @@
 .vercel
 .claude
 ProntoAgent
+StoreApp
 node_modules
 server.log
 server.err
@@ -11,6 +12,8 @@ index.html
 privacy.html
 terms.html
 success.html
+success-store.html
+test-pay.html
 guardian-offer.html
 guardian.html
 logo.png
