@@ -1,0 +1,60 @@
+# ProntoPC Store App — Build & Submit Guide
+
+## Prerequisites
+- Visual Studio 2022 (Community or higher)
+- Workloads: ".NET Desktop Development" + "Universal Windows Platform Development"
+- A Microsoft Partner Center developer account (one-time $19 registration fee)
+
+## Step 1 — Open Partner Center, reserve the app
+1. Go to partner.microsoft.com/dashboard
+2. Create a new app → reserve name "ProntoPC"
+3. Go to App Identity → copy the Package/Identity/Name and Publisher CN values
+4. Paste them into Package.appxmanifest (the two REPLACE-WITH-... fields)
+5. Generate a new GUID for PhoneProductId (any GUID generator works)
+
+## Step 2 — Create the Visual Studio solution
+1. Open Visual Studio 2022
+2. File → New → Project → "Blank App, Packaged (WinUI 3 in Desktop)"
+   — OR —
+   Create a Windows Application Packaging Project and add ProntoPC.csproj as a reference
+3. Replace the generated Program.cs with the one in this folder
+4. Replace the generated Package.appxmanifest with the one in this folder
+5. Add Assets (logos/icons): minimum required are
+   - Square44x44Logo.png (44x44)
+   - Square150x150Logo.png (150x150)
+   - Wide310x150Logo.png (310x150)
+   - StoreLogo.png (50x50)
+   - SplashScreen.png (620x300)
+   Use the ProntoPC dark-blue brand colors (#051424 background, #ffb95f logo)
+
+## Step 3 — Test locally
+1. Build in Debug (x64)
+2. Run: ProntoPC.exe "prontopc://scan?token=test-token-123"
+3. Confirm UAC elevation prompt appears
+4. Confirm it calls the Cloud Run endpoint
+
+## Step 4 — Package for Store
+1. Right-click packaging project → Publish → Create App Packages
+2. Select "Microsoft Store" → Sign in to your Partner Center account
+3. Choose x64 release build
+4. Generate the .msixupload file
+
+## Step 5 — Submit to Partner Center
+1. Back in Partner Center, go to your ProntoPC app → Submissions → New Submission
+2. Upload the .msixupload file
+3. Fill in store listing:
+   - Description: [use Value-For-Value copy from index.html]
+   - Screenshots: take them of the app running on a real scan
+   - Age rating: ESRB E (Everyone)
+   - Category: Utilities & Tools
+4. Pricing: Free (the Stripe paywall is on the website; the app is the launcher)
+5. Submit for certification
+
+## Timeline
+Microsoft Store review: typically 1–3 business days for new apps.
+
+## After approval — update success.html
+Replace the Win+R four-step instructions with:
+  1. A "Download ProntoPC" button → ms-windows-store://pdp/?productid=XXXX
+  2. A "Launch My Scan" button → prontopc://scan?token={token}
+  Step 2 only activates after payment and app install are both confirmed.

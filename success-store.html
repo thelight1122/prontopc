@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Your Custodian Session - Pronto PC</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: { extend: { colors: {
+    "bg": "#051424", "surface": "#122131",
+    "text": "#d4e4fa", "muted": "#8b9ab5",
+    "amber": "#ffb95f", "amber-dark": "#472a00",
+    "green": "#91db2a"
+  }}}
+}
+</script>
+<style>
+  body { background:#051424; color:#d4e4fa; font-family:'Inter',sans-serif; }
+  .card {
+    background:#122131; border:1px solid rgba(255,255,255,0.07);
+    border-radius:1rem; padding:1.75rem;
+  }
+  @keyframes pulse-ring {
+    0% { transform:scale(0.95); box-shadow:0 0 0 0 rgba(145,219,42,0.4); }
+    70% { transform:scale(1); box-shadow:0 0 0 14px rgba(145,219,42,0); }
+    100% { transform:scale(0.95); box-shadow:0 0 0 0 rgba(145,219,42,0); }
+  }
+  .pulse { animation: pulse-ring 2.5s ease-in-out infinite; }
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<nav class="border-b border-white/10 bg-[#051424]/95 backdrop-blur px-6 py-4 flex items-center gap-3">
+  <a href="./index.html" class="font-bold tracking-tighter text-[#d4e4fa] text-lg hover:text-[#ffb95f] transition-colors">PRONTO PC</a>
+  <span class="text-[#8b9ab5]/40 text-sm ml-auto font-mono" id="session-badge"></span>
+</nav>
+
+<main class="flex-1 flex flex-col items-center px-4 py-12">
+
+  <!-- Verifying -->
+  <div id="state-verifying" class="flex flex-col items-center text-center max-w-md pt-12">
+    <div class="inline-flex items-center gap-3 bg-white/8 text-[#8b9ab5] font-semibold text-lg px-8 py-4 rounded-xl mb-3">
+      <span class="material-symbols-outlined animate-spin" style="font-size:1.4rem">progress_activity</span>
+      Verifying your payment…
+    </div>
+    <p class="text-[#8b9ab5] text-sm">Just a moment.</p>
+  </div>
+
+  <!-- Error -->
+  <div id="state-error" class="hidden flex-col items-center text-center max-w-md pt-12">
+    <div class="flex items-start gap-3 bg-red-950/50 border border-red-500/30 text-red-300 text-sm px-6 py-4 rounded-xl mb-4">
+      <span class="material-symbols-outlined shrink-0 text-lg mt-0.5">error</span>
+      <span id="error-msg">Could not verify payment.</span>
+    </div>
+    <p class="text-[#8b9ab5] text-sm mt-1">Need help? <a href="mailto:support@prontopc.online" class="text-[#ffb95f] hover:underline">support@prontopc.online</a></p>
+  </div>
+
+  <!-- Active — app installed path -->
+  <div id="state-active-app" class="hidden w-full max-w-lg space-y-6">
+
+    <div class="text-center pt-2">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#91db2a]/10 border border-[#91db2a]/25 mb-4">
+        <span class="material-symbols-outlined text-[#91db2a] text-base" style="font-variation-settings:'FILL' 1">check_circle</span>
+        <span class="text-[#91db2a] font-mono text-xs tracking-widest uppercase">Payment Confirmed</span>
+      </div>
+      <h1 class="text-3xl font-black text-[#d4e4fa] leading-tight">
+        Ready to scan your PC.
+      </h1>
+      <p class="text-[#8b9ab5] mt-2 text-sm">Takes about 30 seconds. Nothing is left behind on your computer.</p>
+    </div>
+
+    <!-- App not installed warning -->
+    <div id="need-app" class="hidden card border-[#ffb95f]/20" style="border-color:rgba(255,185,95,0.2); background:rgba(255,185,95,0.04);">
+      <div class="flex items-start gap-4">
+        <span class="material-symbols-outlined text-[#ffb95f] text-2xl shrink-0">download</span>
+        <div>
+          <p class="font-bold text-[#d4e4fa]">First: Install the ProntoPC app</p>
+          <p class="text-[#8b9ab5] text-sm mt-1 mb-4">
+            The ProntoPC app is a small, free launcher from the Microsoft Store. It runs your scan securely with one click.
+          </p>
+          <a id="store-link" href="#" class="inline-flex items-center gap-2 bg-[#ffb95f] text-[#472a00] font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
+            <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1">store</span>
+            Get ProntoPC from the Microsoft Store
+          </a>
+          <p class="text-[#8b9ab5] text-xs mt-3">Free · Verified by Microsoft · Takes under a minute to install</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Big scan button -->
+    <div class="text-center">
+      <button id="scan-btn"
+        onclick="launchScan()"
+        class="pulse inline-flex items-center gap-3 bg-[#91db2a] text-[#051424] font-black text-xl px-10 py-5 rounded-2xl hover:opacity-90 transition-opacity">
+        <span class="material-symbols-outlined text-3xl" style="font-variation-settings:'FILL' 1">play_circle</span>
+        Start My Scan
+      </button>
+      <p class="text-[#8b9ab5] text-xs mt-4">
+        Windows will ask for permission — click <strong class="text-[#d4e4fa]">Yes</strong> to allow ProntoPC to run.
+      </p>
+    </div>
+
+    <!-- If scan won't start -->
+    <div class="card text-sm">
+      <p class="font-semibold text-[#d4e4fa] mb-1 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#8b9ab5] text-base">help</span>
+        Button not starting the scan?
+      </p>
+      <p class="text-[#8b9ab5]">
+        Make sure the ProntoPC app is installed (button above), then try again.
+        If it still doesn't work, email <a href="mailto:support@prontopc.online" class="text-[#ffb95f] hover:underline">support@prontopc.online</a> and we'll get you sorted.
+      </p>
+    </div>
+
+    <!-- Copilot chat -->
+    <div class="card overflow-hidden !p-0">
+      <div class="px-5 py-4 border-b border-white/8 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#ffb95f]">support_agent</span>
+        <h3 class="font-bold text-[#d4e4fa]">Questions? Chat with your Custodian</h3>
+      </div>
+      <div id="copilot-embed" class="min-h-[300px] flex items-center justify-center text-[#8b9ab5] text-sm p-6 text-center">
+        Your Custodian Technician is here if you have any questions.
+      </div>
+    </div>
+
+    <p class="text-center text-[#8b9ab5]/50 text-xs pb-4">
+      Session active for <strong class="text-[#8b9ab5]/80">3 days</strong> — you can close this page and return anytime.
+      &nbsp;·&nbsp; <a href="mailto:support@prontopc.online" class="text-[#ffb95f]/70 hover:text-[#ffb95f]">support@prontopc.online</a>
+    </p>
+
+  </div><!-- /state-active-app -->
+</main>
+
+<footer class="border-t border-white/8 py-5 px-6 text-center text-[#8b9ab5]/50 text-xs">
+  &copy; 2026 5D Service Solutions Global LLC &nbsp;·&nbsp;
+  <a href="./privacy.html" class="hover:text-[#ffb95f] transition-colors">Privacy</a> &nbsp;·&nbsp;
+  <a href="./terms.html" class="hover:text-[#ffb95f] transition-colors">Terms</a>
+</footer>
+
+<script>
+const CLOUD_RUN = "https://pronto-pc-108655745293.us-central1.run.app";
+// Replace with the actual Store product ID after submission is approved
+const STORE_PRODUCT_ID = "REPLACE_AFTER_STORE_APPROVAL";
+
+let scanToken = "";
+
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get("session");
+  if (!sessionId) { showError("No session found. Please start from prontopc.online."); return; }
+
+  try {
+    const r = await fetch(`${CLOUD_RUN}/api/verify-payment`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId })
+    });
+    const data = await r.json();
+    if (!data.ok || !data.token) { showError(data.error || "Could not verify your payment. Please contact support."); return; }
+
+    scanToken = data.token;
+
+    // Set up Store link
+    const storeLink = document.getElementById("store-link");
+    if (STORE_PRODUCT_ID !== "REPLACE_AFTER_STORE_APPROVAL") {
+      storeLink.href = `ms-windows-store://pdp/?productid=${STORE_PRODUCT_ID}`;
+    } else {
+      storeLink.href = "https://apps.microsoft.com/";
+      storeLink.textContent = "Microsoft Store (app pending approval)";
+    }
+
+    showActiveApp();
+  } catch {
+    showError("Could not reach our server. Please try again or contact support@prontopc.online");
+  }
+}
+
+function launchScan() {
+  if (!scanToken) return;
+  const uri = `prontopc://scan?token=${encodeURIComponent(scanToken)}`;
+  window.location.href = uri;
+
+  // If the prontopc:// URI doesn't open anything after 2s, show the "need app" card
+  setTimeout(() => {
+    if (document.visibilityState === "visible") {
+      document.getElementById("need-app").classList.remove("hidden");
+    }
+  }, 2000);
+}
+
+function showActiveApp() {
+  document.getElementById("state-verifying").classList.add("hidden");
+  const el = document.getElementById("state-active-app");
+  el.classList.remove("hidden");
+  el.style.display = "";
+  document.getElementById("session-badge").textContent = "Session active";
+}
+
+function showError(msg) {
+  document.getElementById("state-verifying").classList.add("hidden");
+  document.getElementById("error-msg").textContent = msg;
+  const el = document.getElementById("state-error");
+  el.classList.remove("hidden");
+  el.style.display = "flex";
+}
+
+init();
+</script>
+</body>
+</html>

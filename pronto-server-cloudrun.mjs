@@ -487,6 +487,60 @@ function handleScanScript(req, res, token) {
   return text(res, req, 200, script, "text/plain; charset=utf-8");
 }
 
+function handleScanBat(req, res, token) {
+  const session = getSession(token);
+  if (!session) {
+    const origin = corsOrigin(req);
+    res.writeHead(404, {
+      "Content-Type": "text/plain",
+      "Access-Control-Allow-Origin": origin,
+    });
+    return res.end("Session not found. Please visit prontopc.online.");
+  }
+
+  if (session.state === "created") transitionState(token, "scan_served");
+
+  const scanUrl = `${CLOUD_RUN_URL}/scan?token=${token}`;
+  // Windows batch file that self-elevates via UAC, then runs the in-memory PowerShell scan.
+  // The file installs nothing — PowerShell script runs entirely in memory.
+  const bat = `@echo off
+chcp 65001 >nul 2>&1
+title Pronto PC - Diagnostic Scanner
+
+:: Check if already running as Administrator
+net session >nul 2>&1
+if %errorLevel% == 0 goto :run_scan
+
+:: Not elevated — relaunch this file with a UAC permission prompt
+powershell -ExecutionPolicy Bypass -Command "Start-Process cmd '/c \"\"%~f0\"\"' -Verb RunAs"
+exit /b
+
+:run_scan
+title Pronto PC - Diagnostic Scan Running...
+echo.
+echo  ================================================================
+echo    Pronto PC -- Custodian Technician
+echo    5D Service Solutions Global LLC
+echo  ================================================================
+echo.
+echo  Starting your diagnostic scan. This takes about 30 seconds.
+echo  Please do not close this window.
+echo.
+powershell -ExecutionPolicy Bypass -Command "irm '${scanUrl}' | iex"
+`;
+
+  const origin = corsOrigin(req);
+  res.writeHead(200, {
+    "Content-Type": "application/octet-stream",
+    "Content-Disposition": 'attachment; filename="ProntoPC-Diagnostic.bat"',
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Vary": "Origin",
+  });
+  res.end(bat);
+}
+
 function handleRepairScript(req, res, token) {
   const session = getSession(token);
   if (!session) return text(res, req, 404, "Write-Host 'Session expired or invalid.' -ForegroundColor Red");
@@ -1773,9 +1827,12 @@ const server = http.createServer(async (req, res) => {
       if (method === "GET" && action === "report") return handleSessionReport(req, res, token);
     }
 
-    // Dynamic PowerShell scripts
+    // Dynamic PowerShell scripts and launcher files
     const scanToken = method === "GET" && pathname === "/scan" && url.searchParams.get("token");
     if (scanToken) return handleScanScript(req, res, scanToken);
+
+    const batToken = method === "GET" && pathname === "/scan.bat" && url.searchParams.get("token");
+    if (batToken) return handleScanBat(req, res, batToken);
 
     const repairToken = method === "GET" && pathname === "/repair" && url.searchParams.get("token");
     if (repairToken) return handleRepairScript(req, res, repairToken);
