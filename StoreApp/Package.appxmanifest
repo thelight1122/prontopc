@@ -15,16 +15,16 @@
 
   <Identity
     Name="5DServiceSolutionsGlobal.ProntoPC"
-    Publisher="CN=REPLACE-WITH-PARTNER-CENTER-PUBLISHER-CN"
+    Publisher="CN=D4266722-F7B1-45D4-8B71-CC6C75E7273F"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity
-    PhoneProductId="REPLACE-WITH-NEW-GUID"
+    PhoneProductId="0cfd9c7c-1ca7-4195-b275-17441af39b2d"
     PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
   <Properties>
     <DisplayName>ProntoPC</DisplayName>
-    <PublisherDisplayName>5D Service Solutions Global LLC</PublisherDisplayName>
+    <PublisherDisplayName>5D Service Solutions Global</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 

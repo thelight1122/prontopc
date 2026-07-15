@@ -53,8 +53,14 @@
 ## Timeline
 Microsoft Store review: typically 1–3 business days for new apps.
 
-## After approval — update success.html
-Replace the Win+R four-step instructions with:
-  1. A "Download ProntoPC" button → ms-windows-store://pdp/?productid=XXXX
-  2. A "Launch My Scan" button → prontopc://scan?token={token}
-  Step 2 only activates after payment and app install are both confirmed.
+## Store identity (from Partner Center)
+- Store ID: 9P1K9QJXKND8
+- Package/Identity/Name: 5DServiceSolutionsGlobal.ProntoPC
+- Publisher CN: CN=D4266722-F7B1-45D4-8B71-CC6C75E7273F
+- Package Family Name: 5DServiceSolutionsGlobal.ProntoPC_cne6wjsv6stbm
+
+## After approval — update success-store.html
+Once the app is live in the Store, set STORE_PRODUCT_ID in success-store.html:
+  const STORE_PRODUCT_ID = "9P1K9QJXKND8";
+
+Then update the Stripe Payment Link success URL from /success → /success-store.
