@@ -51,8 +51,10 @@ function corsOrigin(req) {
 const sessionStore = new Map();
 
 // States: created → scan_served → diagnosed → consented → repair_served → completed
+// The native Store app POSTs diagnostics directly (it never fetches the /scan
+// script), so it goes created → diagnosed without passing through scan_served.
 const VALID_TRANSITIONS = {
-  created: ["scan_served"],
+  created: ["scan_served", "diagnosed"],
   scan_served: ["diagnosed"],
   diagnosed: ["consented"],
   consented: ["repair_served"],
