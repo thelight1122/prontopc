@@ -1,6 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+namespace ProntoPC;
 
 class Program
 {
@@ -8,6 +16,24 @@ class Program
 
     static void Main(string[] args)
     {
+        // Diagnostic self-test: collect and summarize, no elevation, no POST.
+        if (args.Length > 0 && args[0] == "--selftest")
+        {
+            var diag = Diagnostics.Collect();
+            string full = JsonSerializer.Serialize(diag);
+            Console.WriteLine("SECTIONS (" + diag.Count + "): " + string.Join(", ", diag.Keys));
+            Console.WriteLine("TOTAL JSON BYTES: " + Encoding.UTF8.GetByteCount(full));
+            foreach (var k in new[] { "os", "cpu", "memory", "uptime" })
+                if (diag.ContainsKey(k)) Console.WriteLine(k + " => " + JsonSerializer.Serialize(diag[k]));
+            foreach (var k in new[] { "disk", "browser_caches", "temp_files", "device_errors", "startup_programs", "smart_health", "bsod_history" })
+                if (diag.TryGetValue(k, out var v) && v is System.Collections.IList list) Console.WriteLine(k + " count: " + list.Count);
+            if (diag.TryGetValue("drivers", out var dv) && dv is Dictionary<string, object?> dd)
+                Console.WriteLine("drivers.total=" + dd.GetValueOrDefault("total") + " signed=" + dd.GetValueOrDefault("signed"));
+            if (diag.TryGetValue("installed_programs", out var ip) && ip is Dictionary<string, object?> ipd)
+                Console.WriteLine("installed_programs.total_count=" + ipd.GetValueOrDefault("total_count"));
+            return;
+        }
+
         // URI activation: Windows passes the full prontopc:// URI as args[0]
         if (args.Length == 0)
         {
@@ -44,28 +70,34 @@ class Program
             return;
         }
 
-        // Elevated: run the diagnostic via irm | iex (no file downloaded, runs in memory)
-        string scanUrl = $"{CloudRun}/scan?token={Uri.EscapeDataString(token)}";
-        string psCmd = $"irm '{scanUrl}' | iex";
-
-        Console.WriteLine("ProntoPC Diagnostic Starting...");
-        Console.WriteLine("Please wait — this takes about 30 seconds.");
+        // Elevated: run the read-only diagnostic natively — no PowerShell, no
+        // downloaded scripts, nothing executed from the network. We only READ
+        // system state, then POST the results to the server for the repair plan.
+        Console.WriteLine("ProntoPC Diagnostic");
+        Console.WriteLine("Reading your system — this takes about 30-60 seconds. Nothing is changed.");
         Console.WriteLine();
 
-        var ps = new ProcessStartInfo
-        {
-            FileName = "powershell.exe",
-            Arguments = $"-NoLogo -ExecutionPolicy Bypass -Command \"{psCmd}\"",
-            UseShellExecute = false,
-            WindowStyle = ProcessWindowStyle.Normal
-        };
-
-        var proc = Process.Start(ps);
-        proc?.WaitForExit();
+        try { RunScan(token).GetAwaiter().GetResult(); }
+        catch (Exception ex) { Console.WriteLine("Scan error: " + ex.Message); }
 
         Console.WriteLine();
-        Console.WriteLine("Scan complete. Press any key to close.");
+        Console.WriteLine("Scan complete. Return to your browser to review the findings.");
+        Console.WriteLine("Press any key to close.");
         Console.ReadKey();
+    }
+
+    static async Task RunScan(string token)
+    {
+        Console.WriteLine("Collecting diagnostics...");
+        var diag = Diagnostics.Collect();
+
+        Console.WriteLine("Submitting results...");
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(90) };
+        string payload = JsonSerializer.Serialize(new { token, diagnostics = diag });
+        using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+        var resp = await http.PostAsync($"{CloudRun}/api/submit-diagnostics", content);
+        if (!resp.IsSuccessStatusCode)
+            Console.WriteLine($"Server returned {(int)resp.StatusCode}. Please return to prontopc.online and try again.");
     }
 
     static string ExtractToken(string uri)
@@ -92,16 +124,12 @@ class Program
         return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
     }
 
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
+
     static void ShowMessage(string title, string message)
     {
-        // Use PowerShell to show a message box — no WinForms dependency needed
-        var ps = new ProcessStartInfo
-        {
-            FileName = "powershell.exe",
-            Arguments = $"-Command \"Add-Type -AssemblyName PresentationFramework; [System.Windows.MessageBox]::Show('{message}', '{title}')\"",
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        Process.Start(ps)?.WaitForExit();
+        // Native message box — no PowerShell, no extra dependencies.
+        MessageBox(IntPtr.Zero, message, title, 0x40); // MB_ICONINFORMATION
     }
 }

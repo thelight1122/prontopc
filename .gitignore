@@ -9,3 +9,8 @@ ProntoAgent/dist/
 GEMINI-API.txt
 *.env
 *.key
+
+StoreApp/bin/
+StoreApp/obj/
+StoreApp/publish/
+StoreApp/publish-slim/
