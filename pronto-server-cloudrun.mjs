@@ -16,6 +16,14 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GE
 const CLOUD_RUN_URL = process.env.CLOUD_RUN_URL || "https://pronto-pc-108655745293.us-central1.run.app";
 const SESSION_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 
+// ─── Next-Repair Coupon (50% off) ────────────────────────────────────────────
+// Reusable Stripe coupon (50% off, single use) + a unique promotion code minted
+// for each customer when their repair completes. Redeemable at the $29 checkout.
+const COUPON_ID = process.env.COUPON_ID || "NEXTREPAIR50";
+const COUPON_VALID_DAYS = Number(process.env.COUPON_VALID_DAYS || 180); // ~6 months
+const SITE_URL = process.env.SITE_URL || "https://prontopc.online";
+const LOYALTY_ADMIN_KEY = process.env.LOYALTY_ADMIN_KEY || ""; // gate for the /admin/loyalty ledger view
+
 // ─── CORS ───────────────────────────────────────────────────────────────────
 
 const ALLOWED_ORIGINS = [
@@ -479,7 +487,11 @@ async function handleCreateSession(req, res) {
 
 function handleScanScript(req, res, token) {
   const session = getSession(token);
-  if (!session) return text(res, req, 404, "Write-Host 'Session expired or invalid. Please visit prontopc.online to start a new session.' -ForegroundColor Red");
+  if (!session) return text(res, req, 200, `Write-Host ""
+Write-Host "  Session expired or invalid." -ForegroundColor Red
+Write-Host "  Please visit prontopc.online to start a new session." -ForegroundColor Red
+Write-Host ""
+Read-Host "  Press Enter to close"`);
 
   if (session.state === "created") transitionState(token, "scan_served");
 
@@ -543,13 +555,25 @@ powershell -ExecutionPolicy Bypass -Command "irm '${scanUrl}' | iex"
 
 function handleRepairScript(req, res, token) {
   const session = getSession(token);
-  if (!session) return text(res, req, 404, "Write-Host 'Session expired or invalid.' -ForegroundColor Red");
+  if (!session) return text(res, req, 200, `Write-Host ""
+Write-Host "  Session expired or invalid." -ForegroundColor Red
+Write-Host "  Please visit prontopc.online to start a new session." -ForegroundColor Red
+Write-Host ""
+Read-Host "  Press Enter to close"`);
   if (session.state !== "consented" && session.state !== "repair_served")
     return text(res, req, 403, "Write-Host 'Repairs have not been approved for this session.' -ForegroundColor Red");
 
   if (session.state === "consented") transitionState(token, "repair_served");
 
-  const script = generateRepairScript(token, session.repairPlan);
+  // Serve only the repairs the client approved (per-item consent). If no selection
+  // was recorded (older sessions), fall back to the full plan.
+  const plan = session.repairPlan || {};
+  const selected = session.selectedActionIds;
+  const actions = Array.isArray(selected)
+    ? (plan.actions || []).filter(a => selected.includes(a.id))
+    : (plan.actions || []);
+
+  const script = generateRepairScript(token, { ...plan, actions });
   return text(res, req, 200, script, "text/plain; charset=utf-8");
 }
 
@@ -589,6 +613,8 @@ function handleSessionStatus(req, res, token) {
     diagnosedAt: session.state !== "created" && session.state !== "scan_served" ? new Date(session.updatedAt).toISOString() : null,
     createdAt: new Date(session.createdAt).toISOString(),
     email: session.email,
+    couponCode: session.couponCode || null,
+    couponExpiresAt: session.couponExpiresAt || null,
   });
 }
 
@@ -609,15 +635,204 @@ function handleSessionFindings(req, res, token) {
   });
 }
 
-function handleSessionConsent(req, res, token) {
+async function handleSessionConsent(req, res, token) {
   const session = getSession(token);
   if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
   if (session.state !== "diagnosed") return json(res, req, 400, { ok: false, error: `Cannot consent in state: ${session.state}` });
 
+  // Per-item approval: the client sends the ids of the repairs it approved.
+  // Missing/empty body → approve all (backward compatible). Empty array → diagnostic-only.
+  let selectedIds = null;
+  try {
+    const body = await readBody(req);
+    if (body && Array.isArray(body.selectedIds)) selectedIds = body.selectedIds;
+  } catch {}
+  const allIds = (session.repairPlan?.actions || []).map(a => a.id);
+  session.selectedActionIds = selectedIds === null ? allIds : selectedIds.filter(id => allIds.includes(id));
+
   transitionState(token, "consented");
   const repairUrl = `${CLOUD_RUN_URL}/repair?token=${token}`;
   const repairCommand = `powershell -ExecutionPolicy Bypass -Command "irm '${repairUrl}' | iex"`;
-  return json(res, req, 200, { ok: true, repairUrl, repairCommand });
+  return json(res, req, 200, { ok: true, repairUrl, repairCommand, approvedCount: session.selectedActionIds.length });
+}
+
+// ─── Coupon helpers ──────────────────────────────────────────────────────────
+
+// Ensure the reusable "50% off next repair" coupon exists in Stripe. Idempotent.
+async function ensureNextRepairCoupon() {
+  if (!STRIPE_SECRET_KEY) return false;
+  const existing = await fetch(`https://api.stripe.com/v1/coupons/${COUPON_ID}`, {
+    headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (existing.ok) return true;
+  const params = new URLSearchParams({
+    id: COUPON_ID,
+    percent_off: "50",
+    duration: "once",
+    name: "50% Off Next Repair",
+  });
+  const created = await fetch("https://api.stripe.com/v1/coupons", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+    signal: AbortSignal.timeout(10_000),
+  });
+  return created.ok;
+}
+
+function randomCouponCode() {
+  // Stripe promotion codes must be alphanumeric (no hyphens/symbols).
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I
+  let s = "";
+  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return `PRONTO50${s}`;
+}
+
+// Mint a unique, single-use 50%-off promotion code for this customer's next repair.
+async function createNextRepairCoupon(session) {
+  if (!STRIPE_SECRET_KEY) return null;
+  try {
+    await ensureNextRepairCoupon();
+    const expiresAt = Math.floor(Date.now() / 1000) + COUPON_VALID_DAYS * 86400;
+    // Retry a couple of times in the unlikely event of a code collision.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const params = new URLSearchParams({
+        coupon: COUPON_ID,
+        code: randomCouponCode(),
+        expires_at: String(expiresAt),
+        max_redemptions: "1",
+        "metadata[email]": session.email || "",
+        "metadata[source]": "repair",
+      });
+      const resp = await fetch("https://api.stripe.com/v1/promotion_codes", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+        signal: AbortSignal.timeout(10_000),
+      });
+      const pc = await resp.json();
+      if (!pc.error) return { code: pc.code, expiresAt: expiresAt * 1000 };
+      if (!/already exists/i.test(pc.error.message || "")) {
+        console.error("[coupon] Stripe error:", pc.error.message);
+        return null;
+      }
+    }
+    return null;
+  } catch (e) {
+    console.error("[coupon] Error:", e.message);
+    return null;
+  }
+}
+
+// ─── Loyalty ledger (admin view over Stripe) ─────────────────────────────────
+// Stripe is the durable source of truth; this is a protected read-only window
+// onto every issued 50%-off code: who got it, when, expiry, and used status.
+async function handleLoyaltyLedger(req, res, url) {
+  if (!LOYALTY_ADMIN_KEY)
+    return text(res, req, 503, "Loyalty ledger is locked. Set the LOYALTY_ADMIN_KEY env var on the server, then open /admin/loyalty?key=YOUR_KEY", "text/plain; charset=utf-8");
+  if ((url.searchParams.get("key") || "") !== LOYALTY_ADMIN_KEY)
+    return text(res, req, 401, "Unauthorized", "text/plain; charset=utf-8");
+  if (!STRIPE_SECRET_KEY)
+    return text(res, req, 500, "Stripe not configured", "text/plain; charset=utf-8");
+
+  // The coupon is minted lazily on the first repair; ensure it exists so an
+  // empty ledger renders cleanly instead of erroring with "No such coupon".
+  await ensureNextRepairCoupon();
+
+  let codes = [];
+  try {
+    let startingAfter = null;
+    for (let page = 0; page < 20; page++) {
+      const qs = new URLSearchParams({ coupon: COUPON_ID, limit: "100" });
+      if (startingAfter) qs.set("starting_after", startingAfter);
+      const resp = await fetch(`https://api.stripe.com/v1/promotion_codes?${qs.toString()}`, {
+        headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` },
+        signal: AbortSignal.timeout(15_000),
+      });
+      const data = await resp.json();
+      if (data.error) return text(res, req, 502, "Stripe error: " + data.error.message, "text/plain; charset=utf-8");
+      codes = codes.concat(data.data || []);
+      if (!data.has_more || !(data.data || []).length) break;
+      startingAfter = data.data[data.data.length - 1].id;
+    }
+  } catch (e) {
+    return text(res, req, 502, "Could not reach Stripe: " + e.message, "text/plain; charset=utf-8");
+  }
+
+  const now = Date.now() / 1000;
+  const fmt = (u) => u ? new Date(u * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—";
+  codes.sort((a, b) => (b.created || 0) - (a.created || 0));
+
+  const used = codes.filter(c => (c.times_redeemed || 0) > 0).length;
+  const expiredUnused = codes.filter(c => c.expires_at && c.expires_at < now && (c.times_redeemed || 0) === 0).length;
+  const activeUnused = codes.filter(c => c.active && (c.times_redeemed || 0) === 0 && (!c.expires_at || c.expires_at >= now)).length;
+
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
+  const rows = codes.map(c => {
+    const isUsed = (c.times_redeemed || 0) > 0;
+    const isExpired = c.expires_at && c.expires_at < now;
+    let status = "Active", color = "#2A7A4A";
+    if (isUsed) { status = "Redeemed"; color = "#96A3BC"; }
+    else if (isExpired || !c.active) { status = "Expired"; color = "#C0392B"; }
+    return `<tr><td style="font-family:monospace;font-weight:600">${esc(c.code)}</td><td>${esc((c.metadata && c.metadata.email) || "—")}</td><td>${fmt(c.created)}</td><td>${fmt(c.expires_at)}</td><td style="color:${color};font-weight:600">${status}</td></tr>`;
+  }).join("");
+
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Loyalty Ledger — Pronto PC</title>
+<style>body{font-family:'Segoe UI',system-ui,sans-serif;background:#0B1220;color:#EAEEF6;margin:0;padding:28px}h1{font-size:1.3rem;margin:0 0 4px}.sub{color:#96A3BC;font-size:.82rem;margin-bottom:20px}.stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}.stat{background:#141E30;border:1px solid rgba(234,238,246,.1);border-radius:10px;padding:12px 18px}.stat .n{font-size:1.5rem;font-weight:700}.stat .l{color:#96A3BC;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}table{width:100%;border-collapse:collapse;font-size:.88rem}th{text-align:left;color:#96A3BC;font-weight:600;padding:8px 10px;border-bottom:1px solid rgba(234,238,246,.15);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em}td{padding:9px 10px;border-bottom:1px solid rgba(234,238,246,.06)}tr:hover td{background:rgba(234,238,246,.03)}</style></head>
+<body>
+<h1>Loyalty Ledger — 50% Thank-You Codes</h1>
+<div class="sub">Source of truth: Stripe · coupon ${esc(COUPON_ID)} · generated ${esc(new Date().toLocaleString("en-US"))}</div>
+<div class="stats">
+  <div class="stat"><div class="n">${codes.length}</div><div class="l">Total issued</div></div>
+  <div class="stat"><div class="n" style="color:#2A7A4A">${activeUnused}</div><div class="l">Active &amp; unused</div></div>
+  <div class="stat"><div class="n" style="color:#96A3BC">${used}</div><div class="l">Redeemed</div></div>
+  <div class="stat"><div class="n" style="color:#C0392B">${expiredUnused}</div><div class="l">Expired unused</div></div>
+</div>
+<table><thead><tr><th>Code</th><th>Issued to</th><th>Generated</th><th>Expires</th><th>Status</th></tr></thead>
+<tbody>${rows || `<tr><td colspan="5" style="color:#96A3BC;padding:20px">No codes issued yet.</td></tr>`}</tbody></table>
+</body></html>`;
+
+  return text(res, req, 200, html, "text/html; charset=utf-8");
+}
+
+// Email the coupon to the customer via Resend (reuses the Guardian email setup).
+async function sendCouponEmail(session) {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  const FROM_EMAIL = process.env.FROM_EMAIL || "support@prontopc.online";
+  if (!RESEND_API_KEY || !session.email || !session.couponCode) return;
+
+  const expiryStr = new Date(session.couponExpiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const emailHtml = `
+<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#FDFAF4;border:1px solid #E2DBD0;border-radius:12px;overflow:hidden">
+  <div style="background:#1A1917;padding:20px 24px;color:#fff">
+    <h1 style="margin:0;font-size:1.2rem;font-weight:700">Pronto <span style="color:#C8892A">PC</span> — Thank you</h1>
+  </div>
+  <div style="padding:24px">
+    <p style="color:#1A1917;font-size:1rem;margin:0 0 16px">Your PC has been serviced. As a thank-you, here's <strong>50% off your next repair</strong> — no expiry pressure, it's good for six months.</p>
+    <div style="background:#FFF8ED;border:1px dashed #C8892A;border-radius:10px;padding:20px;text-align:center;margin:0 0 16px">
+      <p style="margin:0 0 6px;color:#6B6560;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Your coupon code</p>
+      <p style="margin:0;font-size:1.6rem;font-weight:800;color:#1A1917;font-family:'Courier New',monospace;letter-spacing:.05em">${session.couponCode}</p>
+      <p style="margin:8px 0 0;color:#9B9590;font-size:.78rem">50% off · valid through ${expiryStr}</p>
+    </div>
+    <p style="text-align:center;margin:0 0 8px"><a href="${SITE_URL}" style="display:inline-block;background:#C8892A;color:#fff;font-weight:700;font-size:.9rem;padding:12px 28px;border-radius:8px;text-decoration:none">Start your next repair →</a></p>
+    <p style="color:#9B9590;font-size:.78rem;text-align:center;margin:8px 0 0">Enter the code at checkout to apply your discount.</p>
+    <hr style="border:none;border-top:1px solid #E2DBD0;margin:20px 0">
+    <p style="font-size:.78rem;color:#9B9590;margin:0">Pronto PC · 5D Service Solutions Global LLC · support@prontopc.online</p>
+  </div>
+</div>`;
+
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: FROM_EMAIL, to: session.email, subject: "Your 50%-off coupon for your next Pronto PC repair", html: emailHtml }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    console.log(`[coupon] Coupon ${session.couponCode} emailed to ${session.email}`);
+  } catch (e) {
+    console.error("[coupon] Email failed:", e.message);
+  }
 }
 
 async function handleSubmitRepairResults(req, res) {
@@ -631,8 +846,19 @@ async function handleSubmitRepairResults(req, res) {
 
   session.repairResults = results;
   transitionState(token, "completed");
+
+  // Mint a 50%-off "next repair" coupon (once per session), store it, and email it.
+  if (!session.couponCode) {
+    const coupon = await createNextRepairCoupon(session);
+    if (coupon) {
+      session.couponCode = coupon.code;
+      session.couponExpiresAt = coupon.expiresAt;
+      await sendCouponEmail(session);
+    }
+  }
+
   console.log(`[submit-repair-results] Session ${token.substring(0, 8)}… completed`);
-  return json(res, req, 200, { ok: true });
+  return json(res, req, 200, { ok: true, couponCode: session.couponCode || null, couponExpiresAt: session.couponExpiresAt || null });
 }
 
 function handleSessionReport(req, res, token) {
@@ -1331,6 +1557,130 @@ Write-Host ""
 Write-Host "    Your report has been saved to your Desktop." -ForegroundColor Gray
 Write-Host "    30-day re-repair guarantee — support@prontopc.online" -ForegroundColor Gray
 Write-Host "  ================================================================" -ForegroundColor DarkYellow
+
+# ── Restart & reconnect ──────────────────────────────────────────────────────
+# Only when a repair that genuinely needs a reboot actually completed.
+$restartActions = @('sfc_scan','dism_restore','reset_network_stack','disable_startup_item','reset_windows_update','optimize_visual_effects')
+$needsRestart = @($results | Where-Object { $_.status -eq 'done' -and $restartActions -contains $_.action }).Count -gt 0
+
+if ($needsRestart) {
+    Write-Host ""
+    Write-Host "  A restart is recommended to finish applying these repairs." -ForegroundColor Yellow
+    Write-Host "  (System-file, startup, registry, or network changes take full effect after a reboot.)" -ForegroundColor Gray
+    Write-Host ""
+
+    # Register a ONE-TIME verification that runs after the next sign-in, then removes itself.
+    $runKey = "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
+    $verifyCmd = 'powershell -ExecutionPolicy Bypass -WindowStyle Normal -Command "irm ''' + "$serverUrl/verify?token=$token" + ''' | iex"'
+    try { Set-ItemProperty -Path $runKey -Name "ProntoPC_Verify" -Value $verifyCmd -ErrorAction Stop } catch {}
+
+    Write-Host "  Your PC will restart in 60 seconds. Press any key to cancel and restart later." -ForegroundColor Cyan
+    $cancelled = $false
+    for ($sec = 60; $sec -ge 1; $sec--) {
+        if ($sec % 15 -eq 0 -or $sec -le 5) { Write-Host "    Restarting in $sec..." -ForegroundColor Yellow }
+        for ($t = 0; $t -lt 10; $t++) {
+            try { if ([Console]::KeyAvailable) { $null = [Console]::ReadKey($true); $cancelled = $true; break } } catch {}
+            Start-Sleep -Milliseconds 100
+        }
+        if ($cancelled) { break }
+    }
+
+    if ($cancelled) {
+        # User chose not to restart now — remove the pending verification so it never fires unexpectedly.
+        try { Remove-ItemProperty -Path $runKey -Name "ProntoPC_Verify" -ErrorAction SilentlyContinue } catch {}
+        Write-Host ""
+        Write-Host "  Restart cancelled. Please restart your PC manually when convenient to finish" -ForegroundColor Yellow
+        Write-Host "  applying the repairs. Your report is saved on your Desktop." -ForegroundColor Gray
+        Read-Host "  Press Enter to close"
+    } else {
+        Write-Host ""
+        Write-Host "  Restarting now — Pronto PC will verify the repairs automatically after reboot." -ForegroundColor Green
+        Start-Sleep -Seconds 2
+        Restart-Computer -Force
+    }
+} else {
+    Read-Host "  Press Enter to close"
+}
+`;
+}
+
+// ─── Post-Restart Verification ───────────────────────────────────────────────
+
+function handleVerifyScript(req, res, token) {
+  const session = getSession(token);
+  if (!session) return text(res, req, 200, `Write-Host "  Session expired." -ForegroundColor Red
+Read-Host "  Press Enter to close"`);
+  return text(res, req, 200, generateVerifyScript(token), "text/plain; charset=utf-8");
+}
+
+async function handleVerifyResults(req, res) {
+  let body;
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { token, verification } = body;
+  if (!token) return json(res, req, 400, { ok: false, error: "token required" });
+  const session = getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
+  session.verification = verification;
+  console.log(`[verify-results] Session ${token.substring(0, 8)}… verified (healthy=${verification?.healthy})`);
+  return json(res, req, 200, { ok: true });
+}
+
+function generateVerifyScript(token) {
+  return `# ProntoPC — Post-Restart Verification
+$ErrorActionPreference = 'SilentlyContinue'
+$token = '${token}'
+$serverUrl = '${CLOUD_RUN_URL}'
+
+# Remove the one-time startup entry FIRST so this can never run twice.
+try { Remove-ItemProperty -Path "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" -Name "ProntoPC_Verify" -ErrorAction SilentlyContinue } catch {}
+
+Start-Sleep -Seconds 8
+Write-Host ""
+Write-Host "  ================================================================" -ForegroundColor DarkYellow
+Write-Host "    Pronto PC — Verifying your repairs" -ForegroundColor Yellow
+Write-Host "  ================================================================" -ForegroundColor DarkYellow
+Write-Host ""
+
+$verify = @{}
+
+try {
+    $tempSize = (Get-ChildItem $env:TEMP -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+    $verify.temp_mb = [math]::Round($tempSize / 1MB)
+} catch { $verify.temp_mb = $null }
+
+$criticalSvcs = @("wuauserv","WinDefend","mpssvc","EventLog","Dhcp","Dnscache","RpcSs")
+$stopped = @()
+foreach ($s in $criticalSvcs) { $svc = Get-Service $s -ErrorAction SilentlyContinue; if ($svc -and $svc.Status -ne 'Running') { $stopped += $s } }
+$verify.stopped_critical = $stopped
+
+try {
+    $boot = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime
+    $newErrors = Get-WinEvent -FilterHashtable @{ LogName='System'; Level=1,2; StartTime=$boot } -ErrorAction SilentlyContinue
+    $verify.new_critical_errors = @($newErrors).Count
+} catch { $verify.new_critical_errors = $null }
+
+$verify.healthy = ($stopped.Count -eq 0)
+$verify.checked_at = (Get-Date).ToString("o")
+
+try {
+    $body = @{ token = $token; verification = $verify } | ConvertTo-Json -Depth 5 -Compress
+    Invoke-RestMethod -Uri "$serverUrl/api/verify-results" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 15 | Out-Null
+} catch {}
+
+# Refresh the desktop report so it now includes the verification section.
+try {
+    $report = Invoke-RestMethod -Uri "$serverUrl/api/session/$token/report" -TimeoutSec 15
+    $reportPath = "$env:USERPROFILE\\Desktop\\ProntoPC_Report_$(Get-Date -Format 'yyyyMMdd_HHmm').html"
+    $report | Out-File -FilePath $reportPath -Encoding utf8
+} catch {}
+
+if ($verify.healthy) {
+    Write-Host "  All clear — your PC restarted cleanly and the repairs are holding." -ForegroundColor Green
+} else {
+    Write-Host "  Restart complete. Some services are still starting up — usually normal right after boot." -ForegroundColor Yellow
+}
+Write-Host "  An updated report has been saved to your Desktop." -ForegroundColor Gray
+Write-Host ""
 Read-Host "  Press Enter to close"
 `;
 }
@@ -1364,6 +1714,18 @@ function generateReportHtml(session) {
 
   let sections = "";
 
+  // Post-restart verification (present only after the reconnect flow ran)
+  const v = session.verification;
+  if (v) {
+    const vColor = v.healthy ? "#2A7A4A" : "#C8892A";
+    const vLabel = v.healthy ? "System restarted cleanly — the repairs are holding." : "Restarted — a few services were still starting up.";
+    sections += `<div class="section" style="border-color:${v.healthy ? "rgba(42,122,74,.3)" : "rgba(200,137,42,.3)"}"><div class="section-head"><div class="dot" style="background:${vColor}"></div><h3>Post-Restart Verification</h3></div><div style="padding:12px 20px"><p style="font-weight:700;color:${vColor};margin:0 0 10px">${vLabel}</p><table><tr><th>Check</th><th>Result</th></tr>`
+      + `<tr><td>Critical services</td><td>${(v.stopped_critical && v.stopped_critical.length) ? `<span style="color:#C0392B">${v.stopped_critical.join(", ")} not running</span>` : `<span style="color:#2A7A4A">All running</span>`}</td></tr>`
+      + `<tr><td>New critical errors since reboot</td><td>${v.new_critical_errors == null ? "—" : (v.new_critical_errors === 0 ? `<span style="color:#2A7A4A">None</span>` : `<span style="color:#C8892A">${v.new_critical_errors}</span>`)}</td></tr>`
+      + `<tr><td>Temp files after restart</td><td>${v.temp_mb == null ? "—" : `${v.temp_mb} MB`}</td></tr>`
+      + `</table></div></div>`;
+  }
+
   // Repair actions
   if (results.length > 0) {
     let rows = results.map(a => `<tr><td>${a.name || a.action}</td><td style="color:${statusColor(a.status)};font-weight:600">${statusLabel(a.status)}</td><td style="color:#2A7A4A;font-family:'Courier New',monospace">${a.mb_freed ? fmtMb(a.mb_freed) + " recovered" : ""}</td><td style="color:#6B6560;font-size:.85em">${(a.detail || "—").substring(0, 120)}</td></tr>`).join("");
@@ -1389,7 +1751,9 @@ function generateReportHtml(session) {
       content += `<table><tr><th>Unsigned Driver</th><th>Manufacturer</th><th>Version</th></tr>${drv.unsigned.map(d => `<tr><td style="color:#C0392B">${d.device}</td><td>${d.manufacturer || "—"}</td><td>${d.version || "—"}</td></tr>`).join("")}</table>`;
     }
     if ((drv.outdated || []).length) {
-      content += `<table><tr><th>Outdated Driver</th><th>Version</th><th>Date</th><th>Age</th></tr>${drv.outdated.map(d => `<tr><td>${d.device}</td><td>${d.version || "—"}</td><td>${d.date || "—"}</td><td style="color:#C8892A">${d.age_days}d</td></tr>`).join("")}</table>`;
+      const driverLink = (d) => `https://www.google.com/search?q=${encodeURIComponent(`${d.provider || ""} ${d.device} driver download`.trim())}`;
+      content += `<div style="padding:0 20px"><p style="font-size:.82rem;color:#6B6560;margin:6px 0 0">These drivers are over two years old. Updating them is optional and free — click <strong>Find latest</strong> to reach the manufacturer's download page and install it yourself. ProntoPC never installs or changes drivers automatically.</p></div>`;
+      content += `<table><tr><th>Outdated Driver</th><th>Version</th><th>Date</th><th>Age</th><th>Recommended</th></tr>${drv.outdated.map(d => `<tr><td>${d.device}</td><td>${d.version || "—"}</td><td>${d.date || "—"}</td><td style="color:#C8892A">${d.age_days}d</td><td><a href="${driverLink(d)}" target="_blank" rel="noopener" style="color:#1A6DC8;text-decoration:none;font-weight:600">Find latest &rarr;</a></td></tr>`).join("")}</table>`;
     }
     const devErrors = diag.device_errors || [];
     if (devErrors.length) {
@@ -1476,7 +1840,7 @@ ${hwNotes ? `<div class="hw-notes"><strong>Hardware Notes:</strong> ${hwNotes}</
 ${secAssess ? `<div class="sec-notes"><strong>Security:</strong> ${secAssess}</div>` : ""}
 <div class="stats"><div class="stat"><div class="num">${totalFreed ? fmtMb(totalFreed) : "—"}</div><div class="lbl">space recovered</div></div><div class="stat"><div class="num">${completedCount || "—"}</div><div class="lbl">repairs${hasRepairs ? " completed" : " recommended"}</div></div><div class="stat"><div class="num">${mem.percent_used || "—"}%</div><div class="lbl">memory in use</div></div></div>
 ${sections}
-<div class="section" style="border-color:rgba(200,137,42,.25);background:linear-gradient(135deg,#FFFDF8,#FFF8ED)"><div style="padding:24px;text-align:center"><h3 style="font-size:1.1rem;font-weight:700;color:#1A1917;margin-bottom:8px">Keep your system in this condition</h3><p style="color:#6B6560;font-size:.9rem;max-width:440px;margin:0 auto 16px">ProntoPC Guardian runs automated health checks — weekly or monthly. Full report emailed. Your Custodian on standby if anything comes up.</p><p style="font-size:1.4rem;font-weight:700;color:#C8892A;margin-bottom:4px">30 days free — then from $5/month</p><p style="font-size:.78rem;color:#9B9590;margin-bottom:16px">Cancel anytime · No contracts · Scan only, never automatic repairs</p><a href="https://prontopc.online/guardian-offer" style="display:inline-block;background:#C8892A;color:#fff;font-weight:700;font-size:.9rem;padding:12px 28px;border-radius:8px;text-decoration:none">Learn More</a></div></div>
+${session.couponCode ? `<div class="section" style="border-color:rgba(200,137,42,.25);background:linear-gradient(135deg,#FFFDF8,#FFF8ED)"><div style="padding:24px;text-align:center"><h3 style="font-size:1.1rem;font-weight:700;color:#1A1917;margin-bottom:8px">A thank-you: 50% off your next repair</h3><p style="color:#6B6560;font-size:.9rem;max-width:440px;margin:0 auto 16px">Keep this code. If your PC ever needs us again, it's half price — good for six months.</p><div style="display:inline-block;background:#fff;border:1px dashed #C8892A;border-radius:10px;padding:16px 28px;margin-bottom:12px"><div style="font-size:.72rem;color:#9B9590;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Your coupon code</div><div style="font-size:1.5rem;font-weight:800;color:#1A1917;font-family:'Courier New',monospace;letter-spacing:.05em">${session.couponCode}</div></div><p style="font-size:.78rem;color:#9B9590;margin-bottom:16px">50% off · valid through ${new Date(session.couponExpiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} · enter it at checkout</p><a href="${SITE_URL}" style="display:inline-block;background:#C8892A;color:#fff;font-weight:700;font-size:.9rem;padding:12px 28px;border-radius:8px;text-decoration:none">Start your next repair</a></div></div>` : ""}
 <div class="footer"><p><strong>Pronto PC</strong> · prontopc.online · support@prontopc.online</p><p>5D Service Solutions Global LLC · 30-day re-repair guarantee</p></div>
 </div></body></html>`;
 }
@@ -1816,6 +2180,7 @@ const server = http.createServer(async (req, res) => {
     if (method === "POST" && pathname === "/api/create-session") return await handleCreateSession(req, res);
     if (method === "POST" && pathname === "/api/submit-diagnostics") return await handleSubmitDiagnostics(req, res);
     if (method === "POST" && pathname === "/api/submit-repair-results") return await handleSubmitRepairResults(req, res);
+    if (method === "POST" && pathname === "/api/verify-results") return await handleVerifyResults(req, res);
 
     // Session status/findings/consent/report
     const sessionMatch = pathname.match(/^\/api\/session\/([a-f0-9]{64})\/(status|findings|consent|report)$/);
@@ -1823,7 +2188,7 @@ const server = http.createServer(async (req, res) => {
       const [, token, action] = sessionMatch;
       if (method === "GET" && action === "status") return handleSessionStatus(req, res, token);
       if (method === "GET" && action === "findings") return handleSessionFindings(req, res, token);
-      if (method === "POST" && action === "consent") return handleSessionConsent(req, res, token);
+      if (method === "POST" && action === "consent") return await handleSessionConsent(req, res, token);
       if (method === "GET" && action === "report") return handleSessionReport(req, res, token);
     }
 
@@ -1836,6 +2201,11 @@ const server = http.createServer(async (req, res) => {
 
     const repairToken = method === "GET" && pathname === "/repair" && url.searchParams.get("token");
     if (repairToken) return handleRepairScript(req, res, repairToken);
+
+    const verifyToken = method === "GET" && pathname === "/verify" && url.searchParams.get("token");
+    if (verifyToken) return handleVerifyScript(req, res, verifyToken);
+
+    if (method === "GET" && pathname === "/admin/loyalty") return await handleLoyaltyLedger(req, res, url);
 
     // Guardian subscription endpoints
     if (method === "POST" && pathname === "/api/guardian/subscribe") return await handleGuardianSubscribe(req, res);

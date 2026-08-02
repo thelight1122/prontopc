@@ -21,7 +21,6 @@ tailwind.config = {
 <style>
   body { background:#051424; color:#d4e4fa; font-family:'Inter',sans-serif; }
 
-  /* Keyboard key style */
   .key {
     display:inline-flex; align-items:center; justify-content:center;
     background:#0d1c2d; border:1px solid rgba(255,255,255,0.18);
@@ -35,8 +34,7 @@ tailwind.config = {
   .key.icon  { font-family:'Material Symbols Outlined'; font-size:1.1rem; padding:5px 10px; }
   .key-plus  { color:#8b9ab5; font-size:0.75rem; margin:0 4px; }
 
-  /* Step card */
-  .step-card {
+  .card {
     background:#122131; border:1px solid rgba(255,255,255,0.07);
     border-radius:1rem; padding:1.5rem;
   }
@@ -44,20 +42,47 @@ tailwind.config = {
     width:2.25rem; height:2.25rem; border-radius:50%;
     background:rgba(255,185,95,0.15); border:1px solid rgba(255,185,95,0.35);
     display:flex; align-items:center; justify-content:center;
-    font-weight:800; font-size:1rem; color:#ffb95f;
-    flex-shrink:0;
+    font-weight:800; font-size:1rem; color:#ffb95f; flex-shrink:0;
   }
 
-  /* Copied banner */
   @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
-  .copied-banner { animation: slideDown 0.35s ease; }
+  .slide-in { animation: slideDown 0.35s ease; }
+
+  @keyframes pulse-ring {
+    0% { transform:scale(0.95); box-shadow:0 0 0 0 rgba(145,219,42,0.4); }
+    70% { transform:scale(1); box-shadow:0 0 0 14px rgba(145,219,42,0); }
+    100% { transform:scale(0.95); box-shadow:0 0 0 0 rgba(145,219,42,0); }
+  }
+  .pulse { animation: pulse-ring 2.5s ease-in-out infinite; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 1s linear infinite; }
 
   .mono { font-family:'JetBrains Mono',monospace; }
+
+  .phase { display:none; }
+  .phase.active { display:flex; flex-direction:column; align-items:center; }
+
+  .action-row {
+    display:flex; align-items:center; gap:0.75rem;
+    padding:0.75rem 1rem; border-radius:0.75rem;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+    margin-bottom:0.5rem;
+  }
+  .action-row .icon { color:#91db2a; flex-shrink:0; }
+  .action-row.medium .icon { color:#ffb95f; }
+
+  .progress-bar-track {
+    background:rgba(255,255,255,0.07); border-radius:99px; height:6px; overflow:hidden;
+  }
+  .progress-bar-fill {
+    height:100%; border-radius:99px; background:linear-gradient(90deg, #91db2a, #52a800);
+    transition: width 0.5s ease;
+  }
 </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-<!-- Nav -->
 <nav class="border-b border-white/10 bg-[#051424]/95 backdrop-blur px-6 py-4 flex items-center gap-3">
   <a href="./index.html" class="font-bold tracking-tighter text-[#d4e4fa] text-lg hover:text-[#ffb95f] transition-colors">PRONTO PC</a>
   <span class="text-[#8b9ab5]/40 text-sm ml-auto font-mono" id="session-badge"></span>
@@ -65,17 +90,17 @@ tailwind.config = {
 
 <main class="flex-1 flex flex-col items-center px-4 py-10">
 
-  <!-- ── Verifying ── -->
-  <div id="state-verifying" class="flex flex-col items-center text-center max-w-md pt-12">
+  <!-- PHASE: Verifying payment -->
+  <div id="phase-verifying" class="phase active flex-col items-center text-center max-w-md pt-12">
     <div class="inline-flex items-center gap-3 bg-white/8 text-[#8b9ab5] font-semibold text-lg px-8 py-4 rounded-xl mb-3">
-      <span class="material-symbols-outlined animate-spin" style="font-size:1.4rem">progress_activity</span>
+      <span class="material-symbols-outlined spin" style="font-size:1.4rem">progress_activity</span>
       Verifying your payment…
     </div>
     <p class="text-[#8b9ab5] text-sm">Just a moment.</p>
   </div>
 
-  <!-- ── Error ── -->
-  <div id="state-error" class="hidden flex-col items-center text-center max-w-md pt-12">
+  <!-- PHASE: Error -->
+  <div id="phase-error" class="phase flex-col items-center text-center max-w-md pt-12">
     <div class="flex items-start gap-3 bg-red-950/50 border border-red-500/30 text-red-300 text-sm px-6 py-4 rounded-xl mb-4">
       <span class="material-symbols-outlined shrink-0 text-lg mt-0.5">error</span>
       <span id="error-msg">Could not verify payment.</span>
@@ -83,49 +108,45 @@ tailwind.config = {
     <p class="text-[#8b9ab5] text-sm mt-1">Need help? <a href="mailto:support@prontopc.online" class="text-[#ffb95f] hover:underline">support@prontopc.online</a></p>
   </div>
 
-  <!-- ── Active ── -->
-  <div id="state-active" class="hidden w-full max-w-xl space-y-5">
+  <!-- PHASE: Scan instructions -->
+  <div id="phase-scan" class="phase w-full max-w-xl space-y-5">
 
-    <!-- Confirmed -->
     <div class="text-center pt-2 pb-1">
       <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#91db2a]/10 border border-[#91db2a]/25 mb-4">
         <span class="material-symbols-outlined text-[#91db2a] text-base" style="font-variation-settings:'FILL' 1">check_circle</span>
         <span class="text-[#91db2a] font-mono text-xs tracking-widest uppercase">Payment Confirmed</span>
       </div>
       <h1 class="text-3xl font-black text-[#d4e4fa] leading-tight">
-        Ready to scan your PC.<br>
+        Step 1: Scan your PC.<br>
         <span class="text-[#ffb95f]">Follow the steps below.</span>
       </h1>
-      <p class="text-[#8b9ab5] mt-2 text-sm">Takes about 30 seconds. Nothing is installed on your computer.</p>
+      <p class="text-[#8b9ab5] mt-2 text-sm">The scan takes about 30 seconds and reads your system — nothing is changed yet.</p>
     </div>
 
-    <!-- Copied banner (shown after clipboard write) -->
-    <div id="copied-banner" class="hidden copied-banner">
+    <div id="copied-banner" class="hidden slide-in">
       <div class="flex items-center gap-3 bg-[#91db2a]/10 border border-[#91db2a]/30 rounded-xl px-5 py-4">
         <span class="material-symbols-outlined text-[#91db2a] text-2xl shrink-0" style="font-variation-settings:'FILL' 1">content_paste</span>
         <div>
           <p class="text-[#91db2a] font-bold">Your command is ready to paste!</p>
-          <p class="text-[#8b9ab5] text-sm">It's been copied to your clipboard automatically. Follow the steps below.</p>
+          <p class="text-[#8b9ab5] text-sm">Copied to your clipboard automatically. Follow the steps below.</p>
         </div>
       </div>
     </div>
 
-    <!-- Copy needed banner (shown if auto-copy failed) -->
     <div id="copy-needed" class="hidden">
       <div class="flex items-center gap-3 bg-[#ffb95f]/10 border border-[#ffb95f]/30 rounded-xl px-5 py-4">
         <span class="material-symbols-outlined text-[#ffb95f] text-2xl shrink-0">content_copy</span>
         <div class="flex-1">
-          <p class="text-[#ffb95f] font-bold">First, copy your command</p>
-          <p class="text-[#8b9ab5] text-sm">Click the button to copy it, then follow the steps below.</p>
+          <p class="text-[#ffb95f] font-bold">First, copy your scan command</p>
+          <p class="text-[#8b9ab5] text-sm">Click the button, then follow the steps below.</p>
         </div>
-        <button onclick="copyCommand()" class="shrink-0 bg-[#ffb95f] text-[#472a00] font-bold text-sm px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+        <button onclick="copyScanCommand()" class="shrink-0 bg-[#ffb95f] text-[#472a00] font-bold text-sm px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
           Copy Command
         </button>
       </div>
     </div>
 
-    <!-- STEP 1 -->
-    <div class="step-card">
+    <div class="card">
       <div class="flex items-start gap-4">
         <div class="step-num">1</div>
         <div class="flex-1">
@@ -136,13 +157,11 @@ tailwind.config = {
             <span class="key-plus">+</span>
             <span class="key wide">R</span>
           </div>
-          <p class="text-[#8b9ab5] text-xs mt-3">A small box will appear in the bottom-left corner of your screen.</p>
         </div>
       </div>
     </div>
 
-    <!-- STEP 2 -->
-    <div class="step-card">
+    <div class="card">
       <div class="flex items-start gap-4">
         <div class="step-num">2</div>
         <div class="flex-1">
@@ -155,13 +174,12 @@ tailwind.config = {
       </div>
     </div>
 
-    <!-- STEP 3 -->
-    <div class="step-card">
+    <div class="card">
       <div class="flex items-start gap-4">
         <div class="step-num">3</div>
         <div class="flex-1">
           <p class="font-bold text-[#d4e4fa] text-lg">Hold <strong class="text-[#ffb95f]">Ctrl + Shift</strong>, then press <strong class="text-[#ffb95f]">Enter</strong></p>
-          <p class="text-[#8b9ab5] text-sm mt-1 mb-4">This opens PowerShell as Administrator. Keep Ctrl and Shift held down while you press Enter.</p>
+          <p class="text-[#8b9ab5] text-sm mt-1 mb-4">This opens PowerShell as Administrator.</p>
           <div class="flex items-center gap-1 flex-wrap">
             <span class="key">Ctrl</span>
             <span class="key-plus">+</span>
@@ -171,19 +189,18 @@ tailwind.config = {
           </div>
           <div class="mt-4 bg-blue-950/40 border border-blue-500/20 rounded-lg px-4 py-3 flex items-start gap-3">
             <span class="material-symbols-outlined text-blue-400 shrink-0 text-lg mt-0.5">shield</span>
-            <p class="text-[#8b9ab5] text-sm"><strong class="text-[#d4e4fa]">A blue permission popup will appear.</strong> This is Windows asking for your OK. Click <strong class="text-[#ffb95f]">Yes</strong>.</p>
+            <p class="text-[#8b9ab5] text-sm"><strong class="text-[#d4e4fa]">A blue permission popup will appear.</strong> Click <strong class="text-[#ffb95f]">Yes</strong>.</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- STEP 4 -->
-    <div class="step-card border-[#ffb95f]/20" style="border-color:rgba(255,185,95,0.2); background:rgba(255,185,95,0.04);">
+    <div class="card" style="border-color:rgba(255,185,95,0.2); background:rgba(255,185,95,0.04);">
       <div class="flex items-start gap-4">
         <div class="step-num">4</div>
         <div class="flex-1">
           <p class="font-bold text-[#d4e4fa] text-lg">Paste and press <strong class="text-[#ffb95f]">Enter</strong></p>
-          <p class="text-[#8b9ab5] text-sm mt-1 mb-4">A dark window has opened. Press <strong class="text-[#d4e4fa]">Ctrl+V</strong> to paste your command, then press <strong class="text-[#d4e4fa]">Enter</strong>.</p>
+          <p class="text-[#8b9ab5] text-sm mt-1 mb-4">Press <strong class="text-[#d4e4fa]">Ctrl+V</strong> to paste, then press <strong class="text-[#d4e4fa]">Enter</strong>.</p>
           <div class="flex items-center gap-1 flex-wrap">
             <span class="key">Ctrl</span>
             <span class="key-plus">+</span>
@@ -191,38 +208,271 @@ tailwind.config = {
             <span class="key-plus mx-3" style="margin:0 12px">then</span>
             <span class="key">Enter</span>
           </div>
-          <p class="text-[#8b9ab5] text-xs mt-4">The scan will start and takes about 30 seconds. A report will be saved to your Desktop when it finishes.</p>
+          <p class="text-[#8b9ab5] text-xs mt-4">The scan takes about 30 seconds. Keep this page open — your repair plan will appear here when it's done.</p>
         </div>
       </div>
     </div>
 
-    <!-- Re-copy button -->
     <div class="text-center">
-      <button onclick="copyCommand()" class="inline-flex items-center gap-2 text-[#8b9ab5] hover:text-[#d4e4fa] text-sm border border-white/10 hover:border-white/20 rounded-lg px-4 py-2 transition-all">
+      <button onclick="copyScanCommand()" class="inline-flex items-center gap-2 text-[#8b9ab5] hover:text-[#d4e4fa] text-sm border border-white/10 hover:border-white/20 rounded-lg px-4 py-2 transition-all">
         <span class="material-symbols-outlined text-base">content_copy</span>
         Copy command again
       </button>
       <span id="recopy-confirm" class="ml-3 text-[#91db2a] text-xs opacity-0 transition-opacity">Copied!</span>
     </div>
 
-    <!-- Copilot chat embed -->
-    <div class="step-card overflow-hidden !p-0">
-      <div class="px-5 py-4 border-b border-white/8 flex items-center gap-2">
-        <span class="material-symbols-outlined text-[#ffb95f]">support_agent</span>
-        <h3 class="font-bold text-[#d4e4fa]">Need help? Chat with your Custodian</h3>
+    <!-- Waiting for scan to complete -->
+    <div id="scan-waiting" class="card text-center">
+      <div class="inline-flex items-center gap-3 text-[#8b9ab5] text-sm">
+        <span class="material-symbols-outlined spin text-[#ffb95f]" style="font-size:1.2rem">progress_activity</span>
+        Waiting for your scan to complete…
       </div>
-      <div id="copilot-embed" class="min-h-[360px] flex items-center justify-center text-[#8b9ab5] text-sm p-6 text-center">
-        Your Custodian Technician is here if you get stuck on any step.
+      <p class="text-[#8b9ab5]/60 text-xs mt-2">This page will automatically update when your scan is done.</p>
+    </div>
+
+  </div><!-- /phase-scan -->
+
+  <!-- PHASE: Repair plan / findings -->
+  <div id="phase-findings" class="phase w-full max-w-xl space-y-5">
+
+    <div class="text-center pt-2">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#ffb95f]/10 border border-[#ffb95f]/25 mb-4">
+        <span class="material-symbols-outlined text-[#ffb95f] text-base" style="font-variation-settings:'FILL' 1">assignment</span>
+        <span class="text-[#ffb95f] font-mono text-xs tracking-widest uppercase">Scan Complete</span>
+      </div>
+      <h1 class="text-3xl font-black text-[#d4e4fa] leading-tight">Step 2: Review & Approve Repairs</h1>
+      <p class="text-[#8b9ab5] mt-2 text-sm" id="findings-hostname"></p>
+    </div>
+
+    <!-- Gemini summary -->
+    <div class="card">
+      <div class="flex items-start gap-3 mb-3">
+        <span class="material-symbols-outlined text-[#ffb95f] text-xl shrink-0 mt-0.5">smart_toy</span>
+        <div>
+          <p class="font-bold text-[#d4e4fa] text-sm uppercase tracking-wider mb-1">Custodian Assessment</p>
+          <p class="text-[#d4e4fa] text-sm leading-relaxed" id="findings-summary"></p>
+        </div>
+      </div>
+      <div id="security-row" class="hidden mt-3 pt-3 border-t border-white/8 flex items-start gap-3">
+        <span class="material-symbols-outlined text-blue-400 text-lg shrink-0 mt-0.5">security</span>
+        <p class="text-[#8b9ab5] text-sm" id="findings-security"></p>
+      </div>
+      <div id="hardware-row" class="hidden mt-3 pt-3 border-t border-white/8 flex items-start gap-3">
+        <span class="material-symbols-outlined text-red-400 text-lg shrink-0 mt-0.5">build</span>
+        <p class="text-[#8b9ab5] text-sm" id="findings-hardware"></p>
       </div>
     </div>
 
-    <!-- Session info -->
-    <p class="text-center text-[#8b9ab5]/50 text-xs pb-4">
+    <!-- Action list -->
+    <div>
+      <div class="flex items-center justify-between mb-1">
+        <p class="font-bold text-[#d4e4fa]">Recommended Repairs</p>
+        <button id="select-all-toggle" type="button" onclick="toggleSelectAll()" class="text-[#ffb95f] text-xs font-mono hover:underline">Deselect all</button>
+      </div>
+      <p class="text-[#8b9ab5] text-xs mb-3" id="findings-action-count"></p>
+      <div id="action-list"></div>
+      <div class="flex items-center justify-between mt-3 text-sm">
+        <span class="text-[#8b9ab5]" id="selected-count"></span>
+        <span class="text-[#91db2a] font-bold" id="selected-total"></span>
+      </div>
+    </div>
+
+    <!-- Consent / approve -->
+    <div class="card" style="border-color:rgba(145,219,42,0.2); background:rgba(145,219,42,0.03);">
+      <p class="font-bold text-[#d4e4fa] mb-1">You choose what runs.</p>
+      <p class="text-[#8b9ab5] text-sm mb-4">
+        Only the repairs you leave checked will run — nothing else is touched. Uncheck anything
+        you'd rather skip. All actions are reversible and your personal files are never affected.
+      </p>
+      <button id="approve-btn" onclick="approveRepairs()"
+        class="pulse w-full inline-flex items-center justify-center gap-3 bg-[#91db2a] text-[#051424] font-black text-lg px-6 py-4 rounded-xl hover:opacity-90 transition-opacity">
+        <span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1">build_circle</span>
+        Proceed with Selected Repairs
+      </button>
+    </div>
+
+    <p class="text-center text-[#8b9ab5]/50 text-xs pb-2">
       Session active for <strong class="text-[#8b9ab5]/80">3 days</strong> — you can close this page and return anytime.
       &nbsp;·&nbsp; <a href="mailto:support@prontopc.online" class="text-[#ffb95f]/70 hover:text-[#ffb95f]">support@prontopc.online</a>
     </p>
 
-  </div><!-- /state-active -->
+  </div><!-- /phase-findings -->
+
+  <!-- PHASE: Repair instructions -->
+  <div id="phase-repair" class="phase w-full max-w-xl space-y-5">
+
+    <div class="text-center pt-2 pb-1">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#91db2a]/10 border border-[#91db2a]/25 mb-4">
+        <span class="material-symbols-outlined text-[#91db2a] text-base" style="font-variation-settings:'FILL' 1">build_circle</span>
+        <span class="text-[#91db2a] font-mono text-xs tracking-widest uppercase">Repairs Approved</span>
+      </div>
+      <h1 class="text-3xl font-black text-[#d4e4fa] leading-tight">
+        Step 3: Run the Repairs.<br>
+        <span class="text-[#ffb95f]">Same steps as before.</span>
+      </h1>
+      <p class="text-[#8b9ab5] mt-2 text-sm">Use the same Win+R process to run your repair command. Takes 1–3 minutes.</p>
+    </div>
+
+    <div id="repair-copied-banner" class="hidden slide-in">
+      <div class="flex items-center gap-3 bg-[#91db2a]/10 border border-[#91db2a]/30 rounded-xl px-5 py-4">
+        <span class="material-symbols-outlined text-[#91db2a] text-2xl shrink-0" style="font-variation-settings:'FILL' 1">content_paste</span>
+        <div>
+          <p class="text-[#91db2a] font-bold">Repair command copied to clipboard!</p>
+          <p class="text-[#8b9ab5] text-sm">Follow the same steps below to run it.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="repair-copy-needed" class="hidden">
+      <div class="flex items-center gap-3 bg-[#ffb95f]/10 border border-[#ffb95f]/30 rounded-xl px-5 py-4">
+        <span class="material-symbols-outlined text-[#ffb95f] text-2xl shrink-0">content_copy</span>
+        <div class="flex-1">
+          <p class="text-[#ffb95f] font-bold">First, copy your repair command</p>
+        </div>
+        <button onclick="copyRepairCommand()" class="shrink-0 bg-[#ffb95f] text-[#472a00] font-bold text-sm px-4 py-2 rounded-lg hover:opacity-90 transition-opacity">
+          Copy Command
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex items-start gap-4">
+        <div class="step-num">1</div>
+        <div class="flex-1">
+          <p class="font-bold text-[#d4e4fa] text-lg">Open the Run box</p>
+          <div class="flex items-center gap-1 flex-wrap mt-3">
+            <span class="key icon">window</span>
+            <span class="key-plus">+</span>
+            <span class="key wide">R</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="flex items-start gap-4">
+        <div class="step-num">2</div>
+        <div class="flex-1">
+          <p class="font-bold text-[#d4e4fa] text-lg">Type <span class="mono text-[#ffb95f]">powershell</span>, then hold <strong class="text-[#ffb95f]">Ctrl+Shift+Enter</strong></p>
+          <div class="mt-3 bg-black/30 border border-white/10 rounded-lg px-4 py-3 inline-block">
+            <span class="mono text-[#ffb95f] text-lg tracking-wide">powershell</span>
+          </div>
+          <div class="mt-3 flex items-center gap-1 flex-wrap">
+            <span class="key">Ctrl</span><span class="key-plus">+</span>
+            <span class="key">Shift</span><span class="key-plus">+</span>
+            <span class="key">Enter</span>
+          </div>
+          <div class="mt-3 bg-blue-950/40 border border-blue-500/20 rounded-lg px-4 py-3 flex items-start gap-3">
+            <span class="material-symbols-outlined text-blue-400 shrink-0 text-lg mt-0.5">shield</span>
+            <p class="text-[#8b9ab5] text-sm">Click <strong class="text-[#ffb95f]">Yes</strong> on the permission popup.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:rgba(255,185,95,0.2); background:rgba(255,185,95,0.04);">
+      <div class="flex items-start gap-4">
+        <div class="step-num">3</div>
+        <div class="flex-1">
+          <p class="font-bold text-[#d4e4fa] text-lg">Paste and press <strong class="text-[#ffb95f]">Enter</strong></p>
+          <p class="text-[#8b9ab5] text-sm mt-1 mb-3">Press <strong class="text-[#d4e4fa]">Ctrl+V</strong> to paste your repair command, then <strong class="text-[#d4e4fa]">Enter</strong>.</p>
+          <div class="flex items-center gap-1 flex-wrap">
+            <span class="key">Ctrl</span><span class="key-plus">+</span>
+            <span class="key">V</span>
+            <span class="key-plus mx-3" style="margin:0 12px">then</span>
+            <span class="key">Enter</span>
+          </div>
+          <p class="text-[#8b9ab5] text-xs mt-4">Repairs take 1–3 minutes depending on how much needs cleaning. Keep this page open — your results will appear here when done.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center">
+      <button onclick="copyRepairCommand()" class="inline-flex items-center gap-2 text-[#8b9ab5] hover:text-[#d4e4fa] text-sm border border-white/10 hover:border-white/20 rounded-lg px-4 py-2 transition-all">
+        <span class="material-symbols-outlined text-base">content_copy</span>
+        Copy command again
+      </button>
+    </div>
+
+    <!-- Waiting for repairs -->
+    <div class="card text-center">
+      <div class="inline-flex items-center gap-3 text-[#8b9ab5] text-sm">
+        <span class="material-symbols-outlined spin text-[#91db2a]" style="font-size:1.2rem">progress_activity</span>
+        Waiting for repairs to complete…
+      </div>
+      <p class="text-[#8b9ab5]/60 text-xs mt-2">This page will automatically update when your repairs are done.</p>
+    </div>
+
+  </div><!-- /phase-repair -->
+
+  <!-- PHASE: Complete -->
+  <div id="phase-complete" class="phase w-full max-w-xl space-y-5">
+
+    <div class="text-center pt-2">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#91db2a]/10 border border-[#91db2a]/25 mb-4">
+        <span class="material-symbols-outlined text-[#91db2a] text-base" style="font-variation-settings:'FILL' 1">verified</span>
+        <span class="text-[#91db2a] font-mono text-xs tracking-widest uppercase">Repairs Complete</span>
+      </div>
+      <h1 class="text-3xl font-black text-[#d4e4fa] leading-tight">Your PC has been serviced.</h1>
+      <p class="text-[#8b9ab5] mt-2 text-sm">Here's what your Custodian Technician did.</p>
+    </div>
+
+    <!-- Space freed summary -->
+    <div class="card text-center" style="border-color:rgba(145,219,42,0.2); background:rgba(145,219,42,0.03);">
+      <p class="text-5xl font-black text-[#91db2a] mb-1" id="complete-mb-freed">—</p>
+      <p class="text-[#8b9ab5] text-sm">MB freed &amp; cleaned</p>
+    </div>
+
+    <!-- Action results -->
+    <div>
+      <p class="font-bold text-[#d4e4fa] mb-3">What was done</p>
+      <div id="complete-action-list"></div>
+    </div>
+
+    <!-- 50%-off next-repair coupon -->
+    <div id="complete-coupon" class="card text-center hidden" style="border-color:rgba(255,185,95,0.35); background:rgba(255,185,95,0.05);">
+      <p class="font-bold text-[#ffb95f] text-base mb-1">A thank-you — 50% off your next repair</p>
+      <p class="text-[#8b9ab5] text-sm mb-4">Keep this code. If your PC ever needs us again, it's half price.</p>
+      <div class="inline-block bg-[#010f1f] border border-dashed border-[#ffb95f]/60 rounded-xl px-6 py-4 mb-3">
+        <p class="text-[#8b9ab5]/70 text-[0.65rem] uppercase tracking-widest mb-1">Your coupon code</p>
+        <p id="coupon-code" class="text-2xl font-black text-[#d4e4fa] font-mono tracking-wide">—</p>
+      </div>
+      <p id="coupon-expiry" class="text-[#8b9ab5]/70 text-xs mb-4"></p>
+      <button onclick="copyCoupon()" id="coupon-copy-btn" class="inline-flex items-center gap-2 bg-[#ffb95f] text-[#472a00] font-bold text-sm px-6 py-2.5 rounded-lg hover:shadow-[0_0_20px_rgba(255,185,95,0.35)] transition-all">
+        <span class="material-symbols-outlined text-base">content_copy</span>
+        Copy code
+      </button>
+      <p class="text-[#8b9ab5]/60 text-xs mt-3">Enter it at checkout on your next visit. We've also emailed it to you.</p>
+    </div>
+
+    <div class="card text-sm">
+      <p class="font-semibold text-[#d4e4fa] mb-1 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#ffb95f] text-base">description</span>
+        Full report saved to your Desktop
+      </p>
+      <p class="text-[#8b9ab5]">
+        A detailed HTML report was saved to your Desktop during the scan. Open it to see the complete diagnostic breakdown and everything that was repaired.
+      </p>
+    </div>
+
+    <div class="card text-sm">
+      <p class="font-semibold text-[#d4e4fa] mb-1 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#8b9ab5] text-base">help</span>
+        Something still not right?
+      </p>
+      <p class="text-[#8b9ab5]">
+        Email <a href="mailto:support@prontopc.online" class="text-[#ffb95f] hover:underline">support@prontopc.online</a> and your Custodian Technician will follow up personally.
+      </p>
+    </div>
+
+    <p class="text-center text-[#8b9ab5]/50 text-xs pb-4">
+      &copy; 2026 5D Service Solutions Global LLC &nbsp;·&nbsp;
+      <a href="./privacy.html" class="text-[#ffb95f]/70 hover:text-[#ffb95f]">Privacy</a> &nbsp;·&nbsp;
+      <a href="./terms.html" class="text-[#ffb95f]/70 hover:text-[#ffb95f]">Terms</a>
+    </p>
+
+  </div><!-- /phase-complete -->
+
 </main>
 
 <footer class="border-t border-white/8 py-5 px-6 text-center text-[#8b9ab5]/50 text-xs">
@@ -233,7 +483,20 @@ tailwind.config = {
 
 <script>
 const CLOUD_RUN = "https://pronto-pc-108655745293.us-central1.run.app";
+let sessionToken = "";
 let scanCommand = "";
+let repairCommand = "";
+let pollTimer = null;
+
+// ── Phase management ─────────────────────────────────────────────────────────
+
+function showPhase(id) {
+  document.querySelectorAll(".phase").forEach(el => el.classList.remove("active"));
+  const el = document.getElementById(id);
+  if (el) el.classList.add("active");
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
 
 async function init() {
   const params = new URLSearchParams(window.location.search);
@@ -249,34 +512,59 @@ async function init() {
     const data = await r.json();
     if (!data.ok || !data.token) { showError(data.error || "Could not verify your payment. Please contact support."); return; }
 
-    const token = data.token;
-    const scanUrl = `${CLOUD_RUN}/scan?token=${token}`;
-    scanCommand = `powershell -ExecutionPolicy Bypass -Command "irm '${scanUrl}' | iex"`;
+    sessionToken = data.token;
+    document.getElementById("session-badge").textContent = "Session active";
 
-    showActive();
-    tryAutoCopy();
+    // Check current session state to resume at the right phase
+    const status = await fetch(`${CLOUD_RUN}/api/session/${sessionToken}/status`).then(r => r.json());
+    resumeFromState(status.state);
+
   } catch {
     showError("Could not reach our server. Please try again or contact support@prontopc.online");
   }
 }
 
-async function tryAutoCopy() {
+function resumeFromState(state) {
+  if (state === "completed") {
+    loadCompletionResults();
+  } else if (state === "repair_served" || state === "consented") {
+    buildRepairCommand().then(() => {
+      showPhase("phase-repair");
+      tryAutoRepairCopy();
+      startPolling();
+    });
+  } else if (state === "diagnosed") {
+    loadFindings();
+  } else {
+    // created or scan_served — show scan instructions and start polling
+    buildScanCommand();
+    showPhase("phase-scan");
+    tryAutoScanCopy();
+    startPolling();
+  }
+}
+
+// ── Scan command ─────────────────────────────────────────────────────────────
+
+function buildScanCommand() {
+  const scanUrl = `${CLOUD_RUN}/scan?token=${sessionToken}`;
+  scanCommand = `powershell -ExecutionPolicy Bypass -Command "irm '${scanUrl}' | iex"`;
+}
+
+async function tryAutoScanCopy() {
   try {
     await navigator.clipboard.writeText(scanCommand);
     document.getElementById("copied-banner").classList.remove("hidden");
   } catch {
-    // Browser blocked auto-copy (needs user gesture) — show manual copy button instead
     document.getElementById("copy-needed").classList.remove("hidden");
   }
 }
 
-async function copyCommand() {
+async function copyScanCommand() {
   try {
     await navigator.clipboard.writeText(scanCommand);
-    // Swap banners
     document.getElementById("copy-needed").classList.add("hidden");
     document.getElementById("copied-banner").classList.remove("hidden");
-    // Flash "Copied!" next to re-copy button
     const c = document.getElementById("recopy-confirm");
     c.style.opacity = "1";
     setTimeout(() => c.style.opacity = "0", 2000);
@@ -285,20 +573,228 @@ async function copyCommand() {
   }
 }
 
-function showActive() {
-  document.getElementById("state-verifying").classList.add("hidden");
-  const el = document.getElementById("state-active");
-  el.classList.remove("hidden");
-  el.style.display = "";
-  document.getElementById("session-badge").textContent = "Session active";
+// ── Findings / repair consent ────────────────────────────────────────────────
+
+async function loadFindings() {
+  try {
+    const data = await fetch(`${CLOUD_RUN}/api/session/${sessionToken}/findings`).then(r => r.json());
+    if (!data.ok) { startPolling(); return; }
+
+    document.getElementById("findings-summary").textContent = data.summary;
+    if (data.hostname) document.getElementById("findings-hostname").textContent = `Diagnostic report for ${data.hostname}`;
+
+    if (data.security_assessment) {
+      document.getElementById("findings-security").textContent = data.security_assessment;
+      document.getElementById("security-row").classList.remove("hidden");
+    }
+    if (data.hardware_notes) {
+      document.getElementById("findings-hardware").textContent = data.hardware_notes;
+      document.getElementById("hardware-row").classList.remove("hidden");
+    }
+
+    const actions = data.actions || [];
+    document.getElementById("findings-action-count").textContent =
+      actions.length === 1 ? "1 repair identified" : `${actions.length} repairs identified`;
+
+    const list = document.getElementById("action-list");
+    list.innerHTML = "";
+    actions.forEach(a => {
+      const risk = a.risk === "medium" ? "medium" : "";
+      list.innerHTML += `
+        <div class="action-row ${risk}">
+          <input type="checkbox" class="action-check shrink-0" data-id="${a.id}" data-mb="${a.estimated_mb_recovered || 0}" checked onchange="updateSelectionSummary()" style="width:18px;height:18px;accent-color:#91db2a;cursor:pointer;">
+          <span class="material-symbols-outlined icon text-xl" style="font-variation-settings:'FILL' 1">
+            ${categoryIcon(a.category)}
+          </span>
+          <div class="flex-1">
+            <p class="text-[#d4e4fa] text-sm font-semibold">${a.friendly_name}</p>
+            ${a.estimated_mb_recovered > 0 ? `<p class="text-[#8b9ab5] text-xs">~${a.estimated_mb_recovered} MB recovered</p>` : ""}
+          </div>
+          <span class="text-xs px-2 py-1 rounded-full ${risk === 'medium' ? 'bg-amber-900/40 text-[#ffb95f]' : 'bg-[#91db2a]/10 text-[#91db2a]'} font-mono">${a.risk}</span>
+        </div>`;
+    });
+    updateSelectionSummary();
+
+    showPhase("phase-findings");
+  } catch {
+    startPolling();
+  }
 }
 
+function categoryIcon(cat) {
+  const map = {
+    cleanup: "delete_sweep", drivers: "settings_input_component",
+    startup: "rocket_launch", browser: "language",
+    system: "settings", network: "wifi",
+    performance: "speed", security: "security"
+  };
+  return map[cat] || "build";
+}
+
+function updateSelectionSummary() {
+  const checks = Array.from(document.querySelectorAll(".action-check"));
+  const total = checks.length;
+  const selected = checks.filter(c => c.checked);
+  const mb = selected.reduce((s, c) => s + (parseInt(c.dataset.mb) || 0), 0);
+
+  const countEl = document.getElementById("selected-count");
+  const totalEl = document.getElementById("selected-total");
+  const toggle = document.getElementById("select-all-toggle");
+  const btn = document.getElementById("approve-btn");
+
+  if (countEl) countEl.textContent = `${selected.length} of ${total} selected`;
+  if (totalEl) totalEl.textContent = mb > 0 ? `~${mb.toLocaleString()} MB` : "";
+  if (toggle) toggle.textContent = (total > 0 && selected.length === total) ? "Deselect all" : "Select all";
+
+  if (btn && !btn.disabled) {
+    if (selected.length === 0) {
+      btn.innerHTML = '<span class="material-symbols-outlined text-2xl">description</span> Continue — diagnostic report only';
+    } else {
+      btn.innerHTML = `<span class="material-symbols-outlined text-2xl" style="font-variation-settings:'FILL' 1">build_circle</span> Proceed with ${selected.length} Repair${selected.length > 1 ? "s" : ""}`;
+    }
+  }
+}
+
+function toggleSelectAll() {
+  const checks = Array.from(document.querySelectorAll(".action-check"));
+  const allChecked = checks.length > 0 && checks.every(c => c.checked);
+  checks.forEach(c => { c.checked = !allChecked; });
+  updateSelectionSummary();
+}
+
+async function approveRepairs() {
+  const btn = document.getElementById("approve-btn");
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = "Approving…";
+
+  const selectedIds = Array.from(document.querySelectorAll(".action-check"))
+    .filter(c => c.checked).map(c => c.dataset.id);
+
+  try {
+    const data = await fetch(`${CLOUD_RUN}/api/session/${sessionToken}/consent`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ selectedIds })
+    }).then(r => r.json());
+
+    if (!data.ok) throw new Error(data.error);
+    repairCommand = data.repairCommand;
+    showPhase("phase-repair");
+    tryAutoRepairCopy();
+    startPolling();
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+    alert("Could not start repairs: " + e.message);
+  }
+}
+
+// ── Repair command ───────────────────────────────────────────────────────────
+
+async function buildRepairCommand() {
+  const data = await fetch(`${CLOUD_RUN}/api/session/${sessionToken}/consent`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: "{}"
+  }).then(r => r.json()).catch(() => null);
+  if (data && data.repairCommand) repairCommand = data.repairCommand;
+}
+
+async function tryAutoRepairCopy() {
+  if (!repairCommand) return;
+  try {
+    await navigator.clipboard.writeText(repairCommand);
+    document.getElementById("repair-copied-banner").classList.remove("hidden");
+  } catch {
+    document.getElementById("repair-copy-needed").classList.remove("hidden");
+  }
+}
+
+async function copyRepairCommand() {
+  try {
+    await navigator.clipboard.writeText(repairCommand);
+    document.getElementById("repair-copy-needed").classList.add("hidden");
+    document.getElementById("repair-copied-banner").classList.remove("hidden");
+  } catch {
+    alert("Could not copy. Please contact support@prontopc.online.");
+  }
+}
+
+// ── Completion ───────────────────────────────────────────────────────────────
+
+async function loadCompletionResults() {
+  showPhase("phase-complete");
+  try {
+    const data = await fetch(`${CLOUD_RUN}/api/session/${sessionToken}/findings`).then(r => r.json());
+    // We show findings as confirmation of what was done
+    const actions = data.actions || [];
+    let totalMb = 0;
+    const list = document.getElementById("complete-action-list");
+    list.innerHTML = "";
+    actions.forEach(a => {
+      totalMb += a.estimated_mb_recovered || 0;
+      list.innerHTML += `
+        <div class="action-row">
+          <span class="material-symbols-outlined text-[#91db2a] text-xl shrink-0" style="font-variation-settings:'FILL' 1">check_circle</span>
+          <p class="text-[#d4e4fa] text-sm">${a.friendly_name}</p>
+        </div>`;
+    });
+    document.getElementById("complete-mb-freed").textContent = totalMb > 0 ? totalMb.toLocaleString() : "—";
+  } catch { /* show phase without detail */ }
+
+  // Show the 50%-off next-repair coupon if one was minted
+  try {
+    const status = await fetch(`${CLOUD_RUN}/api/session/${sessionToken}/status`).then(r => r.json());
+    if (status.couponCode) {
+      document.getElementById("coupon-code").textContent = status.couponCode;
+      if (status.couponExpiresAt) {
+        const d = new Date(status.couponExpiresAt);
+        document.getElementById("coupon-expiry").textContent =
+          "50% off · valid through " + d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+      }
+      document.getElementById("complete-coupon").classList.remove("hidden");
+    }
+  } catch { /* coupon is a bonus — never block completion on it */ }
+}
+
+function copyCoupon() {
+  const code = document.getElementById("coupon-code").textContent.trim();
+  if (!code || code === "—") return;
+  const btn = document.getElementById("coupon-copy-btn");
+  navigator.clipboard.writeText(code).then(() => {
+    btn.innerHTML = '<span class="material-symbols-outlined text-base">check</span> Copied';
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined text-base">content_copy</span> Copy code';
+    }, 2000);
+  }).catch(() => {});
+}
+
+// ── Polling ──────────────────────────────────────────────────────────────────
+
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(poll, 5000);
+}
+
+async function poll() {
+  try {
+    const status = await fetch(`${CLOUD_RUN}/api/session/${sessionToken}/status`).then(r => r.json());
+    const state = status.state;
+
+    if (state === "diagnosed") {
+      clearInterval(pollTimer); pollTimer = null;
+      loadFindings();
+    } else if (state === "completed") {
+      clearInterval(pollTimer); pollTimer = null;
+      loadCompletionResults();
+    }
+    // scan_served, consented, repair_served → keep polling
+  } catch { /* network hiccup — keep polling */ }
+}
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+
 function showError(msg) {
-  document.getElementById("state-verifying").classList.add("hidden");
   document.getElementById("error-msg").textContent = msg;
-  const el = document.getElementById("state-error");
-  el.classList.remove("hidden");
-  el.style.display = "flex";
+  showPhase("phase-error");
 }
 
 init();
