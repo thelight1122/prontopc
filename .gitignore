@@ -14,3 +14,9 @@ StoreApp/bin/
 StoreApp/obj/
 StoreApp/publish/
 StoreApp/publish-slim/
+
+StoreApp/package-layout/
+StoreApp/*.msix
+StoreApp/*.cer
+StoreApp/*.pfx
+StoreApp/install-log.txt
