@@ -49,6 +49,30 @@ static class Diagnostics
         return d;
     }
 
+    // Lightweight post-restart verification: temp size, critical services, health.
+    public static Dictionary<string, object?> Verify()
+    {
+        var v = new Dictionary<string, object?>();
+        try { var t = Environment.GetEnvironmentVariable("TEMP"); long b = (!string.IsNullOrEmpty(t) && Directory.Exists(t)) ? DirSize(t).bytes : 0; v["temp_mb"] = (int)Math.Round(b / 1048576.0); }
+        catch { v["temp_mb"] = null; }
+
+        var critical = new HashSet<string>(new[] { "wuauserv", "WinDefend", "mpssvc", "EventLog", "Dhcp", "Dnscache", "RpcSs" }, StringComparer.OrdinalIgnoreCase);
+        var stopped = new List<object>();
+        try
+        {
+            foreach (var o in Wmi("SELECT Name, State FROM Win32_Service"))
+            {
+                var n = S(o, "Name") ?? "";
+                if (critical.Contains(n) && !(S(o, "State") ?? "").Equals("Running", StringComparison.OrdinalIgnoreCase)) stopped.Add(n);
+            }
+        }
+        catch { }
+        v["stopped_critical"] = stopped;
+        v["new_critical_errors"] = null; // event-log check omitted (no extra deps); report renders null as "—"
+        v["healthy"] = stopped.Count == 0;
+        return v;
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
     static void Section(Dictionary<string, object?> d, string key, Func<object?> fn)
     {

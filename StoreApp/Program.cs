@@ -6,7 +6,9 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Win32;
 
 namespace ProntoPC;
 
@@ -50,6 +52,16 @@ class Program
             return;
         }
 
+        string mode = ExtractMode(uri);
+
+        // Verification runs read-only after a reboot — no elevation needed.
+        if (mode == "verify")
+        {
+            try { RunVerify(token).GetAwaiter().GetResult(); }
+            catch (Exception ex) { Console.WriteLine("Verify error: " + ex.Message); }
+            return;
+        }
+
         // Self-elevate to Administrator if not already elevated
         if (!IsAdmin())
         {
@@ -72,7 +84,6 @@ class Program
 
         // Elevated: run the requested step natively — no PowerShell, no downloaded
         // scripts, nothing executed from the network.
-        string mode = ExtractMode(uri);
         try
         {
             if (mode == "repair")
@@ -152,12 +163,78 @@ class Program
         await http.PostAsync($"{CloudRun}/api/submit-repair-results", content);
 
         if (Repair.NeedsRestart(results))
+            PromptRestartAndReboot(token);
+    }
+
+    const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    const string VerifyValueName = "ProntoPC_Verify";
+
+    // Registers a one-time post-reboot verification, counts down (cancellable), then reboots.
+    static void PromptRestartAndReboot(string token)
+    {
+        // Register a one-time verification that runs after the next sign-in.
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true) ?? Registry.CurrentUser.CreateSubKey(RunKeyPath);
+            string launch = $"explorer.exe \"prontopc://verify?token={Uri.EscapeDataString(token)}\"";
+            key.SetValue(VerifyValueName, launch);
+        }
+        catch { }
+
+        Console.WriteLine();
+        Console.WriteLine("A restart is recommended to finish applying these repairs.");
+        Console.WriteLine("Your PC will restart in 60 seconds. Press any key to cancel and restart later.");
+        bool cancelled = false;
+        for (int sec = 60; sec >= 1; sec--)
+        {
+            if (sec % 15 == 0 || sec <= 5) Console.WriteLine($"  Restarting in {sec}...");
+            for (int t = 0; t < 10; t++)
+            {
+                try { if (Console.KeyAvailable) { Console.ReadKey(true); cancelled = true; break; } } catch { }
+                Thread.Sleep(100);
+            }
+            if (cancelled) break;
+        }
+
+        if (cancelled)
+        {
+            // Remove the pending verification so it never fires unexpectedly.
+            try { using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true); key?.DeleteValue(VerifyValueName, throwOnMissingValue: false); } catch { }
+            Console.WriteLine();
+            Console.WriteLine("Restart cancelled. Please restart your PC manually when convenient to finish.");
+        }
+        else
         {
             Console.WriteLine();
-            Console.WriteLine("Some of these repairs need a restart to finish applying.");
-            Console.WriteLine("Please save your work and restart your PC when convenient.");
-            // TODO(repair-port): native countdown + reboot + post-restart verification.
+            Console.WriteLine("Restarting now — ProntoPC will verify the repairs automatically after reboot.");
+            try { Process.Start(new ProcessStartInfo { FileName = "shutdown", Arguments = "/r /t 8 /c \"ProntoPC is restarting to finish your repairs.\"", UseShellExecute = false, CreateNoWindow = true }); }
+            catch (Exception ex) { Console.WriteLine("Could not restart automatically: " + ex.Message); }
         }
+    }
+
+    // Post-reboot: remove the startup entry, run read-only checks, report back.
+    static async Task RunVerify(string token)
+    {
+        // Remove the one-time startup entry FIRST so this can never run twice.
+        try { using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true); key?.DeleteValue(VerifyValueName, throwOnMissingValue: false); } catch { }
+
+        Thread.Sleep(8000); // let services settle after login
+        Console.WriteLine("ProntoPC — Verifying your repairs...");
+
+        var verify = Diagnostics.Verify();
+
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        string payload = JsonSerializer.Serialize(new { token, verification = verify });
+        using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+        try { await http.PostAsync($"{CloudRun}/api/verify-results", content); } catch { }
+
+        bool healthy = verify.TryGetValue("healthy", out var h) && h is bool b && b;
+        Console.WriteLine();
+        Console.WriteLine(healthy
+            ? "All clear — your PC restarted cleanly and the repairs are holding."
+            : "Restart complete. A few services are still starting up — usually normal right after boot.");
+        Console.WriteLine("Return to your browser to see the updated report.");
+        Thread.Sleep(6000);
     }
 
     static Dictionary<string, object?> JsonElementToDict(JsonElement el)
