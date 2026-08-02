@@ -70,20 +70,39 @@ class Program
             return;
         }
 
-        // Elevated: run the read-only diagnostic natively — no PowerShell, no
-        // downloaded scripts, nothing executed from the network. We only READ
-        // system state, then POST the results to the server for the repair plan.
-        Console.WriteLine("ProntoPC Diagnostic");
-        Console.WriteLine("Reading your system — this takes about 30-60 seconds. Nothing is changed.");
-        Console.WriteLine();
+        // Elevated: run the requested step natively — no PowerShell, no downloaded
+        // scripts, nothing executed from the network.
+        string mode = ExtractMode(uri);
+        try
+        {
+            if (mode == "repair")
+            {
+                Console.WriteLine("ProntoPC — Running Your Approved Repairs");
+                Console.WriteLine();
+                RunRepair(token).GetAwaiter().GetResult();
+                Console.WriteLine();
+                Console.WriteLine("Repairs complete. Return to your browser to see your report.");
+            }
+            else
+            {
+                Console.WriteLine("ProntoPC Diagnostic");
+                Console.WriteLine("Reading your system — about 30-60 seconds. Nothing is changed.");
+                Console.WriteLine();
+                RunScan(token).GetAwaiter().GetResult();
+                Console.WriteLine();
+                Console.WriteLine("Scan complete. Return to your browser to review the findings.");
+            }
+        }
+        catch (Exception ex) { Console.WriteLine("Error: " + ex.Message); }
 
-        try { RunScan(token).GetAwaiter().GetResult(); }
-        catch (Exception ex) { Console.WriteLine("Scan error: " + ex.Message); }
-
-        Console.WriteLine();
-        Console.WriteLine("Scan complete. Return to your browser to review the findings.");
         Console.WriteLine("Press any key to close.");
         Console.ReadKey();
+    }
+
+    // prontopc://scan?... or prontopc://repair?... — the host selects the step.
+    static string ExtractMode(string uri)
+    {
+        try { return new Uri(uri).Host.ToLowerInvariant(); } catch { return "scan"; }
     }
 
     static async Task RunScan(string token)
@@ -98,6 +117,63 @@ class Program
         var resp = await http.PostAsync($"{CloudRun}/api/submit-diagnostics", content);
         if (!resp.IsSuccessStatusCode)
             Console.WriteLine($"Server returned {(int)resp.StatusCode}. Please return to prontopc.online and try again.");
+    }
+
+    static async Task RunRepair(string token)
+    {
+        using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
+
+        Console.WriteLine("Fetching your approved repairs...");
+        string body = await http.GetStringAsync($"{CloudRun}/api/session/{Uri.EscapeDataString(token)}/repair-actions");
+        using var doc = JsonDocument.Parse(body);
+        if (!doc.RootElement.TryGetProperty("actions", out var actionsEl) || actionsEl.ValueKind != JsonValueKind.Array)
+        {
+            Console.WriteLine("No approved repairs found. Please return to prontopc.online.");
+            return;
+        }
+
+        var results = new List<Dictionary<string, object?>>();
+        int total = actionsEl.GetArrayLength(), current = 0;
+        foreach (var el in actionsEl.EnumerateArray())
+        {
+            current++;
+            var action = JsonElementToDict(el);
+            string name = action.GetValueOrDefault("friendly_name")?.ToString() ?? action.GetValueOrDefault("id")?.ToString() ?? "";
+            Console.WriteLine($"  [{current}/{total}] {name}...");
+            var r = Repair.Execute(action);
+            results.Add(r);
+            int mb = Convert.ToInt32(r["mb_freed"]);
+            Console.WriteLine($"      {r["status"]}" + (mb > 0 ? $" — {mb} MB freed" : ""));
+        }
+
+        Console.WriteLine("Submitting results...");
+        string payload = JsonSerializer.Serialize(new { token, results });
+        using var content = new StringContent(payload, Encoding.UTF8, "application/json");
+        await http.PostAsync($"{CloudRun}/api/submit-repair-results", content);
+
+        if (Repair.NeedsRestart(results))
+        {
+            Console.WriteLine();
+            Console.WriteLine("Some of these repairs need a restart to finish applying.");
+            Console.WriteLine("Please save your work and restart your PC when convenient.");
+            // TODO(repair-port): native countdown + reboot + post-restart verification.
+        }
+    }
+
+    static Dictionary<string, object?> JsonElementToDict(JsonElement el)
+    {
+        var d = new Dictionary<string, object?>();
+        if (el.ValueKind == JsonValueKind.Object)
+            foreach (var p in el.EnumerateObject())
+                d[p.Name] = p.Value.ValueKind switch
+                {
+                    JsonValueKind.String => p.Value.GetString(),
+                    JsonValueKind.Number => p.Value.TryGetInt64(out var l) ? (object)l : p.Value.GetDouble(),
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    _ => p.Value.ToString(),
+                };
+        return d;
     }
 
     static string ExtractToken(string uri)

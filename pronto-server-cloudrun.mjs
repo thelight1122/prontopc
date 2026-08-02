@@ -656,6 +656,23 @@ async function handleSessionConsent(req, res, token) {
   return json(res, req, 200, { ok: true, repairUrl, repairCommand, approvedCount: session.selectedActionIds.length });
 }
 
+// Approved repair actions as JSON — consumed by the native Store app to run
+// repairs itself (mirrors the filtering the /repair PowerShell script applies).
+function handleRepairActions(req, res, token) {
+  const session = getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
+  if (session.state !== "consented" && session.state !== "repair_served")
+    return json(res, req, 403, { ok: false, error: "Repairs not approved for this session" });
+  if (session.state === "consented") transitionState(token, "repair_served");
+
+  const plan = session.repairPlan || {};
+  const selected = session.selectedActionIds;
+  const actions = Array.isArray(selected)
+    ? (plan.actions || []).filter(a => selected.includes(a.id))
+    : (plan.actions || []);
+  return json(res, req, 200, { ok: true, actions });
+}
+
 // ─── Coupon helpers ──────────────────────────────────────────────────────────
 
 // Ensure the reusable "50% off next repair" coupon exists in Stripe. Idempotent.
@@ -2183,13 +2200,14 @@ const server = http.createServer(async (req, res) => {
     if (method === "POST" && pathname === "/api/verify-results") return await handleVerifyResults(req, res);
 
     // Session status/findings/consent/report
-    const sessionMatch = pathname.match(/^\/api\/session\/([a-f0-9]{64})\/(status|findings|consent|report)$/);
+    const sessionMatch = pathname.match(/^\/api\/session\/([a-f0-9]{64})\/(status|findings|consent|report|repair-actions)$/);
     if (sessionMatch) {
       const [, token, action] = sessionMatch;
       if (method === "GET" && action === "status") return handleSessionStatus(req, res, token);
       if (method === "GET" && action === "findings") return handleSessionFindings(req, res, token);
       if (method === "POST" && action === "consent") return await handleSessionConsent(req, res, token);
       if (method === "GET" && action === "report") return handleSessionReport(req, res, token);
+      if (method === "GET" && action === "repair-actions") return handleRepairActions(req, res, token);
     }
 
     // Dynamic PowerShell scripts and launcher files
