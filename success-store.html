@@ -96,12 +96,19 @@ tailwind.config = {
       <button id="scan-btn"
         onclick="launchScan()"
         class="pulse inline-flex items-center gap-3 bg-[#91db2a] text-[#051424] font-black text-xl px-10 py-5 rounded-2xl hover:opacity-90 transition-opacity">
-        <span class="material-symbols-outlined text-3xl" style="font-variation-settings:'FILL' 1">play_circle</span>
-        Start My Scan
+        <span class="material-symbols-outlined text-3xl" style="font-variation-settings:'FILL' 1">rocket_launch</span>
+        Open ProntoPC
       </button>
       <p class="text-[#8b9ab5] text-xs mt-4">
-        Windows will ask for permission — click <strong class="text-[#d4e4fa]">Yes</strong> to allow ProntoPC to run.
+        Click <strong class="text-[#d4e4fa]">Yes</strong> on the Windows permission prompt — the app does the rest.
       </p>
+    </div>
+
+    <!-- Post-launch: the app takes over -->
+    <div id="post-launch" class="hidden card text-center" style="border-color:rgba(145,219,42,0.25); background:rgba(145,219,42,0.04);">
+      <span class="material-symbols-outlined text-[#91db2a] text-3xl" style="font-variation-settings:'FILL' 1">desktop_windows</span>
+      <p class="font-bold text-[#d4e4fa] mt-2">ProntoPC is running on your PC</p>
+      <p class="text-[#8b9ab5] text-sm mt-1">Follow the app window — your scan, results, and repairs all happen there. You can close this page.</p>
     </div>
 
     <!-- If scan won't start -->
@@ -228,16 +235,16 @@ async function init() {
   }
 }
 
-let pollTimer = null;
-
 function launchScan() {
   if (!scanToken) return;
-  window.location.href = `prontopc://scan?token=${encodeURIComponent(scanToken)}`;
-  // If the app doesn't take over after 2s, surface the "need app" card
+  window.location.href = `prontopc://run?token=${encodeURIComponent(scanToken)}`;
+  // The desktop app now runs the ENTIRE flow — scan, review, and repair — in its
+  // own window. The browser's only job is this one hand-off.
+  document.getElementById("post-launch").classList.remove("hidden");
+  document.getElementById("scan-btn").textContent = "Reopen ProntoPC";
   setTimeout(() => {
     if (document.visibilityState === "visible") document.getElementById("need-app").classList.remove("hidden");
-  }, 2000);
-  startPolling();
+  }, 2500);
 }
 
 function startPolling() { if (!pollTimer) pollTimer = setInterval(poll, 5000); }
