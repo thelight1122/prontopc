@@ -376,7 +376,7 @@ async function queryGemini(diagnosticText) {
     body: JSON.stringify({
       system_instruction: { parts: [{ text: REPAIR_SYSTEM_PROMPT }] },
       contents: [{ parts: [{ text: `DIAGNOSTIC REPORT:\n${diagnosticText}` }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 4096 }
+      generationConfig: { temperature: 0.1, maxOutputTokens: 8192, responseMimeType: "application/json" }
     }),
     signal: AbortSignal.timeout(90_000)
   });
@@ -387,11 +387,17 @@ async function queryGemini(diagnosticText) {
   }
 
   const data = await response.json();
+  const finishReason = data.candidates?.[0]?.finishReason;
   const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}") + 1;
   if (start === -1 || end === 0) throw new Error("Gemini returned no valid JSON");
-  return JSON.parse(raw.slice(start, end));
+  try {
+    return JSON.parse(raw.slice(start, end));
+  } catch (e) {
+    console.error(`[gemini] JSON parse failed (finishReason=${finishReason}, len=${raw.length}): ${e.message}`);
+    throw new Error(`Gemini returned malformed JSON (finishReason=${finishReason})`);
+  }
 }
 
 // ─── Stripe ─────────────────────────────────────────────────────────────────
@@ -420,9 +426,22 @@ function findSessionByStripeId(stripeSessionId) {
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
-    let body = "";
-    req.on("data", c => { body += c; if (body.length > 5_000_000) reject(new Error("Body too large")); });
-    req.on("end", () => { try { resolve(body ? JSON.parse(body) : {}); } catch { reject(new Error("Invalid JSON")); } });
+    // Collect raw chunks and decode the FULL buffer once. Decoding per chunk
+    // (body += c) corrupts multi-byte UTF-8 characters that straddle a chunk
+    // boundary — which broke the native app's raw-UTF-8 JSON on large bodies.
+    const chunks = [];
+    let size = 0;
+    req.on("data", c => {
+      chunks.push(c);
+      size += c.length;
+      if (size > 5_000_000) reject(new Error("Body too large"));
+    });
+    req.on("end", () => {
+      try {
+        const body = Buffer.concat(chunks).toString("utf8");
+        resolve(body ? JSON.parse(body) : {});
+      } catch { reject(new Error("Invalid JSON")); }
+    });
     req.on("error", reject);
   });
 }
