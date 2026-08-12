@@ -20,3 +20,5 @@ StoreApp/*.msix
 StoreApp/*.cer
 StoreApp/*.pfx
 StoreApp/install-log.txt
+StoreApp/*-log.txt
+StoreApp/diag-dump.json
