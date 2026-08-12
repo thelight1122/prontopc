@@ -65,6 +65,14 @@ static class Repair
                     ResetWindowsUpdate(); Done(result, "Windows Update components reset"); break;
                 case "clear_windows_store_cache":
                     RunExe("wsreset.exe", "", 120); Done(result, "Windows Store cache cleared"); break;
+                case "clean_windows_update_cache":
+                    Freed(result, CleanWindowsUpdateCache()); break;
+                case "clean_component_store":
+                    Done(result, RunExe("DISM", "/Online /Cleanup-Image /StartComponentCleanup", 900)); break;
+                case "remove_windows_old":
+                    RemoveWindowsOld(result); break;
+                case "clean_delivery_optimization":
+                    Freed(result, DeleteAllIn(@"C:\Windows\SoftwareDistribution\DeliveryOptimization")); break;
                 case "driver_report": case "hardware_report":
                     result["status"] = "noted"; result["detail"] = "Documented in report. Physical service may be recommended."; break;
                 default:
@@ -185,6 +193,45 @@ static class Repair
             try { if (Directory.Exists(path)) { if (Directory.Exists(bak)) Directory.Delete(bak, true); Directory.Move(path, bak); } } catch { }
         }
         foreach (var s in svcs) RunExe("net", "start " + s, 60);
+    }
+
+    // ── Windows Update leftovers ─────────────────────────────────────────────
+    static long DirBytes(string path)
+    {
+        long b = 0;
+        if (Directory.Exists(path)) foreach (var f in SafeFiles(path)) { try { b += new FileInfo(f).Length; } catch { } }
+        return b;
+    }
+    static long DeleteAllIn(string dir)
+    {
+        if (!Directory.Exists(dir)) return 0;
+        long freed = 0;
+        foreach (var f in SafeFiles(dir)) { try { long len = new FileInfo(f).Length; File.Delete(f); freed += len; } catch { } }
+        return freed;
+    }
+    static long CleanWindowsUpdateCache()
+    {
+        const string sd = @"C:\Windows\SoftwareDistribution\Download";
+        long freed = DirBytes(sd);
+        foreach (var s in new[] { "wuauserv", "bits" }) RunExe("net", "stop " + s, 60);
+        if (Directory.Exists(sd))
+        {
+            foreach (var f in SafeFiles(sd)) { try { File.Delete(f); } catch { } }
+            foreach (var d in Directory.GetDirectories(sd)) { try { Directory.Delete(d, true); } catch { } }
+        }
+        foreach (var s in new[] { "wuauserv", "bits" }) RunExe("net", "start " + s, 60);
+        return freed;
+    }
+    static void RemoveWindowsOld(Dictionary<string, object?> result)
+    {
+        const string wo = @"C:\Windows.old";
+        if (!Directory.Exists(wo)) { result["status"] = "skipped"; result["detail"] = "No Windows.old present"; return; }
+        long freed = DirBytes(wo);
+        RunExe("takeown", $"/f \"{wo}\" /r /d y", 600);
+        RunExe("icacls", $"\"{wo}\" /grant *S-1-5-32-544:F /t /c", 600);
+        try { Directory.Delete(wo, true); } catch { }
+        if (!Directory.Exists(wo)) { result["status"] = "done"; result["mb_freed"] = (int)Math.Round(freed / 1048576.0); result["detail"] = "Previous Windows installation removed"; }
+        else { result["status"] = "error"; result["detail"] = "Windows.old could not be fully removed"; }
     }
 
     // ── process helper (system tools only — never powershell) ─────────────────

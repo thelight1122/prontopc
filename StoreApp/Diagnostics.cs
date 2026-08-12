@@ -32,6 +32,7 @@ static class Diagnostics
         Section(d, "recycle_bin", RecycleBin);
         Section(d, "browser_caches", BrowserCaches);
         Section(d, "windows_caches", WindowsCaches);
+        Section(d, "update_leftovers", UpdateLeftovers);
         Section(d, "drivers", Drivers);
         Section(d, "device_errors", DeviceErrors);
         Section(d, "bsod_history", BsodHistory);
@@ -289,6 +290,22 @@ static class Diagnostics
             if (bytes > 0) result[name] = new Dictionary<string, object?> { ["size_mb"] = Round(bytes / 1048576.0), ["file_count"] = count };
         }
         return result;
+    }
+
+    static object UpdateLeftovers()
+    {
+        var v = new Dictionary<string, object?> { ["component_cleanup_available"] = true };
+        try { var sd = @"C:\Windows\SoftwareDistribution\Download"; v["windows_update_cache_mb"] = Directory.Exists(sd) ? (int)Math.Round(DirSize(sd).bytes / 1048576.0) : 0; }
+        catch { v["windows_update_cache_mb"] = 0; }
+        try { var doc = @"C:\Windows\SoftwareDistribution\DeliveryOptimization"; v["delivery_optimization_mb"] = Directory.Exists(doc) ? (int)Math.Round(DirSize(doc).bytes / 1048576.0) : 0; }
+        catch { v["delivery_optimization_mb"] = 0; }
+        try
+        {
+            if (Directory.Exists(@"C:\Windows.old")) { v["windows_old_present"] = true; v["windows_old_gb"] = Math.Round(DirSize(@"C:\Windows.old").bytes / 1073741824.0, 1); }
+            else { v["windows_old_present"] = false; v["windows_old_gb"] = null; }
+        }
+        catch { v["windows_old_present"] = false; v["windows_old_gb"] = null; }
+        return v;
     }
 
     static object Drivers()

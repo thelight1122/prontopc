@@ -202,7 +202,13 @@ Return exactly:
 }
 
 Known repair action IDs you may use:
-clear_temp_files, clear_all_browser_caches, clear_chrome_cache, clear_edge_cache, clear_firefox_cache, clear_brave_cache, clear_opera_cache, clear_windows_caches, empty_recycle_bin, disk_cleanup, clear_windows_store_cache, sfc_scan, dism_restore, chkdsk_scan, flush_dns, reset_network_stack, disable_startup_item (requires target_name + target_hive), optimize_power_plan, optimize_visual_effects, reset_windows_update, driver_report, hardware_report`;
+clear_temp_files, clear_all_browser_caches, clear_chrome_cache, clear_edge_cache, clear_firefox_cache, clear_brave_cache, clear_opera_cache, clear_windows_caches, empty_recycle_bin, disk_cleanup, clear_windows_store_cache, clean_windows_update_cache, clean_component_store, remove_windows_old, clean_delivery_optimization, sfc_scan, dism_restore, chkdsk_scan, flush_dns, reset_network_stack, disable_startup_item (requires target_name + target_hive), optimize_power_plan, optimize_visual_effects, reset_windows_update, driver_report, hardware_report
+
+Windows Update leftovers (see the "Windows Update leftovers" diagnostic line) are often the LARGEST reclaimable space — recommend these when present, with estimated_mb_recovered taken from the reported sizes:
+- clean_windows_update_cache: clears the SoftwareDistribution download cache (use its reported MB).
+- clean_delivery_optimization: clears the Delivery Optimization cache (use its reported MB).
+- remove_windows_old: deletes the previous-Windows backup — recommend ONLY when Windows.old is present (use its reported MB; can be many GB).
+- clean_component_store: DISM cleanup of the WinSxS store — safe periodic maintenance; set estimated_mb_recovered 0 (amount isn't pre-measured).`;
 
 function buildDiagnosticText(diag) {
   const lines = [];
@@ -262,6 +268,17 @@ function buildDiagnosticText(diag) {
   const wc = diag.windows_caches || {};
   const wcItems = Object.entries(wc).map(([k, v]) => `${k}: ${v.size_mb} MB`);
   if (wcItems.length) lines.push(`Windows caches: ${wcItems.join(", ")}`);
+
+  // Windows Update leftovers (usually the biggest reclaimable space)
+  const ul = diag.update_leftovers || {};
+  {
+    const parts = [];
+    if (ul.windows_update_cache_mb) parts.push(`update cache ${ul.windows_update_cache_mb} MB`);
+    if (ul.delivery_optimization_mb) parts.push(`Delivery Optimization ${ul.delivery_optimization_mb} MB`);
+    if (ul.windows_old_present) parts.push(`Windows.old present${ul.windows_old_gb ? ` (${ul.windows_old_gb} GB)` : ""}`);
+    if (ul.component_cleanup_available) parts.push(`component store cleanup available`);
+    if (parts.length) lines.push(`Windows Update leftovers: ${parts.join(", ")}`);
+  }
 
   // Large files
   const lf = diag.large_files || [];
@@ -1127,6 +1144,26 @@ foreach ($name in $wcPaths.Keys) {
     }
 }
 
+# 9b. Windows Update leftovers (often the largest reclaimable space)
+$diag.update_leftovers = @{ component_cleanup_available = $true }
+try {
+    $sd = "C:\\Windows\\SoftwareDistribution\\Download"
+    $sz = if (Test-Path $sd) { (Get-ChildItem $sd -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum } else { 0 }
+    $diag.update_leftovers.windows_update_cache_mb = [math]::Round($sz/1MB)
+} catch { $diag.update_leftovers.windows_update_cache_mb = 0 }
+try {
+    $do = "C:\\Windows\\SoftwareDistribution\\DeliveryOptimization"
+    $sz = if (Test-Path $do) { (Get-ChildItem $do -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum } else { 0 }
+    $diag.update_leftovers.delivery_optimization_mb = [math]::Round($sz/1MB)
+} catch { $diag.update_leftovers.delivery_optimization_mb = 0 }
+try {
+    if (Test-Path "C:\\Windows.old") {
+        $diag.update_leftovers.windows_old_present = $true
+        $wsz = (Get-ChildItem "C:\\Windows.old" -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+        $diag.update_leftovers.windows_old_gb = [math]::Round($wsz/1GB, 1)
+    } else { $diag.update_leftovers.windows_old_present = $false; $diag.update_leftovers.windows_old_gb = $null }
+} catch { $diag.update_leftovers.windows_old_present = $false; $diag.update_leftovers.windows_old_gb = $null }
+
 # 10. Drivers
 Write-Step 8 $totalSteps "Auditing drivers"
 try {
@@ -1541,6 +1578,36 @@ foreach ($action in $actions) {
             "clear_windows_store_cache" {
                 Start-Process wsreset.exe -Wait -ErrorAction SilentlyContinue
                 $result.status = "done"; $result.detail = "Windows Store cache cleared"
+            }
+            "clean_windows_update_cache" {
+                $sd = "C:\\Windows\\SoftwareDistribution\\Download"
+                $freed = if (Test-Path $sd) { (Get-ChildItem $sd -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum } else { 0 }
+                @("wuauserv","bits") | ForEach-Object { Stop-Service $_ -Force -ErrorAction SilentlyContinue }
+                if (Test-Path $sd) { Get-ChildItem $sd -ErrorAction SilentlyContinue | ForEach-Object { try { Remove-Item $_.FullName -Recurse -Force } catch {} } }
+                @("wuauserv","bits") | ForEach-Object { Start-Service $_ -ErrorAction SilentlyContinue }
+                $result.status = "done"; $result.mb_freed = [math]::Round($freed/1MB)
+            }
+            "clean_component_store" {
+                Write-Host "    Cleaning Windows component store (this may take several minutes)..." -ForegroundColor Gray
+                $out = & DISM /Online /Cleanup-Image /StartComponentCleanup 2>&1 | Out-String
+                $result.status = "done"; $result.detail = $out.Substring([math]::Max(0, $out.Length - 200))
+            }
+            "remove_windows_old" {
+                if (Test-Path "C:\\Windows.old") {
+                    $freed = (Get-ChildItem "C:\\Windows.old" -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+                    & takeown /f "C:\\Windows.old" /r /d y 2>&1 | Out-Null
+                    & icacls "C:\\Windows.old" /grant "*S-1-5-32-544:F" /t /c 2>&1 | Out-Null
+                    Remove-Item "C:\\Windows.old" -Recurse -Force -ErrorAction SilentlyContinue
+                    if (-not (Test-Path "C:\\Windows.old")) { $result.status = "done"; $result.mb_freed = [math]::Round($freed/1MB); $result.detail = "Previous Windows installation removed" }
+                    else { $result.status = "error"; $result.detail = "Windows.old could not be fully removed" }
+                } else { $result.status = "skipped"; $result.detail = "No Windows.old present" }
+            }
+            "clean_delivery_optimization" {
+                $do = "C:\\Windows\\SoftwareDistribution\\DeliveryOptimization"
+                $freed = if (Test-Path $do) { (Get-ChildItem $do -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum } else { 0 }
+                try { Delete-DeliveryOptimizationCache -Force -ErrorAction SilentlyContinue } catch {}
+                if (Test-Path $do) { Get-ChildItem $do -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { try { Remove-Item $_.FullName -Force } catch {} } }
+                $result.status = "done"; $result.mb_freed = [math]::Round($freed/1MB); $result.detail = "Delivery Optimization cache cleared"
             }
             { $_ -in @("driver_report","hardware_report") } {
                 $result.status = "noted"; $result.detail = "Documented in report. Physical service may be recommended."
