@@ -9,10 +9,24 @@ import http from "node:http";
 import crypto from "node:crypto";
 
 const PORT = process.env.PORT || 8080;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+
+// ─── LLM: Azure OpenAI (primary), Gemini (optional fallback) ─────────────────
+const AZURE_OPENAI_ENDPOINT = (process.env.AZURE_OPENAI_ENDPOINT || "").replace(/\/+$/, "");
+const AZURE_OPENAI_KEY = process.env.AZURE_OPENAI_KEY;
+const AZURE_OPENAI_DEPLOYMENT = process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-41-mini";
+const AZURE_OPENAI_API_VERSION = process.env.AZURE_OPENAI_API_VERSION || "2024-10-21";
+const AZURE_OPENAI_URL = AZURE_OPENAI_ENDPOINT
+  ? `${AZURE_OPENAI_ENDPOINT}/openai/deployments/${AZURE_OPENAI_DEPLOYMENT}/chat/completions?api-version=${AZURE_OPENAI_API_VERSION}`
+  : "";
+const LLM_MODEL = `azure/${AZURE_OPENAI_DEPLOYMENT}`;
+
+// Legacy Gemini (only used if Azure is not configured)
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = "gemini-2.5-flash";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL = GEMINI_API_KEY
+  ? `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`
+  : "";
 const CLOUD_RUN_URL = process.env.CLOUD_RUN_URL || "https://pronto-pc-108655745293.us-central1.run.app";
 const SESSION_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 
@@ -386,7 +400,46 @@ function buildDiagnosticText(diag) {
   return lines.join("\n");
 }
 
-async function queryGemini(diagnosticText) {
+function extractJson(raw, source) {
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}") + 1;
+  if (start === -1 || end === 0) throw new Error(`${source} returned no valid JSON`);
+  return JSON.parse(raw.slice(start, end));
+}
+
+async function queryAzureOpenAI(diagnosticText) {
+  const response = await fetch(AZURE_OPENAI_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "api-key": AZURE_OPENAI_KEY },
+    body: JSON.stringify({
+      messages: [
+        { role: "system", content: REPAIR_SYSTEM_PROMPT },
+        { role: "user", content: `DIAGNOSTIC REPORT:\n${diagnosticText}` }
+      ],
+      temperature: 0.1,
+      max_tokens: 8192,
+      response_format: { type: "json_object" }
+    }),
+    signal: AbortSignal.timeout(90_000)
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Azure OpenAI error ${response.status}: ${err}`);
+  }
+
+  const data = await response.json();
+  const finishReason = data.choices?.[0]?.finish_reason;
+  const raw = (data.choices?.[0]?.message?.content || "").trim();
+  try {
+    return extractJson(raw, "Azure OpenAI");
+  } catch (e) {
+    console.error(`[azure] JSON parse failed (finish_reason=${finishReason}, len=${raw.length}): ${e.message}`);
+    throw new Error(`Azure OpenAI returned malformed JSON (finish_reason=${finishReason})`);
+  }
+}
+
+async function queryGeminiLegacy(diagnosticText) {
   const response = await fetch(GEMINI_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -406,15 +459,20 @@ async function queryGemini(diagnosticText) {
   const data = await response.json();
   const finishReason = data.candidates?.[0]?.finishReason;
   const raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}") + 1;
-  if (start === -1 || end === 0) throw new Error("Gemini returned no valid JSON");
   try {
-    return JSON.parse(raw.slice(start, end));
+    return extractJson(raw, "Gemini");
   } catch (e) {
     console.error(`[gemini] JSON parse failed (finishReason=${finishReason}, len=${raw.length}): ${e.message}`);
     throw new Error(`Gemini returned malformed JSON (finishReason=${finishReason})`);
   }
+}
+
+// Provider-agnostic entry point. Prefers Azure OpenAI; falls back to Gemini
+// only if Azure isn't configured.
+async function queryLLM(diagnosticText) {
+  if (AZURE_OPENAI_URL && AZURE_OPENAI_KEY) return queryAzureOpenAI(diagnosticText);
+  if (GEMINI_URL) return queryGeminiLegacy(diagnosticText);
+  throw new Error("No LLM configured (set AZURE_OPENAI_* or GEMINI_API_KEY)");
 }
 
 // ─── Stripe ─────────────────────────────────────────────────────────────────
@@ -630,7 +688,7 @@ async function handleSubmitDiagnostics(req, res) {
     session.diagnostics = diagnostics;
     session.hostname = diagnostics.os?.hostname || "Unknown PC";
     const diagText = buildDiagnosticText(diagnostics);
-    const plan = await queryGemini(diagText);
+    const plan = await queryLLM(diagText);
     session.repairPlan = plan;
     transitionState(token, "diagnosed");
     console.log(`[submit-diagnostics] Done — ${plan.actions?.length || 0} actions`);
@@ -934,7 +992,7 @@ async function handleRepairPlan(req, res) {
 
   try {
     const diagText = buildDiagnosticText(diagnostics);
-    const plan = await queryGemini(diagText);
+    const plan = await queryLLM(diagText);
     console.log(`[repair-plan] Legacy call — ${plan.actions?.length || 0} actions`);
     return json(res, req, 200, { ok: true, plan });
   } catch (e) {
@@ -2276,7 +2334,7 @@ const server = http.createServer(async (req, res) => {
   try {
     // Health
     if (method === "GET" && pathname === "/health")
-      return json(res, req, 200, { ok: true, service: "pronto-pc", version: "2.0.0", model: GEMINI_MODEL, sessions: sessionStore.size, timestamp: new Date().toISOString() });
+      return json(res, req, 200, { ok: true, service: "pronto-pc", version: "2.0.0", model: LLM_MODEL, sessions: sessionStore.size, timestamp: new Date().toISOString() });
 
     // Stripe verification
     if (method === "POST" && pathname === "/api/verify-payment") return await handleVerifyPayment(req, res);
@@ -2333,7 +2391,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Pronto PC Custodian v2.0 running on port ${PORT}`);
-  console.log(`Model: ${GEMINI_MODEL}`);
-  if (!GEMINI_API_KEY) console.warn("WARNING: GEMINI_API_KEY not set");
+  console.log(`Model: ${LLM_MODEL}`);
+  if (!AZURE_OPENAI_KEY && !GEMINI_API_KEY) console.warn("WARNING: no LLM key set (AZURE_OPENAI_KEY or GEMINI_API_KEY)");
   if (!STRIPE_SECRET_KEY) console.warn("WARNING: STRIPE_SECRET_KEY not set");
 });
