@@ -486,7 +486,13 @@ async function verifyStripeSession(sessionId) {
   if (resp.status === 404) throw new Error("Payment session not found. Please use the link from your confirmation email, or contact support@prontopc.online.");
   if (!resp.ok) throw new Error("Could not verify payment. Please contact support@prontopc.online.");
   const session = await resp.json();
-  if (session.payment_status !== "paid") throw new Error("Payment is still processing. Please wait a moment and reload this page. If this continues, contact support@prontopc.online.");
+  // A completed checkout is fulfilled even when no charge occurred: a 100%-off
+  // promo (e.g. the Microsoft cert code MSCERT2026) settles as
+  // "no_payment_required"/status "complete", not "paid".
+  const fulfilled = session.payment_status === "paid"
+    || session.payment_status === "no_payment_required"
+    || session.status === "complete";
+  if (!fulfilled) throw new Error("Payment is still processing. Please wait a moment and reload this page. If this continues, contact support@prontopc.online.");
   return session;
 }
 
