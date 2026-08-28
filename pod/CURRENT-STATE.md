@@ -12,7 +12,18 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0019** (2026-08-28) — **Opened the `custodian-stage` Orb — the conversational Custodian Technician
+**TOTEM-0020** (2026-08-28) — **Killed another paste fossil + mapped the rest.** FAQ "Do I need technical
+knowledge?" still said *"The only technical action is pasting one command"* (missed by TOTEM-0018's sweep —
+pattern didn't match "past**ing**"). Fixed to the certified-app truth (the app runs the diagnostic itself; no
+commands to type or paste). Exhaustive sweep: `index.html` is now **clean**. The *"nothing is installed/
+downloaded/runs in memory"* claim Tracey flagged is **already gone from the repo** (removed TOTEM-0018) — the
+quote is from the **stale live site**, so a **Vercel redeploy** is still needed. **Remaining paste fossils are
+in FUNCTIONAL flows, deliberately NOT edited** (would break real Stripe-wired delivery before the certified-app
+download flow is designed): `success.html` (post-payment Run-box/PowerShell/Ctrl+V scan+repair) and
+`guardian.html`/`guardian-offer.html` (the subscription is also all-paste). Recorded Tracey's **relational-DB-MCP
+knowledge-lookup** option in `custodian-stage` SPEC §6 (Phase-4 fork vs. system-prompt prose). All 20 Totems HOLD.
+
+**Prior:** TOTEM-0019 (2026-08-28) — **Opened the `custodian-stage` Orb — the conversational Custodian Technician
 (SPEC + Conversation Contract, no app code).** The on-device Gemma stops being a silent one-shot plan author
 and becomes a **session-scoped chat technician** — the chat window that replaces the command window
 (Tracey's direction; settles the A/B as **A, the certified app**). `custodian-stage` was already declared

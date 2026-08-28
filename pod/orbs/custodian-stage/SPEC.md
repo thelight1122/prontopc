@@ -95,6 +95,19 @@ The stage's honesty specs are not just about 3D workers — they govern what the
 - **Knowledge source** — Tracey: *"as we implement, its requirements will reveal themselves"*; I curate the
   v0.1 reference ([`knowledge/windows-repair-reference.md`](knowledge/windows-repair-reference.md)); expand
   iteratively.
+- **Knowledge delivery — prose-in-context vs. a relational-DB MCP (Tracey's option).** Two ways to make the
+  model knowledgeable, and they compose:
+  - **v0.1 · system-prompt prose** (`knowledge.ingestion = "system_prompt"`): the curated reference rides in
+    the 32k context. Zero infra, fully offline, but every token costs context and the whole doc is always
+    "in the room."
+  - **later · relational-DB MCP lookup** (`knowledge.ingestion = "retrieval"`): a small local relational
+    store (e.g. SQLite) fronted by an **MCP** the Custodian queries on demand — action ↔ symptom ↔ area ↔
+    plain-English explanation, keyed by the real 26-action catalogue and the six areas. Scales past what fits
+    in context, keeps answers grounded in vetted rows (a natural fit for `defer_when_uncertain` — no row ⇒ no
+    claim), and is auditable. Cost: it's another moving part to ship inside the app, and MCP tool-use from a
+    1B model is weak (the deferred E2B/Pro tier tool-calls properly), so v0.1 would likely have the **app**,
+    not the model, run the lookup and inject the matched rows. **Decide at Phase 4;** the contract already
+    reserves `retrieval` as the ingestion mode for exactly this.
 - **Chat replaces or augments the panels?** — v0.1 assumption: ChatPanel is the primary surface, the
   existing phase panels become the "stage" it narrates. Confirm at Phase 3.
 - **Scope enforcement strictness** — how hard to refuse off-topic (polite redirect vs. hard stop). Set the
