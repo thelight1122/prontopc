@@ -10,14 +10,14 @@
 <script>
 tailwind.config = {
   darkMode: "class",
-  theme: { extend: { colors: { "background": "#051424", "surface-container": "#122131", "on-surface": "#d4e4fa", "on-surface-variant": "#c6c6cd", "secondary": "#ffb95f", "on-secondary": "#472a00", "tertiary": "#91db2a" } } }
+  theme: { extend: { colors: { "background": "#070a18", "surface-container": "#12142c", "on-surface": "#eef1ff", "on-surface-variant": "#c3c8e6", "secondary": "#a78bfa", "on-secondary": "#ffffff", "tertiary": "#5be3a0" } } }
 }
 </script>
 <style>
-  body { background-color: #051424; color: #d4e4fa; font-family: 'Inter', sans-serif; }
+  body { background-color: #070a18; color: #eef1ff; font-family: 'Inter', sans-serif; }
   .option-card { transition: all 0.2s; }
-  .option-card.selected { border-color: #ffb95f; background: rgba(255,185,95,0.05); }
-  .option-card:hover { border-color: rgba(255,185,95,0.5); }
+  .option-card.selected { border-color: #a78bfa; background: rgba(139,107,255,0.05); }
+  .option-card:hover { border-color: rgba(139,107,255,0.5); }
 </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -46,7 +46,7 @@ tailwind.config = {
       <div class="inline-flex gap-6 flex-wrap justify-center">
         <div class="bg-surface-container border border-white/10 rounded-2xl px-8 py-5 text-center">
           <p class="text-on-surface-variant text-xs uppercase tracking-widest mb-1">Monthly</p>
-          <span class="text-4xl font-black text-secondary">$5</span>
+          <span class="text-4xl font-black text-secondary">$2.50</span>
           <span class="text-on-surface-variant text-lg">/month</span>
         </div>
         <div class="bg-surface-container border border-white/10 rounded-2xl px-8 py-5 text-center">
@@ -105,7 +105,7 @@ tailwind.config = {
             <h3 class="font-bold text-on-surface">Monthly</h3>
           </div>
           <p class="text-on-surface-variant text-sm">Every 30 days. A regular check-up without the noise. Best for stable, lightly-used systems.</p>
-          <p class="text-secondary font-bold text-sm mt-2">$5/month</p>
+          <p class="text-secondary font-bold text-sm mt-2">$2.50/month</p>
         </button>
       </div>
     </div>
@@ -179,8 +179,8 @@ function updateButton() {
   const btn = document.getElementById("subscribe-btn");
   if (selectedFrequency && selectedExecution) {
     btn.disabled = false;
-    btn.className = "inline-flex items-center gap-3 bg-secondary text-on-secondary font-bold text-lg px-8 py-4 rounded-xl hover:shadow-[0_0_24px_rgba(255,185,95,0.4)] transition-all cursor-pointer";
-    const price = selectedFrequency === "weekly" ? "$10" : "$5";
+    btn.className = "inline-flex items-center gap-3 bg-secondary text-on-secondary font-bold text-lg px-8 py-4 rounded-xl hover:shadow-[0_0_24px_rgba(139,107,255,0.4)] transition-all cursor-pointer";
+    const price = selectedFrequency === "weekly" ? "$10" : "$2.50";
     btn.innerHTML = '<span class="material-symbols-outlined" style="font-variation-settings:\'FILL\' 1;">shield</span> Start free trial — then ' + price + '/month';
   }
 }

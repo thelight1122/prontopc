@@ -11,43 +11,43 @@
 tailwind.config = {
   darkMode: "class",
   theme: { extend: { colors: {
-    "bg": "#051424", "surface": "#122131",
-    "text": "#d4e4fa", "muted": "#8b9ab5",
-    "amber": "#ffb95f", "amber-dark": "#472a00",
-    "green": "#91db2a"
+    "bg": "#070a18", "surface": "#12142c",
+    "text": "#eef1ff", "muted": "#c3c8e6",
+    "amber": "#a78bfa", "amber-dark": "#ffffff",
+    "green": "#5be3a0"
   }}}
 }
 </script>
 <style>
-  body { background:#051424; color:#d4e4fa; font-family:'Inter',sans-serif; }
+  body { background:#070a18; color:#eef1ff; font-family:'Inter',sans-serif; }
   .card {
-    background:#122131; border:1px solid rgba(255,255,255,0.07);
+    background:#12142c; border:1px solid rgba(255,255,255,0.07);
     border-radius:1rem; padding:1.75rem;
   }
   @keyframes pulse-ring {
-    0% { transform:scale(0.95); box-shadow:0 0 0 0 rgba(145,219,42,0.4); }
-    70% { transform:scale(1); box-shadow:0 0 0 14px rgba(145,219,42,0); }
-    100% { transform:scale(0.95); box-shadow:0 0 0 0 rgba(145,219,42,0); }
+    0% { transform:scale(0.95); box-shadow:0 0 0 0 rgba(91,227,160,0.4); }
+    70% { transform:scale(1); box-shadow:0 0 0 14px rgba(91,227,160,0); }
+    100% { transform:scale(0.95); box-shadow:0 0 0 0 rgba(91,227,160,0); }
   }
   .pulse { animation: pulse-ring 2.5s ease-in-out infinite; }
 </style>
 </head>
 <body class="min-h-screen flex flex-col">
 
-<nav class="border-b border-white/10 bg-[#051424]/95 backdrop-blur px-6 py-4 flex items-center gap-3">
-  <a href="./index.html" class="font-bold tracking-tighter text-[#d4e4fa] text-lg hover:text-[#ffb95f] transition-colors">PRONTO PC</a>
-  <span class="text-[#8b9ab5]/40 text-sm ml-auto font-mono" id="session-badge"></span>
+<nav class="border-b border-white/10 bg-[#070a18]/95 backdrop-blur px-6 py-4 flex items-center gap-3">
+  <a href="./index.html" class="font-bold tracking-tighter text-[#eef1ff] text-lg hover:text-[#a78bfa] transition-colors">PRONTO PC</a>
+  <span class="text-[#c3c8e6]/40 text-sm ml-auto font-mono" id="session-badge"></span>
 </nav>
 
 <main class="flex-1 flex flex-col items-center px-4 py-12">
 
   <!-- Verifying -->
   <div id="state-verifying" class="flex flex-col items-center text-center max-w-md pt-12">
-    <div class="inline-flex items-center gap-3 bg-white/8 text-[#8b9ab5] font-semibold text-lg px-8 py-4 rounded-xl mb-3">
+    <div class="inline-flex items-center gap-3 bg-white/8 text-[#c3c8e6] font-semibold text-lg px-8 py-4 rounded-xl mb-3">
       <span class="material-symbols-outlined animate-spin" style="font-size:1.4rem">progress_activity</span>
       Verifying your payment…
     </div>
-    <p class="text-[#8b9ab5] text-sm">Just a moment.</p>
+    <p class="text-[#c3c8e6] text-sm">Just a moment.</p>
   </div>
 
   <!-- Error -->
@@ -56,37 +56,37 @@ tailwind.config = {
       <span class="material-symbols-outlined shrink-0 text-lg mt-0.5">error</span>
       <span id="error-msg">Could not verify payment.</span>
     </div>
-    <p class="text-[#8b9ab5] text-sm mt-1">Need help? <a href="mailto:support@prontopc.online" class="text-[#ffb95f] hover:underline">support@prontopc.online</a></p>
+    <p class="text-[#c3c8e6] text-sm mt-1">Need help? <a href="mailto:support@prontopc.online" class="text-[#a78bfa] hover:underline">support@prontopc.online</a></p>
   </div>
 
   <!-- Active — app installed path -->
   <div id="state-active-app" class="hidden w-full max-w-lg space-y-6">
 
     <div class="text-center pt-2">
-      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#91db2a]/10 border border-[#91db2a]/25 mb-4">
-        <span class="material-symbols-outlined text-[#91db2a] text-base" style="font-variation-settings:'FILL' 1">check_circle</span>
-        <span class="text-[#91db2a] font-mono text-xs tracking-widest uppercase">Payment Confirmed</span>
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#5be3a0]/10 border border-[#5be3a0]/25 mb-4">
+        <span class="material-symbols-outlined text-[#5be3a0] text-base" style="font-variation-settings:'FILL' 1">check_circle</span>
+        <span class="text-[#5be3a0] font-mono text-xs tracking-widest uppercase">Payment Confirmed</span>
       </div>
-      <h1 class="text-3xl font-black text-[#d4e4fa] leading-tight">
+      <h1 class="text-3xl font-black text-[#eef1ff] leading-tight">
         Ready to scan your PC.
       </h1>
-      <p class="text-[#8b9ab5] mt-2 text-sm">Takes about 30 seconds. Nothing is left behind on your computer.</p>
+      <p class="text-[#c3c8e6] mt-2 text-sm">Takes about 30 seconds. Nothing is left behind on your computer.</p>
     </div>
 
     <!-- App not installed warning -->
-    <div id="need-app" class="hidden card border-[#ffb95f]/20" style="border-color:rgba(255,185,95,0.2); background:rgba(255,185,95,0.04);">
+    <div id="need-app" class="hidden card border-[#a78bfa]/20" style="border-color:rgba(139,107,255,0.2); background:rgba(139,107,255,0.04);">
       <div class="flex items-start gap-4">
-        <span class="material-symbols-outlined text-[#ffb95f] text-2xl shrink-0">download</span>
+        <span class="material-symbols-outlined text-[#a78bfa] text-2xl shrink-0">download</span>
         <div>
-          <p class="font-bold text-[#d4e4fa]">First: Install the ProntoPC app</p>
-          <p class="text-[#8b9ab5] text-sm mt-1 mb-4">
+          <p class="font-bold text-[#eef1ff]">First: Install the ProntoPC app</p>
+          <p class="text-[#c3c8e6] text-sm mt-1 mb-4">
             The ProntoPC app is a small, free launcher from the Microsoft Store. It runs your scan securely with one click.
           </p>
-          <a id="store-link" href="#" class="inline-flex items-center gap-2 bg-[#ffb95f] text-[#472a00] font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
+          <a id="store-link" href="#" class="inline-flex items-center gap-2 bg-[#a78bfa] text-[#ffffff] font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm">
             <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' 1">store</span>
             Get ProntoPC from the Microsoft Store
           </a>
-          <p class="text-[#8b9ab5] text-xs mt-3">Free · Verified by Microsoft · Takes under a minute to install</p>
+          <p class="text-[#c3c8e6] text-xs mt-3">Free · Verified by Microsoft · Takes under a minute to install</p>
         </div>
       </div>
     </div>
@@ -95,48 +95,48 @@ tailwind.config = {
     <div class="text-center">
       <button id="scan-btn"
         onclick="launchScan()"
-        class="pulse inline-flex items-center gap-3 bg-[#91db2a] text-[#051424] font-black text-xl px-10 py-5 rounded-2xl hover:opacity-90 transition-opacity">
+        class="pulse inline-flex items-center gap-3 bg-[#5be3a0] text-[#070a18] font-black text-xl px-10 py-5 rounded-2xl hover:opacity-90 transition-opacity">
         <span class="material-symbols-outlined text-3xl" style="font-variation-settings:'FILL' 1">rocket_launch</span>
         Open ProntoPC
       </button>
-      <p class="text-[#8b9ab5] text-xs mt-4">
-        Click <strong class="text-[#d4e4fa]">Yes</strong> on the Windows permission prompt — the app does the rest.
+      <p class="text-[#c3c8e6] text-xs mt-4">
+        Click <strong class="text-[#eef1ff]">Yes</strong> on the Windows permission prompt — the app does the rest.
       </p>
     </div>
 
     <!-- Post-launch: the app takes over -->
-    <div id="post-launch" class="hidden card text-center" style="border-color:rgba(145,219,42,0.25); background:rgba(145,219,42,0.04);">
-      <span class="material-symbols-outlined text-[#91db2a] text-3xl" style="font-variation-settings:'FILL' 1">desktop_windows</span>
-      <p class="font-bold text-[#d4e4fa] mt-2">ProntoPC is running on your PC</p>
-      <p class="text-[#8b9ab5] text-sm mt-1">Follow the app window — your scan, results, and repairs all happen there. You can close this page.</p>
+    <div id="post-launch" class="hidden card text-center" style="border-color:rgba(91,227,160,0.25); background:rgba(91,227,160,0.04);">
+      <span class="material-symbols-outlined text-[#5be3a0] text-3xl" style="font-variation-settings:'FILL' 1">desktop_windows</span>
+      <p class="font-bold text-[#eef1ff] mt-2">ProntoPC is running on your PC</p>
+      <p class="text-[#c3c8e6] text-sm mt-1">Follow the app window — your scan, results, and repairs all happen there. You can close this page.</p>
     </div>
 
     <!-- If scan won't start -->
     <div class="card text-sm">
-      <p class="font-semibold text-[#d4e4fa] mb-1 flex items-center gap-2">
-        <span class="material-symbols-outlined text-[#8b9ab5] text-base">help</span>
+      <p class="font-semibold text-[#eef1ff] mb-1 flex items-center gap-2">
+        <span class="material-symbols-outlined text-[#c3c8e6] text-base">help</span>
         Button not starting the scan?
       </p>
-      <p class="text-[#8b9ab5]">
+      <p class="text-[#c3c8e6]">
         Make sure the ProntoPC app is installed (button above), then try again.
-        If it still doesn't work, email <a href="mailto:support@prontopc.online" class="text-[#ffb95f] hover:underline">support@prontopc.online</a> and we'll get you sorted.
+        If it still doesn't work, email <a href="mailto:support@prontopc.online" class="text-[#a78bfa] hover:underline">support@prontopc.online</a> and we'll get you sorted.
       </p>
     </div>
 
     <!-- Copilot chat -->
     <div class="card overflow-hidden !p-0">
       <div class="px-5 py-4 border-b border-white/8 flex items-center gap-2">
-        <span class="material-symbols-outlined text-[#ffb95f]">support_agent</span>
-        <h3 class="font-bold text-[#d4e4fa]">Questions? Chat with your Custodian</h3>
+        <span class="material-symbols-outlined text-[#a78bfa]">support_agent</span>
+        <h3 class="font-bold text-[#eef1ff]">Questions? Chat with your Custodian</h3>
       </div>
-      <div id="copilot-embed" class="min-h-[300px] flex items-center justify-center text-[#8b9ab5] text-sm p-6 text-center">
+      <div id="copilot-embed" class="min-h-[300px] flex items-center justify-center text-[#c3c8e6] text-sm p-6 text-center">
         Your Custodian Technician is here if you have any questions.
       </div>
     </div>
 
-    <p class="text-center text-[#8b9ab5]/50 text-xs pb-4">
-      Session active for <strong class="text-[#8b9ab5]/80">3 days</strong> — you can close this page and return anytime.
-      &nbsp;·&nbsp; <a href="mailto:support@prontopc.online" class="text-[#ffb95f]/70 hover:text-[#ffb95f]">support@prontopc.online</a>
+    <p class="text-center text-[#c3c8e6]/50 text-xs pb-4">
+      Session active for <strong class="text-[#c3c8e6]/80">3 days</strong> — you can close this page and return anytime.
+      &nbsp;·&nbsp; <a href="mailto:support@prontopc.online" class="text-[#a78bfa]/70 hover:text-[#a78bfa]">support@prontopc.online</a>
     </p>
 
   </div><!-- /state-active-app -->
@@ -144,57 +144,57 @@ tailwind.config = {
   <!-- Findings: per-item approval -->
   <div id="state-findings" class="hidden w-full max-w-lg space-y-5">
     <div class="text-center pt-2">
-      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#ffb95f]/10 border border-[#ffb95f]/25 mb-3">
-        <span class="material-symbols-outlined text-[#ffb95f] text-base" style="font-variation-settings:'FILL' 1">fact_check</span>
-        <span class="text-[#ffb95f] font-mono text-xs tracking-widest uppercase">Scan Complete</span>
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#a78bfa]/10 border border-[#a78bfa]/25 mb-3">
+        <span class="material-symbols-outlined text-[#a78bfa] text-base" style="font-variation-settings:'FILL' 1">fact_check</span>
+        <span class="text-[#a78bfa] font-mono text-xs tracking-widest uppercase">Scan Complete</span>
       </div>
-      <h1 class="text-2xl font-black text-[#d4e4fa]">Here's what we found.</h1>
-      <p class="text-[#8b9ab5] mt-2 text-sm" id="findings-summary"></p>
+      <h1 class="text-2xl font-black text-[#eef1ff]">Here's what we found.</h1>
+      <p class="text-[#c3c8e6] mt-2 text-sm" id="findings-summary"></p>
     </div>
     <div class="card">
       <div class="flex items-center justify-between mb-1">
-        <p class="font-bold text-[#d4e4fa]">Recommended Repairs</p>
-        <button id="select-all-toggle" type="button" onclick="toggleSelectAll()" class="text-[#ffb95f] text-xs font-mono hover:underline">Deselect all</button>
+        <p class="font-bold text-[#eef1ff]">Recommended Repairs</p>
+        <button id="select-all-toggle" type="button" onclick="toggleSelectAll()" class="text-[#a78bfa] text-xs font-mono hover:underline">Deselect all</button>
       </div>
       <div id="action-list" class="space-y-2 mt-3"></div>
       <div class="flex items-center justify-between mt-3 pt-3 border-t border-white/8 text-sm">
-        <span class="text-[#8b9ab5]" id="selected-count"></span>
-        <span class="text-[#91db2a] font-bold" id="selected-total"></span>
+        <span class="text-[#c3c8e6]" id="selected-count"></span>
+        <span class="text-[#5be3a0] font-bold" id="selected-total"></span>
       </div>
     </div>
     <button id="approve-btn" onclick="approveRepairs()"
-      class="w-full inline-flex items-center justify-center gap-3 bg-[#91db2a] text-[#051424] font-black text-lg px-6 py-4 rounded-xl hover:opacity-90 transition-opacity">
+      class="w-full inline-flex items-center justify-center gap-3 bg-[#5be3a0] text-[#070a18] font-black text-lg px-6 py-4 rounded-xl hover:opacity-90 transition-opacity">
       <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">build_circle</span>
       Proceed with Selected Repairs
     </button>
-    <p class="text-center text-[#8b9ab5] text-xs">Windows will ask permission when repairs start — click <strong class="text-[#d4e4fa]">Yes</strong>.</p>
+    <p class="text-center text-[#c3c8e6] text-xs">Windows will ask permission when repairs start — click <strong class="text-[#eef1ff]">Yes</strong>.</p>
   </div>
 
   <!-- Repair launching -->
   <div id="state-repair" class="hidden w-full max-w-lg space-y-5 text-center pt-8">
-    <div class="inline-flex items-center gap-3 bg-white/8 text-[#8b9ab5] font-semibold text-lg px-8 py-4 rounded-xl">
+    <div class="inline-flex items-center gap-3 bg-white/8 text-[#c3c8e6] font-semibold text-lg px-8 py-4 rounded-xl">
       <span class="material-symbols-outlined animate-spin" style="font-size:1.4rem">progress_activity</span>
       Repairs running…
     </div>
-    <p class="text-[#8b9ab5] text-sm">Approve the Windows permission prompt if you haven't. Keep this page open — it updates when done.</p>
-    <button onclick="launchRepair()" class="text-[#ffb95f] text-sm font-mono hover:underline">Repairs didn't start? Click to retry</button>
+    <p class="text-[#c3c8e6] text-sm">Approve the Windows permission prompt if you haven't. Keep this page open — it updates when done.</p>
+    <button onclick="launchRepair()" class="text-[#a78bfa] text-sm font-mono hover:underline">Repairs didn't start? Click to retry</button>
   </div>
 
   <!-- Complete -->
   <div id="state-complete" class="hidden w-full max-w-lg space-y-5 text-center pt-8">
-    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#91db2a]/10 border border-[#91db2a]/25 mb-2">
-      <span class="material-symbols-outlined text-[#91db2a] text-base" style="font-variation-settings:'FILL' 1">verified</span>
-      <span class="text-[#91db2a] font-mono text-xs tracking-widest uppercase">Repairs Complete</span>
+    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#5be3a0]/10 border border-[#5be3a0]/25 mb-2">
+      <span class="material-symbols-outlined text-[#5be3a0] text-base" style="font-variation-settings:'FILL' 1">verified</span>
+      <span class="text-[#5be3a0] font-mono text-xs tracking-widest uppercase">Repairs Complete</span>
     </div>
-    <h1 class="text-2xl font-black text-[#d4e4fa]">Your PC has been serviced.</h1>
-    <p class="text-[#8b9ab5] text-sm">A full report was saved to your Desktop.</p>
+    <h1 class="text-2xl font-black text-[#eef1ff]">Your PC has been serviced.</h1>
+    <p class="text-[#c3c8e6] text-sm">A full report was saved to your Desktop.</p>
   </div>
 </main>
 
-<footer class="border-t border-white/8 py-5 px-6 text-center text-[#8b9ab5]/50 text-xs">
+<footer class="border-t border-white/8 py-5 px-6 text-center text-[#c3c8e6]/50 text-xs">
   &copy; 2026 5D Service Solutions Global LLC &nbsp;·&nbsp;
-  <a href="./privacy.html" class="hover:text-[#ffb95f] transition-colors">Privacy</a> &nbsp;·&nbsp;
-  <a href="./terms.html" class="hover:text-[#ffb95f] transition-colors">Terms</a>
+  <a href="./privacy.html" class="hover:text-[#a78bfa] transition-colors">Privacy</a> &nbsp;·&nbsp;
+  <a href="./terms.html" class="hover:text-[#a78bfa] transition-colors">Terms</a>
 </footer>
 
 <script>
@@ -276,10 +276,10 @@ async function loadFindings() {
       const risk = a.risk === "medium";
       list.innerHTML += `
         <label class="flex items-center gap-3 bg-black/20 border border-white/8 rounded-lg px-3 py-2.5 cursor-pointer">
-          <input type="checkbox" class="action-check shrink-0" data-id="${a.id}" data-mb="${a.estimated_mb_recovered||0}" checked onchange="updateSelectionSummary()" style="width:18px;height:18px;accent-color:#91db2a;">
-          <span class="material-symbols-outlined text-[#ffb95f] text-lg" style="font-variation-settings:'FILL' 1">${catIcon(a.category)}</span>
-          <span class="flex-1 text-[#d4e4fa] text-sm font-semibold">${a.friendly_name}${a.estimated_mb_recovered>0?` <span class="text-[#8b9ab5] font-normal text-xs">~${a.estimated_mb_recovered} MB</span>`:""}</span>
-          <span class="text-xs px-2 py-0.5 rounded-full ${risk?'bg-amber-900/40 text-[#ffb95f]':'bg-[#91db2a]/10 text-[#91db2a]'} font-mono">${a.risk}</span>
+          <input type="checkbox" class="action-check shrink-0" data-id="${a.id}" data-mb="${a.estimated_mb_recovered||0}" checked onchange="updateSelectionSummary()" style="width:18px;height:18px;accent-color:#5be3a0;">
+          <span class="material-symbols-outlined text-[#a78bfa] text-lg" style="font-variation-settings:'FILL' 1">${catIcon(a.category)}</span>
+          <span class="flex-1 text-[#eef1ff] text-sm font-semibold">${a.friendly_name}${a.estimated_mb_recovered>0?` <span class="text-[#c3c8e6] font-normal text-xs">~${a.estimated_mb_recovered} MB</span>`:""}</span>
+          <span class="text-xs px-2 py-0.5 rounded-full ${risk?'bg-amber-900/40 text-[#a78bfa]':'bg-[#5be3a0]/10 text-[#5be3a0]'} font-mono">${a.risk}</span>
         </label>`;
     });
     updateSelectionSummary();

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Pronto PC" Height="700" Width="540"
         WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize"
-        Background="#051424" FontFamily="Segoe UI">
+        Background="#070a18" FontFamily="Segoe UI">
 
   <Window.Resources>
     <Storyboard x:Key="Spin" RepeatBehavior="Forever">
@@ -30,24 +30,29 @@
   </Window.Triggers>
 
   <Grid>
-    <TextBlock Text="PRONTO PC" Foreground="#d4e4fa" FontWeight="Bold" FontSize="16"
-               VerticalAlignment="Top" HorizontalAlignment="Left" Margin="24,18,0,0"/>
+    <TextBlock VerticalAlignment="Top" HorizontalAlignment="Left" Margin="24,18,0,0" FontWeight="Bold" FontSize="16">
+      <Run Text="PRONTO " Foreground="#eef1ff"/><Run Text="PC" Foreground="#a78bfa"/>
+    </TextBlock>
 
-    <!-- WORKING (scan / repair) — swap the ring for the mascot GIF later -->
-    <StackPanel x:Name="WorkingPanel" VerticalAlignment="Center" HorizontalAlignment="Center" Width="400">
-      <Grid Width="120" Height="120" HorizontalAlignment="Center" Margin="0,0,0,28">
-        <Ellipse Width="120" Height="120" Stroke="#122131" StrokeThickness="10"/>
-        <Ellipse Width="120" Height="120" Stroke="#91db2a" StrokeThickness="10" StrokeDashArray="4 3"
+    <!-- WORKING (scan / repair) — the Auditor technician inside a scanning aura -->
+    <StackPanel x:Name="WorkingPanel" VerticalAlignment="Center" HorizontalAlignment="Center" Width="420">
+      <Grid Width="320" Height="320" HorizontalAlignment="Center" Margin="0,0,0,18">
+        <Ellipse Width="300" Height="300" Stroke="#12142c" StrokeThickness="8"/>
+        <Ellipse Width="300" Height="300" Stroke="#8b6bff" StrokeThickness="8" StrokeDashArray="4 3"
                  RenderTransformOrigin="0.5,0.5">
           <Ellipse.RenderTransform><RotateTransform x:Name="SpinnerRotate"/></Ellipse.RenderTransform>
         </Ellipse>
-        <TextBlock Text="PC" Foreground="#ffb95f" FontWeight="Bold" FontSize="30"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <Image x:Name="WorkingAuditor" Source="pack://application:,,,/Assets/auditor.png" Height="300"
+               HorizontalAlignment="Center" VerticalAlignment="Center"
+               RenderOptions.BitmapScalingMode="HighQuality"/>
+        <Image x:Name="WorkingBuilder" Source="pack://application:,,,/Assets/builder.png" Height="300"
+               HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"
+               RenderOptions.BitmapScalingMode="HighQuality"/>
       </Grid>
-      <TextBlock x:Name="WorkingTitle" Text="Reading your system…" Foreground="#d4e4fa"
+      <TextBlock x:Name="WorkingTitle" Text="Reading your system…" Foreground="#eef1ff"
                  FontSize="22" FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap"/>
       <TextBlock x:Name="WorkingSub" Text="This takes about a minute. Nothing is changed."
-                 Foreground="#8b9ab5" FontSize="13" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                 Foreground="#c3c8e6" FontSize="13" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0"/>
     </StackPanel>
 
     <!-- FINDINGS -->
@@ -56,36 +61,49 @@
         <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
       <StackPanel Grid.Row="0">
-        <TextBlock Text="Here's what we found." Foreground="#d4e4fa" FontSize="22" FontWeight="Bold"/>
-        <TextBlock x:Name="FindingsSummary" Foreground="#8b9ab5" FontSize="13" TextWrapping="Wrap" Margin="0,8,0,14"/>
-        <TextBlock Text="Recommended repairs — uncheck anything you'd rather skip:" Foreground="#8b9ab5" FontSize="12" Margin="0,0,0,8"/>
+        <TextBlock Text="Here's what we found." Foreground="#eef1ff" FontSize="22" FontWeight="Bold"/>
+        <TextBlock x:Name="FindingsSummary" Foreground="#c3c8e6" FontSize="13" TextWrapping="Wrap" Margin="0,8,0,14"/>
+        <TextBlock Text="Recommended repairs — uncheck anything you'd rather skip:" Foreground="#c3c8e6" FontSize="12" Margin="0,0,0,8"/>
       </StackPanel>
+      <!-- Auditor technician presence, behind the list (never blocks the checkboxes) -->
+      <Image Grid.Row="1" Source="pack://application:,,,/Assets/auditor.png" Height="240"
+             HorizontalAlignment="Center" VerticalAlignment="Bottom" Opacity="0.9"
+             IsHitTestVisible="False" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,0,4"/>
       <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
         <StackPanel x:Name="ActionList"/>
       </ScrollViewer>
       <StackPanel Grid.Row="2" Margin="0,14,0,0">
-        <TextBlock x:Name="FindingsTotal" Foreground="#91db2a" FontWeight="Bold" FontSize="13" Margin="0,0,0,10"/>
+        <TextBlock x:Name="FindingsTotal" Foreground="#5be3a0" FontWeight="Bold" FontSize="13" Margin="0,0,0,10"/>
         <Button x:Name="ProceedButton" Content="Perform Repairs" Click="Proceed_Click"
-                Height="52" FontSize="17" FontWeight="Bold" Foreground="#051424" Background="#91db2a" Cursor="Hand"/>
+                Height="52" FontSize="17" FontWeight="Bold" Foreground="#ffffff" Cursor="Hand">
+          <Button.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+              <GradientStop Color="#7c5cff" Offset="0"/>
+              <GradientStop Color="#4f7dff" Offset="1"/>
+            </LinearGradientBrush>
+          </Button.Background>
+        </Button>
         <TextBlock Text="Permission is already granted — repairs run immediately."
-                   Foreground="#8b9ab5" FontSize="11" TextAlignment="Center" Margin="0,8,0,0"/>
+                   Foreground="#c3c8e6" FontSize="11" TextAlignment="Center" Margin="0,8,0,0"/>
       </StackPanel>
     </Grid>
 
     <!-- COMPLETE -->
-    <StackPanel x:Name="CompletePanel" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" Width="420">
-      <TextBlock Text="✓" Foreground="#91db2a" FontSize="64" TextAlignment="Center"/>
-      <TextBlock Text="Your PC has been serviced." Foreground="#d4e4fa" FontSize="24" FontWeight="Bold" TextAlignment="Center" Margin="0,8,0,0"/>
-      <TextBlock x:Name="CompleteText" Foreground="#8b9ab5" FontSize="14" TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"/>
+    <StackPanel x:Name="CompletePanel" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" Width="440">
+      <Image Source="pack://application:,,,/Assets/builder.png" Height="210"
+             HorizontalAlignment="Center" Margin="0,0,0,4"
+             RenderOptions.BitmapScalingMode="HighQuality"/>
+      <TextBlock Text="✓ Your PC has been serviced." Foreground="#eef1ff" FontSize="24" FontWeight="Bold" TextAlignment="Center" Margin="0,4,0,0"/>
+      <TextBlock x:Name="CompleteText" Foreground="#c3c8e6" FontSize="14" TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"/>
       <Button Content="Close" Click="Close_Click" Height="44" Width="150" Margin="0,24,0,0"
-              Foreground="#d4e4fa" Background="#122131" Cursor="Hand" HorizontalAlignment="Center"/>
+              Foreground="#eef1ff" Background="#12142c" Cursor="Hand" HorizontalAlignment="Center"/>
     </StackPanel>
 
     <!-- ERROR -->
     <StackPanel x:Name="ErrorPanel" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" Width="420">
-      <TextBlock Text="⚠" Foreground="#ffb95f" FontSize="52" TextAlignment="Center"/>
-      <TextBlock x:Name="ErrorText" Foreground="#d4e4fa" FontSize="15" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0"/>
-      <TextBlock Text="support@prontopc.online" Foreground="#ffb95f" FontSize="12" TextAlignment="Center" Margin="0,12,0,0"/>
+      <TextBlock Text="⚠" Foreground="#ff7a7a" FontSize="52" TextAlignment="Center"/>
+      <TextBlock x:Name="ErrorText" Foreground="#eef1ff" FontSize="15" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0"/>
+      <TextBlock Text="support@prontopc.online" Foreground="#a78bfa" FontSize="12" TextAlignment="Center" Margin="0,12,0,0"/>
     </StackPanel>
   </Grid>
 </Window>

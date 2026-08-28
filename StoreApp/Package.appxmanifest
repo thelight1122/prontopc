@@ -16,7 +16,7 @@
   <Identity
     Name="5DServiceSolutionsGlobal.ProntoPC"
     Publisher="CN=D4266722-F7B1-45D4-8B71-CC6C75E7273F"
-    Version="1.0.2.0" />
+    Version="1.1.0.0" />
 
   <mp:PhoneIdentity
     PhoneProductId="0cfd9c7c-1ca7-4195-b275-17441af39b2d"

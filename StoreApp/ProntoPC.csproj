@@ -10,13 +10,19 @@
     <SelfContained>false</SelfContained>
     <AssemblyName>ProntoPC</AssemblyName>
     <RootNamespace>ProntoPC</RootNamespace>
-    <ApplicationDisplayVersion>1.0.1</ApplicationDisplayVersion>
+    <ApplicationDisplayVersion>1.1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- WMI access for the native diagnostic collector (Diagnostics.cs) -->
     <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Character AI presence: Auditor (scan/findings), Builder (repair complete) -->
+    <Resource Include="Assets\auditor.png" />
+    <Resource Include="Assets\builder.png" />
   </ItemGroup>
 
 </Project>
