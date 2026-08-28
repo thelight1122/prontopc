@@ -5,3 +5,21 @@ __pycache__/
 # .NET build output
 [Bb]in/
 [Oo]bj/
+
+# Packaging & publish output
+*.msix
+*.cer
+StoreApp/publish/
+StoreApp/publish-slim/
+StoreApp/package-layout/
+
+# Python packaging output
+ProntoAgent/build/
+ProntoAgent/dist/
+
+# Logs & local tooling
+*.log
+server.err
+StoreApp/install-log.txt
+StoreApp/reinstall-log.txt
+.vercel/
