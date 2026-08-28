@@ -1,24 +1,7 @@
-.vercel
-deploy.bat
-server.log
-server.err
-.claude/
-node_modules/
-ProntoAgent/build/
-ProntoAgent/dist/
-GEMINI-API.txt
-*.env
-*.key
+# Python
+__pycache__/
+*.pyc
 
-StoreApp/bin/
-StoreApp/obj/
-StoreApp/publish/
-StoreApp/publish-slim/
-
-StoreApp/package-layout/
-StoreApp/*.msix
-StoreApp/*.cer
-StoreApp/*.pfx
-StoreApp/install-log.txt
-StoreApp/*-log.txt
-StoreApp/diag-dump.json
+# .NET build output
+[Bb]in/
+[Oo]bj/

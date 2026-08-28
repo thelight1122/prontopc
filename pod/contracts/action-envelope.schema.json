@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "prontopc-action-envelope.schema.json",
+  "title": "ProntoPC Action Envelope",
+  "description": "The strict bounded operating contract for the repair-action catalogue. Owned by the prontopc-repair-engine Orb (it declares what its actions are and when they are admissible). Held at runtime by the Orchestrator, which KEYS each plan Umbilical to it: at the scan->plan seam the Orchestrator compiles the per-machine admissible action set from these preconditions x the live diagnostics, hands that narrowed set to whichever plan author is attached (cloud Orb or local-model Satellite), and validates the returned plan against this envelope before advancing to the consent phase. Every field a plan asserts about an action (risk, requires_restart, estimated_mb_recovered) is fixed HERE, not by the model. This is the structural guarantee that a small local model cannot emit an unsafe, inapplicable, or mislabelled action.",
+  "type": "object",
+  "required": ["schema_version", "envelope_id", "envelope_version", "owner_orb", "predicate_ops", "plan_bounds", "actions"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string" },
+    "envelope_id": { "type": "string" },
+    "envelope_version": { "type": "string" },
+    "owner_orb": { "type": "string", "description": "The Orb that owns the referents (the repair-engine)." },
+    "diagnostics_ref": { "type": "string", "description": "Which Orb output the predicate fields address (the diagnostics)." },
+    "predicate_ops": {
+      "type": "array",
+      "description": "The closed set of operators a precondition may use. Deliberately NOT Turing-complete: enough to express the 26 guards, no more.",
+      "items": { "enum": ["always", "present", "nonempty", "eq", "gt", "gte", "and", "or"] }
+    },
+    "plan_bounds": {
+      "type": "object",
+      "description": "Whole-plan bounds the Orchestrator enforces after authorship, before consent.",
+      "required": ["max_actions"],
+      "additionalProperties": false,
+      "properties": {
+        "max_actions": { "type": "integer", "description": "A plan may contain at most this many actions (kills runaway 'do everything' plans)." },
+        "estimated_mb_recovered_cap": { "type": "string", "description": "Rule: an action's estimated_mb_recovered is clamped to [0, measured cap from its mb source]; the plan total may never exceed measured reclaimable space." },
+        "subsumption": {
+          "type": "array",
+          "description": "If the umbrella action is present, the listed member actions are dropped as redundant.",
+          "items": {
+            "type": "object",
+            "required": ["umbrella", "members"],
+            "additionalProperties": false,
+            "properties": {
+              "umbrella": { "type": "string" },
+              "members": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+      "type": "object",
+      "description": "One entry per catalogue action id. The keys MUST be exactly the prontopc-repair-engine catalogue (26).",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["risk", "requires_restart", "precondition", "mb"],
+        "additionalProperties": false,
+        "properties": {
+          "risk": { "enum": ["low", "medium"], "description": "Fixed by contract. The model cannot set or downgrade it." },
+          "requires_restart": { "type": "boolean", "description": "Grounded in Repair.RestartActions." },
+          "outcome": { "enum": ["freed", "done", "noted"], "description": "How the engine reports this action (freed=reclaims measured space; done=ran, no measured space; noted=report-only)." },
+          "precondition": {
+            "type": "object",
+            "description": "Predicate over the diagnostics. TRUE => the action is admissible on THIS machine and may enter the model's grammar; FALSE => the action is not selectable and is dropped if emitted.",
+            "required": ["op"],
+            "properties": {
+              "op": { "enum": ["always", "present", "nonempty", "eq", "gt", "gte", "and", "or"] },
+              "field": { "type": "string", "description": "Dotted path into diagnostics, e.g. update_leftovers.windows_old_present." },
+              "value": {},
+              "of": { "type": "array", "description": "Sub-predicates for and/or.", "items": { "type": "object" } }
+            }
+          },
+          "mb": {
+            "type": "object",
+            "description": "How estimated_mb_recovered is bounded.",
+            "required": ["source"],
+            "additionalProperties": false,
+            "properties": {
+              "source": { "enum": ["field", "zero", "none"], "description": "field=clamp to the named diagnostics measure; zero=not pre-measurable, force 0; none=no space dimension." },
+              "field": { "type": "string" },
+              "unit": { "enum": ["mb", "gb"] },
+              "fallback": { "type": "integer" }
+            }
+          },
+          "required_params": {
+            "type": "array",
+            "description": "Params the engine needs (grounded in the handler). Missing => drop the action.",
+            "items": { "type": "string" }
+          },
+          "param_domains": {
+            "type": "object",
+            "description": "Allowed values / source for required params.",
+            "additionalProperties": { "type": "object" }
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}

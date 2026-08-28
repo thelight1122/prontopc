@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "umbilical_id": "prontopc-repair-engine-umbilical",
+  "pod_id": "prontopc-pod",
+  "orb_id": "prontopc-repair-engine",
+  "attachment_point": "orchestrator",
+  "runtime": { "language": "csharp", "form": "library" },
+  "invocation": {
+    "entrypoint": "ProntoPC.Repair.Execute",
+    "orb_version": "1.0.0"
+  },
+  "input_contract": {
+    "description": "One approved action at a time, as chosen by the customer at the consent phase.",
+    "action": {
+      "id": "string (one of the catalogue IDs)",
+      "friendly_name": "string",
+      "category": "string",
+      "risk": "low | medium",
+      "estimated_mb_recovered": "integer",
+      "target_name": "string (optional, e.g. startup item)",
+      "target_hive": "HKCU | HKLM (optional)"
+    }
+  },
+  "output_contract": {
+    "description": "A truthful result row. mb_freed is measured, never estimated.",
+    "result": {
+      "action": "string (id)",
+      "name": "string",
+      "status": "done | noted | skipped | error",
+      "mb_freed": "integer",
+      "detail": "string"
+    }
+  },
+  "observation_contract": {
+    "description": "The referent channel for relational semiotics. The Custodian stage (prontopc-custodian-stage) SUBSCRIBES to these events and may only change scene / fire a completion stroke in response to one - never on a timer. This is what makes U1 and U4 structurally enforceable rather than a matter of discipline.",
+    "events": [
+      "action.started { action_id, friendly_name }",
+      "action.completed { action_id, status, mb_freed }"
+    ]
+  },
+  "evidence_contract": {
+    "description": "Result rows are POSTed to the cloudrun portal (/api/submit-repair-results) and saved to the on-desktop report; both are the after-the-fact evidence of what actually ran."
+  },
+  "working_parameters": {
+    "status": "provisional",
+    "outside_parameters_behavior": "Unknown action id -> status:noted, no system change. Any exception -> status:error with the message; never a silent success."
+  }
+}

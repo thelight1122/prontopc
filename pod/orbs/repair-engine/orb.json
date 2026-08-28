@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "orb_id": "prontopc-repair-engine",
+  "orb_version": "1.0.0",
+  "ability_name": "Native Windows repair executor",
+  "purpose": "Execute client-approved repair actions using native .NET APIs and ordinary Windows system tools (sfc, DISM, chkdsk, netsh, cleanmgr, wsreset, powercfg) plus file/registry work. Never PowerShell; nothing downloaded or executed from the network. This is the ONE canonical repair engine - it replaces the three drifting implementations the audit found (I1).",
+  "runtime": {
+    "language": "csharp",
+    "form": "library",
+    "entrypoint": "ProntoPC.Repair.Execute"
+  },
+  "capabilities": [
+    { "name": "cleanup", "function": "Clear temp files, browser/Windows caches, recycle bin, update leftovers, Delivery Optimization, Windows.old (presence-gated)." },
+    { "name": "system_repair", "function": "sfc /scannow, DISM RestoreHealth/StartComponentCleanup, chkdsk /scan, Windows Update component reset." },
+    { "name": "network", "function": "Flush DNS; reset winsock/IP stack." },
+    { "name": "performance", "function": "Disable startup items (registry), power plan, visual effects, Windows Store cache." },
+    { "name": "truthful_result_rows", "function": "Each action returns { action, name, status: done|noted|skipped|error, mb_freed, detail } with real byte counts - the referents the Custodian stage's signs are bound to." }
+  ],
+  "demonstration": {
+    "input_fixture": "fixtures/repair-engine.input.json",
+    "expected_outputs": [
+      "result row per approved action with a real status",
+      "mb_freed reflects actual bytes deleted, not an estimate",
+      "irreversible actions (remove_windows_old) are presence-gated and never run when absent"
+    ],
+    "observable_events": [
+      "action.started(action_id, friendly_name)",
+      "action.completed(action_id, status, mb_freed)"
+    ]
+  },
+  "umbilicals": ["umbilical.json"],
+  "evidence": {
+    "created_utc": "2026-08-27T00:00:00Z",
+    "source": "Placed from StoreApp/Repair.cs (audit I4 PASS: reversible/safe, truthful rows; catalogue >= 18 PASS). trust_state=provisional: one Auditor pass. Promotion to verified requires the full 3/5 independent-reviewer marker promotion, builder excluded.",
+    "trust_state": "provisional"
+  }
+}

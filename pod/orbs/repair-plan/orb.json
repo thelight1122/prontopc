@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "orb_id": "prontopc-repair-plan",
+  "orb_version": "0.1.0",
+  "ability_name": "AI repair-plan author",
+  "purpose": "Turn real diagnostics into a genuine model-authored repair plan (summary + actions drawn only from the repair-engine catalogue, referencing the actual diagnostics) OR an explicit unavailable status. Never a heuristic plan presented as the AI plan. Structurally kills Manifest I2 and C3.",
+  "runtime": {
+    "language": "javascript",
+    "form": "http_service",
+    "entrypoint": "pronto-server-cloudrun.handleRepairPlan"
+  },
+  "capabilities": [
+    { "name": "author_plan", "function": "Build a prompt from diagnostics; the model selects only from the repair-engine catalogue; return summary + actions + provenance." },
+    { "name": "provider_order", "function": "local-model-satellite (if attached) -> Azure OpenAI -> Gemini, via the llm-portal." },
+    { "name": "honest_unavailable", "function": "If every provider fails, return status:unavailable with a reason. There is no code path that emits a heuristic plan under status:ok." },
+    { "name": "catalogue_integrity", "function": "Every emitted action.id is a member of the prontopc-repair-engine catalogue, so plan and engine cannot drift." }
+  ],
+  "demonstration": {
+    "input_fixture": "fixtures/repair-plan.input.json",
+    "expected_outputs": [
+      "status:ok plan that references the supplied diagnostics (disk/memory/temp/etc.)",
+      "provenance.provider + provenance.model present on every ok plan",
+      "with all providers forced down: status:unavailable, never a heuristic plan"
+    ],
+    "observable_events": [
+      "plan.requested { session }",
+      "plan.provider_selected { provider, model }",
+      "plan.authored { action_count } | plan.unavailable { reason }"
+    ]
+  },
+  "umbilicals": ["umbilical.json"],
+  "evidence": {
+    "created_utc": "2026-08-27T00:00:00Z",
+    "source": "IMPLEMENTED 2026-08-27 in pronto-server-cloudrun.mjs (authorRepairPlan, REPAIR_ACTION_CATALOGUE, status/provenance handlers) and StoreApp/MainWindow.xaml.cs (status-aware branch + labelled ShowOfflinePlan). Backend node --check OK; WPF build 0 errors. Auditor verified 3/4 static DoD PASS (I2, catalogue-subset, provenance). trust_state stays draft: promotion to provisional is gated on C3, which is LIVE-only (run certification_preflight.py against a live deploy).",
+    "trust_state": "draft"
+  }
+}

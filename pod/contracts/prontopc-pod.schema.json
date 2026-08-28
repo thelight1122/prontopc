@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prontopc.local/schemas/prontopc-pod.schema.json",
+  "title": "ProntoPC Pod Contract",
+  "description": "ProntoPC's own Pod DESIGN. The POD Architecture is general; a DataQuad-for-a-CyberPeer requires PEER/PCT/NCT/SPINE tensors, steward/advocate roles and a temporal daemon - a PC-repair product does not. ProntoPC's specific requirements are declared here: a thin orchestration core that owns nothing but phase sequencing, plus Orbs (inside) and Portals (outward), each attached by an Umbilical. Attach, don't affect: adding or removing a capability never edits the Pod core.",
+  "type": "object",
+  "required": ["schema_version", "pod_id", "product", "runtime", "orchestrator", "orbs", "portals", "evidence"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "pod_id": { "type": "string", "minLength": 1 },
+    "product": { "type": "string", "minLength": 1 },
+    "runtime": {
+      "type": "object",
+      "required": ["language", "implementation"],
+      "properties": {
+        "language": { "type": "string" },
+        "implementation": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "orchestrator": {
+      "type": "object",
+      "description": "ProntoPC's equivalent of the Pod processor: the thin shell that sequences the phases (scan -> plan -> consent -> repair -> verify -> complete) by invoking attached Orbs across their Umbilicals. It owns orchestration state only - never diagnostic or repair logic.",
+      "required": ["purpose", "phases", "status"],
+      "properties": {
+        "purpose": { "type": "string" },
+        "phases": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "orbs": { "type": "array", "items": { "$ref": "#/$defs/attachment" } },
+    "portals": {
+      "type": "array",
+      "description": "Orbs whose defining function crosses OUTWARD to a service the Pod does not own (Stripe, LLM providers, Cloud Run, the asset pipeline). Same attachment shape; outward-facing.",
+      "items": { "$ref": "#/$defs/attachment" }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["created_utc", "source", "trust_state"],
+      "properties": {
+        "created_utc": { "type": "string" },
+        "source": { "type": "string" },
+        "trust_state": { "type": "string", "enum": ["draft", "provisional", "verified"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "attachment": {
+      "type": "object",
+      "required": ["orb_id", "required_for_full_function", "umbilical", "trust_state"],
+      "properties": {
+        "orb_id": { "type": "string" },
+        "required_for_full_function": { "type": "boolean" },
+        "umbilical": { "type": "string" },
+        "orb_version_pin": { "type": "string" },
+        "trust_state": { "type": "string", "enum": ["draft", "provisional", "verified"] },
+        "manifest_specs": {
+          "type": "array",
+          "description": "The Manifest-of-Completion spec IDs whose PASS (with Auditor evidence) promotes this attachment to verified. This is the trust gate: an Orb is verified only when its specs pass.",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

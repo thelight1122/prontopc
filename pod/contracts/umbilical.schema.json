@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aegis.local/schemas/umbilical.schema.json",
+  "title": "AEGIS Umbilical Contract",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "umbilical_id",
+    "pod_id",
+    "orb_id",
+    "attachment_point",
+    "runtime",
+    "invocation",
+    "input_contract",
+    "output_contract",
+    "observation_contract",
+    "evidence_contract",
+    "working_parameters"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "umbilical_id": { "type": "string", "minLength": 1 },
+    "pod_id": { "type": "string", "minLength": 1 },
+    "orb_id": { "type": "string", "minLength": 1 },
+    "attachment_point": { "type": "string" },
+    "runtime": {
+      "type": "object",
+      "required": ["language", "form"],
+      "properties": {
+        "language": { "type": "string" },
+        "form": {
+          "type": "string",
+          "enum": ["local_process", "container", "http_service", "library", "manual_fixture"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "invocation": {
+      "type": "object",
+      "description": "Free-form by design (additionalProperties intentionally left open) — the three properties below document a convention, not a restriction. entrypoint already existed in practice before this schema described it; orb_version/orb_runtime_hash are new, optional pinning fields.",
+      "properties": {
+        "entrypoint": { "type": "string", "description": "Dotted callable path the Pod resolves dynamically (e.g. via importlib), e.g. \"core.rls.engine.RecursiveLearningEngine.execute_session\"." },
+        "orb_version": {
+          "type": "string",
+          "description": "The exact Orb release this Umbilical expects, e.g. \"1.0.0\". Optional pin — absent means no version gate is enforced at attachment time.",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "orb_runtime_hash": {
+          "type": "string",
+          "description": "SHA-256 (uppercase hex) of the Orb's exact source bytes this Umbilical expects, using the same hash convention as the Orb's own per-invocation evidence ledger. Optional pre-invocation gate distinct from that evidence, which is recorded after the fact."
+        }
+      }
+    },
+    "input_contract": { "type": "object" },
+    "output_contract": { "type": "object" },
+    "observation_contract": { "type": "object" },
+    "evidence_contract": { "type": "object" },
+    "working_parameters": {
+      "type": "object",
+      "required": ["status", "outside_parameters_behavior"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["draft", "provisional", "verified"]
+        },
+        "outside_parameters_behavior": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

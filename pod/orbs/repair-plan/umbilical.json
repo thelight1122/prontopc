@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0.0",
+  "umbilical_id": "prontopc-repair-plan-umbilical",
+  "pod_id": "prontopc-pod",
+  "orb_id": "prontopc-repair-plan",
+  "attachment_point": "orchestrator",
+  "runtime": { "language": "javascript", "form": "http_service" },
+  "invocation": {
+    "entrypoint": "pronto-server-cloudrun.handleRepairPlan",
+    "orb_version": "0.1.0"
+  },
+  "input_contract": {
+    "description": "Real diagnostics for one session.",
+    "session": "string (token)",
+    "diagnostics": "object (the diagnostics Orb output: os, disk[], memory, temp_files, drivers, security, startup, ...)"
+  },
+  "output_contract": {
+    "description": "EXACTLY two shapes. There is deliberately NO shape for a heuristic plan under status:ok — that absence is the structural kill for Manifest I2. The orchestrator MUST branch on status.",
+    "oneOf": [
+      {
+        "status": "ok",
+        "plan": {
+          "summary": "string (model-authored, references the diagnostics)",
+          "security_assessment": "string (optional)",
+          "hardware_notes": "string (optional)",
+          "actions": [
+            { "id": "string (MUST be in the repair-engine catalogue)", "category": "string", "friendly_name": "string", "risk": "low | medium", "estimated_mb_recovered": "integer" }
+          ],
+          "deferred_actions": "array (optional)"
+        },
+        "provenance": { "provider": "local-model | azure-openai | gemini", "model": "string" }
+      },
+      {
+        "status": "unavailable",
+        "reason": "string (why no model could author a plan)"
+      }
+    ]
+  },
+  "observation_contract": {
+    "description": "Events the orchestrator and (later) the Custodian stage may observe. The stage may show an 'authoring' worker only while plan.requested is open, and must reflect plan.unavailable honestly — never pantomime a plan that was not authored.",
+    "events": [
+      "plan.requested { session }",
+      "plan.provider_selected { provider, model }",
+      "plan.authored { action_count }",
+      "plan.unavailable { reason }"
+    ]
+  },
+  "evidence_contract": {
+    "description": "Each ok plan carries provenance (provider+model) as its evidence of authorship. certification_preflight.check_ai_repair_plan is the executable check that the plan references diagnostics and is not the canned fallback string."
+  },
+  "working_parameters": {
+    "status": "draft",
+    "envelope_ref": {
+      "id": "prontopc-action-envelope",
+      "version": "0.1.0",
+      "path": "pod/orbs/repair-engine/action-envelope.json",
+      "keyed_by": "orchestrator",
+      "description": "This Umbilical is KEYED to the action envelope by the Orchestrator. The Orchestrator holds the envelope, hash-checks this ref at attach (a mismatch fails the attach), compiles the per-machine admissible action set from envelope preconditions x live diagnostics, hands only that narrowed set to the attached author (cloud Orb OR local-model Satellite), and validates the returned plan against the envelope before advancing to consent. The rules below are the envelope's consequences, not an independent copy."
+    },
+    "outside_parameters_behavior": "Enforced by the Orchestrator via the keyed envelope, identically for the cloud author and the local-model Satellite: (1) Missing/invalid diagnostics -> status:unavailable ('insufficient diagnostics'). (2) All providers fail -> status:unavailable. (3) An action id outside the repair-engine catalogue, or whose envelope precondition is FALSE on this machine, or missing a required_param -> dropped and logged, never passed to the engine. (4) risk and requires_restart are taken from the envelope, never from model output. (5) estimated_mb_recovered is clamped to the envelope mb bound; the plan total may not exceed measured reclaimable space. (6) At most plan_bounds.max_actions actions; subsumed members dropped when their umbrella is present."
+  }
+}

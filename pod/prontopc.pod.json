@@ -1,0 +1,103 @@
+{
+  "schema_version": "1.0.0",
+  "pod_id": "prontopc-pod",
+  "product": "ProntoPC",
+  "runtime": {
+    "language": "csharp",
+    "implementation": "WPF self-contained Store client (canonical) + Cloud Run broker portal"
+  },
+  "orchestrator": {
+    "purpose": "Sequence the repair experience by invoking attached Orbs across their Umbilicals. Owns phase/session state only; holds no diagnostic or repair logic of its own.",
+    "phases": ["greet", "scan", "plan", "consent", "repair", "verify", "complete"],
+    "holds_contracts": [
+      {
+        "contract": "prontopc-action-envelope",
+        "path": "orbs/repair-engine/action-envelope.json",
+        "role": "The Orchestrator HOLDS the action envelope (owned/authored by the repair-engine Orb) and KEYS the repair-plan Umbilical to it. Holding a declarative admissibility contract and enforcing the keying is orchestration, NOT repair logic: the Orchestrator never decides what to repair, only that any plan crossing the Umbilical satisfies the envelope. At scan->plan it compiles the per-machine admissible action set (preconditions x diagnostics) and hands it to the attached author; at plan->consent the keyed envelope is the guard on the transition; at consent it renders risk / requires_restart / estimated_mb from the envelope, not from model output — so every sign the user approves has a real referent."
+      }
+    ],
+    "status": "to_build"
+  },
+  "orbs": [
+    {
+      "orb_id": "prontopc-repair-engine",
+      "required_for_full_function": true,
+      "umbilical": "orbs/repair-engine/umbilical.json",
+      "orb_version_pin": "1.0.0",
+      "trust_state": "provisional",
+      "manifest_specs": ["I1", "I4", "C4"]
+    },
+    {
+      "orb_id": "prontopc-diagnostics",
+      "required_for_full_function": true,
+      "umbilical": "orbs/diagnostics/umbilical.json",
+      "orb_version_pin": "1.0.0",
+      "trust_state": "provisional",
+      "manifest_specs": ["C4"]
+    },
+    {
+      "orb_id": "prontopc-repair-plan",
+      "required_for_full_function": true,
+      "umbilical": "orbs/repair-plan/umbilical.json",
+      "trust_state": "draft",
+      "manifest_specs": ["I2", "C3"]
+    },
+    {
+      "orb_id": "prontopc-custodian-stage",
+      "required_for_full_function": false,
+      "umbilical": "orbs/custodian-stage/umbilical.json",
+      "trust_state": "draft",
+      "manifest_specs": ["U1", "U2", "U3", "U4", "U5", "U6"]
+    },
+    {
+      "orb_id": "prontopc-session",
+      "required_for_full_function": true,
+      "umbilical": "orbs/session/umbilical.json",
+      "orb_version_pin": "1.0.0",
+      "trust_state": "provisional",
+      "manifest_specs": ["C4"]
+    },
+    {
+      "orb_id": "prontopc-loyalty",
+      "required_for_full_function": false,
+      "umbilical": "orbs/loyalty/umbilical.json",
+      "trust_state": "provisional",
+      "manifest_specs": []
+    }
+  ],
+  "portals": [
+    {
+      "orb_id": "prontopc-stripe-portal",
+      "required_for_full_function": true,
+      "umbilical": "portals/stripe.umbilical.json",
+      "trust_state": "provisional",
+      "manifest_specs": ["C1", "I5"]
+    },
+    {
+      "orb_id": "prontopc-llm-portal",
+      "required_for_full_function": true,
+      "umbilical": "portals/llm.umbilical.json",
+      "trust_state": "draft",
+      "manifest_specs": ["C3", "I3"]
+    },
+    {
+      "orb_id": "prontopc-cloudrun-portal",
+      "required_for_full_function": true,
+      "umbilical": "portals/cloudrun.umbilical.json",
+      "trust_state": "provisional",
+      "manifest_specs": ["C2"]
+    },
+    {
+      "orb_id": "prontopc-mint-portal",
+      "required_for_full_function": false,
+      "umbilical": "portals/mint.umbilical.json",
+      "trust_state": "draft",
+      "manifest_specs": []
+    }
+  ],
+  "evidence": {
+    "created_utc": "2026-08-27T00:00:00Z",
+    "source": "Opened clean from the Manifest-of-Completion audit (5 PASS / 3 FAIL / 4 PARTIAL / 4 UNVERIFIABLE). Places audit-passing elements as provisional Orbs; declares FAIL/redesign items as draft Orbs to be built clean. Note: a local-model Satellite (embedded small multimodal model) will serve prontopc-repair-plan; declared in README, not yet an attachment.",
+    "trust_state": "draft"
+  }
+}

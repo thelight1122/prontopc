@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prontopc.local/schemas/totem.schema.json",
+  "title": "ProntoPC Totem Contract",
+  "description": "A continuity waypoint left by one session for the next cold-start instance: what was done to the code AT THIS POINT, hash-bound to the actual files so a future instance re-hashes and detects drift instead of inheriting a stale picture. A Totem is a true sign only while its file hashes still match the tree; a mismatch means the code moved and the Totem must be re-verified, not trusted. Append-only: never edit a past Totem, add a new one.",
+  "type": "object",
+  "required": ["schema_version", "totem_id", "utc", "summary", "files", "advances", "next_gated_step", "trust_state"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "totem_id": { "type": "string", "pattern": "^TOTEM-[0-9]{4}$" },
+    "utc": { "type": "string" },
+    "session_ref": { "type": "string", "description": "The session/transcript this Totem was written from, for tracing back to the reasoning." },
+    "summary": { "type": "string", "description": "What was done code-wise at this point, in one or two sentences." },
+    "actions": { "type": "array", "items": { "type": "string" }, "description": "The concrete things done, most load-bearing first." },
+    "files": {
+      "type": "array",
+      "description": "The referent binding. Each file this Totem claims to have created/modified, with the SHA-256 of its bytes at write time.",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256", "state"],
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[A-F0-9]{64}$" },
+          "state": { "type": "string", "enum": ["created", "modified"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "advances": {
+      "type": "object",
+      "required": ["orbs", "manifest_specs", "trust_transitions"],
+      "properties": {
+        "orbs": { "type": "array", "items": { "type": "string" } },
+        "manifest_specs": { "type": "array", "items": { "type": "string" } },
+        "trust_transitions": { "type": "array", "items": { "type": "string" }, "description": "e.g. 'prontopc-repair-plan: draft -> provisional'." }
+      },
+      "additionalProperties": false
+    },
+    "verify_on_resume": { "type": "string", "description": "The exact command a future instance runs to confirm this Totem still holds against the live tree." },
+    "next_gated_step": { "type": "string", "description": "The single next action, so a cold-start instance knows where to pick up without guessing." },
+    "trust_state": { "type": "string", "enum": ["draft", "provisional", "verified"] }
+  },
+  "additionalProperties": false
+}

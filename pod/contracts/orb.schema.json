@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aegis.local/schemas/orb.schema.json",
+  "title": "AEGIS Orb Contract",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "orb_id",
+    "ability_name",
+    "purpose",
+    "runtime",
+    "capabilities",
+    "demonstration",
+    "umbilicals",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "orb_id": { "type": "string", "minLength": 1 },
+    "orb_version": {
+      "type": "string",
+      "description": "The Orb's own semver release (e.g. \"1.0.0\"), distinct from schema_version (which describes the contract-document format version, not the Orb's build). Optional: absent means the Orb predates real versioning and is still identified by orb_id alone.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "ability_name": { "type": "string", "minLength": 1 },
+    "purpose": { "type": "string" },
+    "runtime": {
+      "type": "object",
+      "required": ["language", "form", "entrypoint"],
+      "properties": {
+        "language": { "type": "string" },
+        "form": {
+          "type": "string",
+          "enum": ["local_process", "container", "http_service", "library", "manual_fixture"]
+        },
+        "entrypoint": { "type": "string" },
+        "package": {
+          "type": "object",
+          "description": "How to actually install this Orb as an independent unit, distinct from entrypoint (the dotted callable path once installed). Optional: absent means the Orb has no independent install mechanism yet (still source-merged into a Pod's own tree).",
+          "required": ["name", "version_spec", "source"],
+          "properties": {
+            "name": { "type": "string", "description": "The installable package name, e.g. \"orb-rls-persistent-relations-core\"." },
+            "version_spec": { "type": "string", "description": "A PEP 440-style version specifier the Pod pins against, e.g. \"==1.0.0\" or \">=1.0,<2.0\"." },
+            "source": { "type": "string", "description": "Install source: \"git+https://...@<tag-or-sha>\" or a local wheel path." }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "function"],
+        "properties": {
+          "name": { "type": "string" },
+          "function": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "demonstration": {
+      "type": "object",
+      "required": ["input_fixture", "expected_outputs", "observable_events"],
+      "properties": {
+        "input_fixture": { "type": "string" },
+        "expected_outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "observable_events": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "umbilicals": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["created_utc", "source", "trust_state"],
+      "properties": {
+        "created_utc": { "type": "string" },
+        "source": { "type": "string" },
+        "trust_state": {
+          "type": "string",
+          "enum": ["draft", "provisional", "verified"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
