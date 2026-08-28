@@ -12,15 +12,13 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0005** (2026-08-28) — **Built Orchestrator Stage 1: the client now holds the Action
-Envelope and keys the plan Umbilical to it.** `StoreApp/Envelope.cs` (loader + predicate evaluator +
-`AdmissibleSet` + `Validate`) and `StoreApp/Orchestrator.cs` (provider-order authors, version-key
-check, validate-before-consent) added; `MainWindow` delegates the plan phase to the Orchestrator.
-The cloud plan is now envelope-validated before consent — `risk`/`requires_restart` stamped from the
-envelope, `estimated_mb` clamped, out-of-catalogue/false-precondition/subsumed actions dropped.
-**Proven at runtime** (scratchpad console over the real `Envelope.cs`). WPF build 0/0. All 5 Totems
-HOLD. (TOTEM-0004 wrote the envelope + Satellite spec; -0003 the repair-plan Orb; -0002 its spec;
--0001 opened the Pod.)
+**TOTEM-0006** (2026-08-28) — **Stage 2a: built the Gemma Satellite author, wired first in provider
+order.** `StoreApp/LocalPlanner.cs` — `GemmaLocalPlanner:IPlanAuthor` behind an `ILocalInference`
+seam (prompt + admissible-set JSON-schema grammar + prose-tolerant parse + `provenance:local-model`);
+`AbsentInference` default so the app still falls through to the cloud unchanged. Runtime-proven with a
+fake inference. **Stage 2b (real ONNX inference) is one class, gated on the Gemma weights + license.**
+WPF build 0/0. All 6 Totems HOLD. (TOTEM-0005 built Orchestrator Stage 1; -0004 the envelope + Satellite
+spec; -0003 the repair-plan Orb; -0002 its spec; -0001 opened the Pod.)
 
 ## What is true now
 - Clean Pod opened at `pod/`, validates against contracts. Pod trust_state: **draft**.
@@ -35,10 +33,14 @@ HOLD. (TOTEM-0004 wrote the envelope + Satellite spec; -0003 the repair-plan Orb
   `StoreApp/Envelope.cs` at runtime (embedded via csproj Link — single source of truth). Runtime-
   proven.
 - **Orchestrator: Stage 1 BUILT (client-side).** Holds the envelope, version-keys the Umbilical,
-  authors via provider order (Stage 1 = cloud broker), validates before consent. `MainWindow`
-  delegates the plan phase. **Stage 2 pending:** the Gemma local-model Satellite as first author.
+  authors via provider order, validates before consent. `MainWindow` delegates the plan phase.
   Repair/verify phases not yet migrated into it.
-- **Draft — not built yet:** custodian-stage, llm-portal, mint-portal, **Gemma Satellite (Stage 2)**.
+- **Gemma Satellite: Stage 2a BUILT.** `StoreApp/LocalPlanner.cs` — `GemmaLocalPlanner:IPlanAuthor`
+  wired FIRST in provider order behind an `ILocalInference` seam (prompt + admissible-set grammar +
+  prose-tolerant parse + `provenance:local-model`). `AbsentInference` default → app falls through to
+  cloud unchanged. Runtime-proven with a fake inference. **Stage 2b GATED on Tracey:** Gemma weights
+  + license, then `Microsoft.ML.OnnxRuntimeGenAI` + `OnnxGenAiInference` (recipe in the Satellite SPEC).
+- **Draft — not built yet:** custodian-stage, llm-portal, mint-portal, **Gemma Stage 2b (on-device inference)**.
 - Manifest of Completion: `docs/MANIFEST_OF_COMPLETION.md`. Opening audit: 5 PASS / 3 FAIL
   (I1, I2, U6) / 4 PARTIAL / 4 UNVERIFIABLE.
 - **I2 now fixed** in `StoreApp/MainWindow.xaml.cs` (no silent non-AI substitution; offline plan is
@@ -54,12 +56,12 @@ HOLD. (TOTEM-0004 wrote the envelope + Satellite spec; -0003 the repair-plan Orb
   (subsumed by `clear_all_browser_caches`).
 
 ## Next gated step
-**Stage 2 — attach the Gemma 3 1B local-model Satellite** as the first `IPlanAuthor` (ONNX Runtime
-GenAI + DirectML; model bundled in the MSIX; grammar constrained to the Orchestrator's admissible
-set). This makes the AI plan present offline and is the durable C3 billing-cliff kill — no live
-cloud deploy required. Then: grow the runtime proof into a ~10-fixture eval suite; migrate the
-repair/verify phases into the Orchestrator. (Alternative cloud-C3 path still open: deploy to Cloud
-Run + `certification_preflight.py` — needs Tracey. After: `prontopc-custodian-stage`.)
+**Stage 2b (needs Tracey):** accept the Gemma license + download `gemma-3-1b-it` int4 ONNX into
+`StoreApp/Assets/models/`, add `Microsoft.ML.OnnxRuntimeGenAI`, implement
+`OnnxGenAiInference:ILocalInference`, swap `AbsentInference`. Recipe in the Satellite SPEC §6b. Then:
+offline-VM DoD (`provenance:"local-model"`, no network), grow the runtime proof into a ~10-fixture
+eval suite, and migrate the repair/verify phases into the Orchestrator. (Alternative cloud-C3 path
+still open: deploy to Cloud Run + `certification_preflight.py`. After: `prontopc-custodian-stage`.)
 
 ## How to work here
 1. `python pod/totems/verify_totems.py` — confirm the picture holds.

@@ -25,9 +25,18 @@ public partial class MainWindow : Window
         InitializeComponent();
         _token = token;
         // The Orchestrator holds the Action Envelope and keys the plan Umbilical to it.
-        // Provider order (Stage 1): cloud broker. If the envelope fails to load/key,
-        // degrade to a labelled offline plan rather than blocking the app.
-        try { _orch = new Orchestrator(new IPlanAuthor[] { new CloudPlanAuthor(CloudRun, () => _token) }); }
+        // Provider order: local-model Satellite (on-device, offline) -> cloud broker.
+        // The Satellite runs only when a model is bundled (Stage 2b); until then
+        // AbsentInference makes it decline and the cloud broker authors, unchanged.
+        // If the envelope fails to load/key, degrade to a labelled offline plan.
+        try
+        {
+            _orch = new Orchestrator(new IPlanAuthor[]
+            {
+                new GemmaLocalPlanner(new AbsentInference()),
+                new CloudPlanAuthor(CloudRun, () => _token),
+            });
+        }
         catch { _orch = null; }
         Loaded += async (_, __) => await Start();
     }

@@ -158,6 +158,32 @@ offline plan.** The Orb's own `orb.json` `provider_order` already names this seq
   bundling; it is not OSI-open and carries pass-through obligations — legal must confirm before
   ship.)
 
+## 6b. Build status (Stage 2a done; Stage 2b gated on the weights)
+
+**Stage 2a — DONE (`StoreApp/LocalPlanner.cs`, wired first in provider order).** `GemmaLocalPlanner :
+IPlanAuthor` builds the prompt (native port of the backend diagnostic wording), builds a JSON-schema
+grammar restricting `action.id` to the Orchestrator's admissible set, calls inference behind the
+`ILocalInference` seam, extracts prose-wrapped JSON, and returns `provenance:"local-model"`.
+`AbsentInference` (the default) declines, so the app currently falls through to the cloud broker
+unchanged. Proven at runtime with a fake inference: prose-wrapped JSON parsed → `local-model` →
+envelope-validated (risk stamped, mb clamped, false-precondition dropped).
+
+**Stage 2b — GATED on Tracey (weights + license), then one class:**
+1. Accept the Gemma license on the model page (gated repo), then download the 1B int4 ONNX
+   (DirectML) build with the current `hf` CLI (`huggingface-cli` was renamed to `hf` on 2025-07-25):
+   `pip install -U huggingface_hub` → `hf auth login` →
+   `hf download onnxruntime/Gemma-3-ONNX --include "gemma-3-1b-it/gpu/gpu-fp16-io-int4-rtn-block-32/*" --local-dir StoreApp/Assets/models/`
+   (or the `cpu/*` build). Bundle under `StoreApp/Assets/models/gemma-3-1b-it/` as packaged `Content`.
+2. csproj: `<PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI" Version="0.15.*" />`
+   (or the `.DirectML` variant).
+3. Implement `OnnxGenAiInference : ILocalInference` — `new Model(dir)` / `new Tokenizer(model)`;
+   `Available` = model dir present + loaded; `Complete` = encode prompt → `GeneratorParams` (set
+   `max_length`; apply the JSON-schema via the runtime's guided-decoding/guidance grammar) →
+   `Generator` loop → detokenize. Swap `new AbsentInference()` → `new OnnxGenAiInference(modelDir)`
+   in `MainWindow`.
+4. DoD: offline VM, no network → `ok` plan with `provenance.provider == "local-model"`; latency
+   budget; Gemma license bundled/linked in-app + Store listing.
+
 ## 7. Contracts to add on approval
 - `satellite.json` — the Satellite descriptor (id `prontopc-repair-plan-local-model`, `serves_orb`,
   runtime `csharp / in-process`, model + runtime pins, provenance value it supplies). Needs a
