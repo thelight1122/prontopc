@@ -12,7 +12,17 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0012** (2026-08-28) — **C4 false claim killed.** The listing copy in `docs/custodian-spec.md`
+**TOTEM-0013** (2026-08-28) — **Rule-based fallback removed; honest AI-unavailable recourse added.**
+The app no longer shows a non-AI plan under the AI claim under any condition. When BOTH AI authors
+decline (on-device Gemma AND cloud broker — now rare), the client POSTs the miss to a new backend
+endpoint `POST /api/report-ai-unavailable`, which issues a **single-use 100% make-good coupon** (tagged
+to that customer + that machine), **emails the customer the code**, and **notifies Support@ProntoPC.online**;
+the app then shows an honest make-good screen. Deleted `BuildLocalPlan`/`ShowOfflinePlan`/`_offline` and
+the dead `Orchestrator.Sanitize`. WPF build 0/0; PodEval 28 PASS; `node --check` clean; endpoint
+smoke-tested locally (missing token→400, unknown token→200 ok/couponCode null). **Not deployed; no live
+email/coupon sent.** All 13 Totems HOLD.
+
+**Prior:** TOTEM-0012 — **C4 false claim killed.** The listing copy in `docs/custodian-spec.md`
 overstated the diagnostic as "35+ system areas"; the honest count is **25** (verified: 25 `Section(...)`
 collectors in `Diagnostics.cs`). Corrected the copy to "25 system areas" and marked C4 RESOLVED in
 `pod/README.md`. No code path changed — an honesty fix to shipping listing copy. All 12 Totems HOLD.
@@ -96,9 +106,14 @@ spec; -0001 opened the Pod.)
   packaging → then promote to provisional.
 - Manifest of Completion: `docs/MANIFEST_OF_COMPLETION.md`. Opening audit: 5 PASS / 3 FAIL
   (I1, I2, U6) / 4 PARTIAL / 4 UNVERIFIABLE.
-- **I2 now fixed** in `StoreApp/MainWindow.xaml.cs` (no silent non-AI substitution; offline plan is
-  explicitly labelled). **C4 now fixed** (TOTEM-0012): listing copy corrected from "35+" to the honest
-  **25** system areas in `docs/custodian-spec.md`.
+- **I2 now fixed** (TOTEM-0013 hardened it): there is **no non-AI substitution at all** — the rule-based
+  plan was removed. When AI is unavailable the app shows honest recourse (100% make-good coupon), never
+  a heuristic plan under the AI claim. **C4 now fixed** (TOTEM-0012): listing copy corrected from "35+"
+  to the honest **25** system areas in `docs/custodian-spec.md`.
+- **AI-unavailable make-good: BUILT (draft, not deployed).** `POST /api/report-ai-unavailable` in
+  `pronto-server-cloudrun.mjs` mints a single-use **100% coupon** (email+machine tagged, `source=ai_unavailable`),
+  emails the customer + Support@ProntoPC.online; the WPF client reports the miss and shows a make-good
+  screen. Reuses the proven Resend + Stripe promo-code path. No live email/coupon sent from dev.
 
 ## Open review items (carried, not blessed)
 - **Session gate:** `handleSubmitDiagnostics` now **auto-creates** a session instead of 404 on an

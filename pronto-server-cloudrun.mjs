@@ -38,6 +38,16 @@ const COUPON_VALID_DAYS = Number(process.env.COUPON_VALID_DAYS || 180); // ~6 mo
 const SITE_URL = process.env.SITE_URL || "https://prontopc.online";
 const LOYALTY_ADMIN_KEY = process.env.LOYALTY_ADMIN_KEY || ""; // gate for the /admin/loyalty ledger view
 
+// ─── AI-Unavailable Make-Good (100% off, that machine only) ──────────────────
+// When BOTH AI authors fail — the on-device Gemma AND the cloud broker — the
+// customer paid for an AI-powered plan and did not get it. We never substitute a
+// rule-based plan under the AI claim; instead we issue a single-use 100% coupon so
+// they can run again free, email them the code + an honest apology, and notify
+// Support of every incident. Honest value-for-value commerce.
+const MAKEGOOD_COUPON_ID = process.env.MAKEGOOD_COUPON_ID || "AIMAKEGOOD100";
+const MAKEGOOD_VALID_DAYS = Number(process.env.MAKEGOOD_VALID_DAYS || 180); // ~6 months
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "support@prontopc.online";
+
 // ─── CORS ───────────────────────────────────────────────────────────────────
 
 const ALLOWED_ORIGINS = [
@@ -1020,6 +1030,197 @@ async function sendCouponEmail(session) {
   } catch (e) {
     console.error("[coupon] Email failed:", e.message);
   }
+}
+
+// ─── AI-Unavailable Make-Good ────────────────────────────────────────────────
+
+// Ensure the reusable 100%-off make-good coupon exists in Stripe. Idempotent.
+async function ensureMakeGoodCoupon() {
+  if (!STRIPE_SECRET_KEY) return false;
+  const existing = await fetch(`https://api.stripe.com/v1/coupons/${MAKEGOOD_COUPON_ID}`, {
+    headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (existing.ok) return true;
+  const params = new URLSearchParams({
+    id: MAKEGOOD_COUPON_ID,
+    percent_off: "100",
+    duration: "once",
+    name: "AI Make-Good — Free Repair",
+  });
+  const created = await fetch("https://api.stripe.com/v1/coupons", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+    signal: AbortSignal.timeout(10_000),
+  });
+  return created.ok;
+}
+
+function randomMakeGoodCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I
+  let s = "";
+  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return `AIFREE${s}`;
+}
+
+// Mint a unique, single-use 100%-off code for this customer, tagged to the one
+// machine that missed its AI plan. The code is single-use, so the machine tag is
+// audit metadata (not enforced at redemption) — it cannot be farmed across
+// machines or customers.
+async function createMakeGoodCoupon(session, machineId, machineName) {
+  if (!STRIPE_SECRET_KEY) return null;
+  try {
+    await ensureMakeGoodCoupon();
+    const expiresAt = Math.floor(Date.now() / 1000) + MAKEGOOD_VALID_DAYS * 86400;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const params = new URLSearchParams({
+        "promotion[type]": "coupon",
+        "promotion[coupon]": MAKEGOOD_COUPON_ID,
+        code: randomMakeGoodCode(),
+        expires_at: String(expiresAt),
+        max_redemptions: "1",
+        "metadata[email]": session.email || "",
+        "metadata[machine_id]": machineId || "",
+        "metadata[machine_name]": machineName || "",
+        "metadata[source]": "ai_unavailable",
+      });
+      const resp = await fetch("https://api.stripe.com/v1/promotion_codes", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: params.toString(),
+        signal: AbortSignal.timeout(10_000),
+      });
+      const pc = await resp.json();
+      if (!pc.error) return { code: pc.code, expiresAt: expiresAt * 1000 };
+      if (!/already exists/i.test(pc.error.message || "")) {
+        console.error("[makegood] Stripe error:", pc.error.message);
+        return null;
+      }
+    }
+    return null;
+  } catch (e) {
+    console.error("[makegood] Error:", e.message);
+    return null;
+  }
+}
+
+// Email the 100% make-good code + an honest apology to the customer via Resend.
+async function sendMakeGoodEmail(session) {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  const FROM_EMAIL = process.env.FROM_EMAIL || "support@prontopc.online";
+  if (!RESEND_API_KEY || !session.email || !session.makeGoodCouponCode) return;
+
+  const expiryStr = new Date(session.makeGoodCouponExpiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const emailHtml = `
+<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#FDFAF4;border:1px solid #E2DBD0;border-radius:12px;overflow:hidden">
+  <div style="background:#1A1917;padding:20px 24px;color:#fff">
+    <h1 style="margin:0;font-size:1.2rem;font-weight:700">Pronto <span style="color:#7C5CFF">PC</span> — Let's make this right</h1>
+  </div>
+  <div style="padding:24px">
+    <p style="color:#1A1917;font-size:1rem;margin:0 0 16px">Your repair is powered by AI, and this time our AI couldn't build your personalized plan. You paid for an AI-powered repair and didn't get the full benefit of it — so this one's on us.</p>
+    <p style="color:#1A1917;font-size:1rem;margin:0 0 16px">Here's a <strong>100% coupon — a free repair on this PC</strong>. Run Pronto PC again whenever you like and your AI plan should build normally.</p>
+    <div style="background:#FFF8ED;border:1px dashed #7C5CFF;border-radius:10px;padding:20px;text-align:center;margin:0 0 16px">
+      <p style="margin:0 0 6px;color:#6B6560;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Your free-repair code</p>
+      <p style="margin:0;font-size:1.6rem;font-weight:800;color:#1A1917;font-family:'Courier New',monospace;letter-spacing:.05em">${session.makeGoodCouponCode}</p>
+      <p style="margin:8px 0 0;color:#9B9590;font-size:.78rem">100% off · single use · valid through ${expiryStr}</p>
+    </div>
+    <p style="text-align:center;margin:0 0 8px"><a href="${SITE_URL}" style="display:inline-block;background:#7C5CFF;color:#fff;font-weight:700;font-size:.9rem;padding:12px 28px;border-radius:8px;text-decoration:none">Run your free repair →</a></p>
+    <p style="color:#9B9590;font-size:.78rem;text-align:center;margin:8px 0 0">Enter the code at checkout — your total will be $0.</p>
+    <hr style="border:none;border-top:1px solid #E2DBD0;margin:20px 0">
+    <p style="font-size:.78rem;color:#9B9590;margin:0">Pronto PC · 5D Service Solutions Global LLC · support@prontopc.online</p>
+  </div>
+</div>`;
+
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: FROM_EMAIL, to: session.email, subject: "Your AI plan didn't run — here's a free repair on us", html: emailHtml }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    console.log(`[makegood] 100% code ${session.makeGoodCouponCode} emailed to ${session.email}`);
+  } catch (e) {
+    console.error("[makegood] Customer email failed:", e.message);
+  }
+}
+
+// Notify Support of every AI-unavailable incident, so a human sees it even when
+// the customer coupon auto-issued (abuse review + a product-quality signal).
+async function sendSupportIncidentEmail(session, machineId, machineName, reason, couponCode) {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  const FROM_EMAIL = process.env.FROM_EMAIL || "support@prontopc.online";
+  if (!RESEND_API_KEY) return;
+
+  const tokenShort = (session && session.token ? session.token : "unknown").substring(0, 12);
+  const esc = (v) => String(v == null ? "—" : v).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+  const rows = [
+    ["Customer email", session && session.email ? session.email : "(no session / not resolvable)"],
+    ["Machine", machineName],
+    ["Machine ID", machineId],
+    ["Session token", tokenShort + "…"],
+    ["Reason", reason],
+    ["Make-good code", couponCode || "(none issued — no customer email on file)"],
+    ["Time (UTC)", new Date().toISOString()],
+  ].map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#6B6560">${esc(k)}</td><td style="padding:4px 0;font-weight:600;color:#1A1917">${esc(v)}</td></tr>`).join("");
+
+  const html = `
+<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:620px;margin:0 auto">
+  <h2 style="margin:0 0 4px">AI-unavailable make-good issued</h2>
+  <p style="color:#6B6560;margin:0 0 16px">A customer's AI plan did not build (both on-device and cloud). ${couponCode ? "A 100% make-good coupon was auto-issued and emailed to them." : "No coupon could be auto-issued — resolve the customer manually."}</p>
+  <table style="border-collapse:collapse;font-size:.9rem">${rows}</table>
+</div>`;
+
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: FROM_EMAIL, to: SUPPORT_EMAIL, subject: `[AI-UNAVAILABLE] ${machineName || "a customer PC"} — make-good ${couponCode || "PENDING"}`, html }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    console.log(`[makegood] Support notified (${SUPPORT_EMAIL}) for token ${tokenShort}…`);
+  } catch (e) {
+    console.error("[makegood] Support email failed:", e.message);
+  }
+}
+
+// POST /api/report-ai-unavailable — the recourse when BOTH AI authors fail.
+// The client reports the incident with its token + machine identity; we issue the
+// single-use 100% coupon (once per session, to the customer email), email it, and
+// always notify Support. There is no rule-based plan: honest recourse only.
+async function handleReportAiUnavailable(req, res) {
+  let body;
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { token, machineId, machineName, reason } = body || {};
+  if (!token) return json(res, req, 400, { ok: false, error: "token required" });
+
+  const session = getSession(token);
+
+  // Record the incident on the session for support/audit (best-effort).
+  if (session) {
+    session.hostname = machineName || session.hostname;
+    session.aiUnavailableAt = Date.now();
+    session.aiUnavailableReason = reason || "";
+  }
+
+  // Issue the 100% make-good once per session, tied to the customer's email.
+  // (No email on file — e.g. an unpaid/expired token — means no coupon to send;
+  // Support is still notified so it can be resolved by hand.)
+  let couponCode = (session && session.makeGoodCouponCode) || null;
+  let couponExpiresAt = (session && session.makeGoodCouponExpiresAt) || null;
+  if (session && session.email && !couponCode) {
+    const coupon = await createMakeGoodCoupon(session, machineId, machineName);
+    if (coupon) {
+      session.makeGoodCouponCode = couponCode = coupon.code;
+      session.makeGoodCouponExpiresAt = couponExpiresAt = coupon.expiresAt;
+      await sendMakeGoodEmail(session);
+    }
+  }
+
+  await sendSupportIncidentEmail(session, machineId, machineName, reason, couponCode);
+
+  console.log(`[ai-unavailable] token ${token.substring(0, 8)}… machine ${machineName || "?"} reason ${reason || "?"} coupon ${couponCode || "none"}`);
+  return json(res, req, 200, { ok: true, couponCode, couponExpiresAt, supportEmail: SUPPORT_EMAIL });
 }
 
 async function handleSubmitRepairResults(req, res) {
@@ -2417,6 +2618,7 @@ const server = http.createServer(async (req, res) => {
     if (method === "POST" && pathname === "/api/create-session") return await handleCreateSession(req, res);
     if (method === "POST" && pathname === "/api/submit-diagnostics") return await handleSubmitDiagnostics(req, res);
     if (method === "POST" && pathname === "/api/submit-repair-results") return await handleSubmitRepairResults(req, res);
+    if (method === "POST" && pathname === "/api/report-ai-unavailable") return await handleReportAiUnavailable(req, res);
     if (method === "POST" && pathname === "/api/verify-results") return await handleVerifyResults(req, res);
 
     // Session status/findings/consent/report

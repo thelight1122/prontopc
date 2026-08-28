@@ -78,16 +78,6 @@ sealed class Orchestrator
         return PlanOutcome.Unavailable();
     }
 
-    // Envelope pass-through so the view can also sanitize the labelled offline plan
-    // (it is not the AI plan, but it must still be admissible and honestly measured).
-    // If the envelope is unkeyed, pass the plan through unchanged.
-    public JsonObject Sanitize(JsonElement plan, Dictionary<string, object?> diag)
-    {
-        if (_env is null) return JsonNode.Parse(plan.GetRawText())!.AsObject();
-        var (sane, _) = _env.Validate(plan, JsonSerializer.SerializeToElement(diag));
-        return sane;
-    }
-
     // Repair + verify phases: invoke the repair-engine Orb over the approved actions,
     // reporting progress, then summarize (freed space, restart-needed). The Orchestrator
     // sequences and reports; the engine (Repair) owns what each action does. Envelope-

@@ -17,8 +17,8 @@ public partial class MainWindow : Window
     const string CloudRun = "https://pronto-pc-108655745293.us-central1.run.app";
     string _token;
     readonly List<(Dictionary<string, object?> action, CheckBox box)> _rows = new();
-    bool _offline;
     readonly Orchestrator _orch;
+    readonly bool _modelPresent;
 
     public MainWindow(string token)
     {
@@ -33,6 +33,7 @@ public partial class MainWindow : Window
         // (declines -> cloud). CreateOrAbsent keys off genai_config.json, so dropping the
         // model into Assets/models/gemma-3-1b-it activates it with no code change.
         string modelDir = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "models", "gemma-3-1b-it");
+        _modelPresent = System.IO.File.Exists(System.IO.Path.Combine(modelDir, "genai_config.json"));
         _orch = new Orchestrator(new IPlanAuthor[]
         {
             new GemmaLocalPlanner(OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it")),
@@ -54,111 +55,89 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(_token))
             _token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
 
-        _offline = false;
-
         // Plan phase: the Orchestrator authors a plan (local Satellite -> cloud broker)
         // and validates it against the keyed Action Envelope before it reaches consent.
         var outcome = await _orch.AuthorPlanAsync(diag);
         if (outcome.IsOk) { ShowFindings(ToElement(outcome.Plan!)); return; }
 
-        // No genuine model plan (status:"unavailable" / unreachable / unkeyed envelope).
-        // Presenting a heuristic plan AS the AI plan is what failed Store certification
-        // (10.1.2.10), so show it honestly labelled as offline — and still run it through
-        // the envelope so even the fallback is admissible and honestly measured.
-        ShowOfflinePlan(ToElement(_orch.Sanitize(BuildLocalPlan(diag), diag)));
+        // Both AI authors declined (on-device Gemma AND cloud broker). We never present
+        // a rule-based plan under the AI claim — instead we report the miss so the
+        // customer is made whole (single-use 100% coupon) and show honest recourse.
+        await ReportAiUnavailable(diag);
     }
 
     static JsonElement ToElement(JsonNode node) => JsonSerializer.SerializeToElement(node);
 
-    // ── Local fallback when backend is unreachable ───────────────────────────
-    static JsonElement BuildLocalPlan(Dictionary<string, object?> diag)
+    // ── AI unavailable → honest recourse (never a rule-based plan) ────────────
+    // Both AI authors declined. Report the miss to the backend, which issues a
+    // single-use 100% coupon (that customer, that machine) and notifies Support,
+    // then show the customer an honest make-good — we never dress a non-AI plan
+    // up as the AI-powered plan they paid for.
+    async Task ReportAiUnavailable(Dictionary<string, object?> diag)
     {
+        var (machineId, machineName) = MachineFingerprint(diag);
+        string reason = _modelPresent ? "local_and_cloud_unavailable" : "no_local_model_and_cloud_unavailable";
+        string? coupon = null;
         try
         {
-            var actions = new List<Dictionary<string, object?>>();
-            var findings = new List<string>();
-
-            int tempMb = SumSizeMb(diag, "temp_files");
-            if (tempMb > 10)
-            {
-                actions.Add(PlanAction("clear_temp_files", "cleanup", "Clear temporary files", tempMb));
-                findings.Add($"{tempMb} MB in temporary files");
-            }
-
-            int cacheMb = SumSizeMb(diag, "browser_caches");
-            if (cacheMb > 10)
-            {
-                actions.Add(PlanAction("clear_all_browser_caches", "browser", "Clear browser caches", cacheMb));
-                findings.Add($"{cacheMb} MB in browser caches");
-            }
-
-            actions.Add(PlanAction("clear_windows_caches", "cleanup", "Clear Windows thumbnail and icon caches", 0));
-
-            int rbMb = DictSizeMb(diag, "recycle_bin");
-            if (rbMb > 10)
-            {
-                actions.Add(PlanAction("empty_recycle_bin", "cleanup", "Empty Recycle Bin", rbMb));
-                findings.Add($"{rbMb} MB in Recycle Bin");
-            }
-
-            actions.Add(PlanAction("flush_dns", "network", "Flush DNS cache", 0));
-
-            string summary = findings.Count > 0
-                ? $"Your system scan found {string.Join(", ", findings)} that can be cleaned up, along with other optimization opportunities."
-                : "Your system scan completed. We found standard maintenance items to help keep your PC running smoothly.";
-
-            return ToJsonElement(new Dictionary<string, object?> { ["summary"] = summary, ["actions"] = actions });
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            string payload = JsonSerializer.Serialize(new { token = _token, machineId, machineName, reason });
+            var resp = await http.PostAsync($"{CloudRun}/api/report-ai-unavailable",
+                new StringContent(payload, Encoding.UTF8, "application/json"));
+            string bodyText = await resp.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(bodyText);
+            if (doc.RootElement.TryGetProperty("couponCode", out var c) && c.ValueKind == JsonValueKind.String)
+                coupon = c.GetString();
         }
-        catch
+        catch { /* offline / backend unreachable — still show honest recourse below */ }
+
+        ShowMakeGood(coupon);
+    }
+
+    void ShowMakeGood(string? coupon)
+    {
+        if (!string.IsNullOrWhiteSpace(coupon))
         {
-            return ToJsonElement(new Dictionary<string, object?>
-            {
-                ["summary"] = "Your system scan completed. We found maintenance items to help keep your PC running smoothly.",
-                ["actions"] = new List<Dictionary<string, object?>>
-                {
-                    PlanAction("clear_temp_files", "cleanup", "Clear temporary files", 0),
-                    PlanAction("clear_windows_caches", "cleanup", "Clear Windows caches", 0),
-                    PlanAction("flush_dns", "network", "Flush DNS cache", 0),
-                }
-            });
+            MakeGoodText.Text = "Your repair is AI-powered, and this time our AI couldn't build your plan. "
+                + "You paid for that and didn't get it — so this one's on us. We've emailed you a 100% coupon "
+                + "(a free repair on this PC) and flagged it to our team. Run Pronto PC again anytime with the code below.";
+            MakeGoodCode.Text = coupon;
+            MakeGoodCodeBox.Visibility = Visibility.Visible;
         }
+        else
+        {
+            MakeGoodText.Text = "Your repair is AI-powered, and this time our AI couldn't build your plan. "
+                + "You paid for that and didn't get the full benefit — so we'll make it right. We've flagged this to "
+                + "our team at support@prontopc.online, and you'll receive a 100% coupon for a free repair on this PC.";
+            MakeGoodCodeBox.Visibility = Visibility.Collapsed;
+        }
+        ShowPanel(MakeGoodPanel);
     }
 
-    static Dictionary<string, object?> PlanAction(string id, string cat, string name, int mb) =>
-        new() { ["id"] = id, ["category"] = cat, ["friendly_name"] = name, ["risk"] = "low", ["estimated_mb_recovered"] = mb };
-
-    static JsonElement ToJsonElement(Dictionary<string, object?> plan)
+    // A stable, non-identifying fingerprint of THIS machine, so the make-good is
+    // scoped to the PC that missed its plan. Derived from already-collected
+    // diagnostics (no extra probing): hostname + processor + OS build, hashed.
+    static (string machineId, string machineName) MachineFingerprint(Dictionary<string, object?> diag)
     {
-        string json = JsonSerializer.Serialize(plan);
-        using var doc = JsonDocument.Parse(json);
-        return doc.RootElement.Clone();
-    }
-
-    static int SumSizeMb(Dictionary<string, object?> diag, string key)
-    {
-        if (!diag.TryGetValue(key, out var val) || val is not IList<object> list) return 0;
-        int total = 0;
-        foreach (var item in list)
-            if (item is Dictionary<string, object?> d && d.TryGetValue("size_mb", out var mb))
-                try { total += (int)Math.Round(Convert.ToDouble(mb)); } catch { }
-        return total;
-    }
-
-    static int DictSizeMb(Dictionary<string, object?> diag, string key)
-    {
-        if (!diag.TryGetValue(key, out var val) || val is not Dictionary<string, object?> d || !d.TryGetValue("size_mb", out var mb)) return 0;
-        try { return (int)Math.Round(Convert.ToDouble(mb)); } catch { return 0; }
+        string host = "", proc = "", build = "";
+        if (diag.TryGetValue("os", out var osv) && osv is Dictionary<string, object?> os)
+        {
+            host = os.GetValueOrDefault("hostname")?.ToString() ?? "";
+            proc = os.GetValueOrDefault("processor")?.ToString() ?? "";
+            build = os.GetValueOrDefault("build")?.ToString() ?? "";
+        }
+        string basis = $"{host}|{proc}|{build}";
+        string id;
+        using (var sha = System.Security.Cryptography.SHA256.Create())
+            id = Convert.ToHexString(sha.ComputeHash(Encoding.UTF8.GetBytes(basis))).Substring(0, 16);
+        return (id, string.IsNullOrWhiteSpace(host) ? "unknown-pc" : host);
     }
 
     // ── Findings ─────────────────────────────────────────────────────────────
-    void ShowOfflinePlan(JsonElement plan) { _offline = true; ShowFindings(plan); }
-
     void ShowFindings(JsonElement plan)
     {
         string summary = plan.TryGetProperty("summary", out var s) ? (s.GetString() ?? "") : "";
-        FindingsSummary.Text = _offline
-            ? "⚠ OFFLINE BASIC PLAN — our AI service was unavailable, so this is a basic rule-based cleanup, not your AI-personalised plan.\n\n" + summary
-            : summary;
+        FindingsSummary.Text = summary;
         ActionList.Children.Clear();
         _rows.Clear();
 
@@ -248,6 +227,7 @@ public partial class MainWindow : Window
         FindingsPanel.Visibility = Visibility.Collapsed;
         CompletePanel.Visibility = Visibility.Collapsed;
         ErrorPanel.Visibility = Visibility.Collapsed;
+        MakeGoodPanel.Visibility = Visibility.Collapsed;
         panel.Visibility = Visibility.Visible;
     }
 
