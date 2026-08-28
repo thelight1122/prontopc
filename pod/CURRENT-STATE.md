@@ -12,7 +12,18 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0020** (2026-08-28) — **Killed another paste fossil + mapped the rest.** FAQ "Do I need technical
+**TOTEM-0021** (2026-08-28) — **Greenlit web-surface reference spec drafted.** `docs/WEB_SURFACE_SPEC.md` is
+the source of truth the web rebuild is authored **against** (Tracey's clean-rebuild rule: new files by
+reference, never edited clones). Holds the one true product model (certified Store app, no copy-paste,
+on-device conversational Custodian, read-only consent-gated scan, six areas, $29, honest make-good), the true
+customer journey (retires the paste flow), the page inventory to author fresh, the **anti-fossil honesty
+checklist** (banned claims / required truths, tied to C3/C4/I2/U1–U6), the mascot-voice rule, the AEGIS design
+tokens, and proven wiring to *reference* not clone. **Brand direction captured:** the Custodian mascot is the
+**Brand Ambassador** — featured at prominent scale in hero + closing CTA, never a small icon (the current
+clone renders him too small; the rebuild sizes him right from the start). Reference only — no page rebuilt yet.
+All 21 Totems HOLD.
+
+**Prior:** TOTEM-0020 (2026-08-28) — **Killed another paste fossil + mapped the rest.** FAQ "Do I need technical
 knowledge?" still said *"The only technical action is pasting one command"* (missed by TOTEM-0018's sweep —
 pattern didn't match "past**ing**"). Fixed to the certified-app truth (the app runs the diagnostic itself; no
 commands to type or paste). Exhaustive sweep: `index.html` is now **clean**. The *"nothing is installed/
