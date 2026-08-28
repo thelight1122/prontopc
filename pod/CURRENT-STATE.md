@@ -12,7 +12,18 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0017** (2026-08-28) — **Fix It Now now breathes — a "push me" invitation.** Added `@keyframes
+**TOTEM-0018** (2026-08-28) — **Killed a copy-paste architecture drift in the site "how it works."**
+Tracey caught step 3 describing a **copy-paste-a-command** flow ("single command to paste… Nothing is
+installed") — which is **not the product**. The shipping product is the **Microsoft-Store-certified**
+Custodian app that self-elevates (UAC) and runs the scan itself: **no command for the customer to copy or
+paste** (and Store cert = no purchased code-signing cert). Reworded step 3 + the "25 diagnostic categories"
+claim (which traced to the *unshipped* `Diagnostics.cs`, not the live 29-field web scan) to the **six
+headline areas** (Tracey's call) across `index.html` (×3), `guardian-offer.html`, `terms.html`.
+**⚠ Bigger drift flagged, NOT edited:** `success.html` + `pronto-server-cloudrun.mjs` **still implement the
+paste-a-command flow** (Copy Command / Win+R / scan+repair command URLs) and the server prompt still says
+"35+ categories" ×2 — they contradict the certified-app product and need Tracey's direction. All 18 Totems HOLD.
+
+**Prior:** TOTEM-0017 (2026-08-28) — **Fix It Now now breathes — a "push me" invitation.** Added `@keyframes
 ppFixPulse` (soft iris halo: ring 0→7px + glow 16→40px, `#7c5cff`/`#8b6bff` low-alpha, + 1.5% scale,
 2.8s ease-in-out infinite) to **both** Fix It Now CTAs — the desktop hotspot `.repair` (halo over the
 baked hero card) and the mobile `.primary` button. Slow + low-amplitude by design = **confident
