@@ -12,7 +12,14 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0008** (2026-08-28) — **Stage 2b inference code complete + building.** `OnnxGenAiInference`
+**TOTEM-0009** (2026-08-28) — **Committed Pod eval suite (`tests/PodEval`) — ALL 28 checks PASS.**
+Compiles the shipping `Envelope`/`GemmaLocalPlanner` and asserts 10 admissibility fixtures + 6
+`Validate` checks (clamp, gb→mb, risk-stamp, catalogue-drop, false-precondition-drop, subsumption) +
+3 Gemma author-path checks. Extracted `IPlanAuthor`/`PlanResult` into `PlanContracts.cs` (engine-free)
+so the eval runs the real code. StoreApp build 0/0. **google/gemma-3-1b-it access now GRANTED**;
+int4 model build in progress. All 9 Totems HOLD.
+
+**Prior:** TOTEM-0008 — **Stage 2b inference code complete + building.** `OnnxGenAiInference`
 (ONNX Runtime GenAI 0.15.2) implements `ILocalInference` — lazy off-thread model load, `json_schema`
 guided decoding, prompt-stripped decode; `CreateOrAbsent` auto-activates the bundled Gemma via
 `genai_config.json`, else `AbsentInference` (app unchanged). Package + `Assets/models/**` bundling in

@@ -1,0 +1,65 @@
+{
+  "_comment": "Pod eval fixtures for the Action Envelope. Each scenario feeds diagnostics through Envelope.AdmissibleSet and asserts that key actions are admissible (includes) or not (excludes) on that machine. Run by tests/PodEval. Grounded in Diagnostics.cs field shapes.",
+  "scenarios": [
+    {
+      "name": "clean_healthy_pc",
+      "diagnostics": { "memory": {"percent_used": 40}, "network": {"connectivity": {"internet_reachable": true}}, "dns_cache": {"entries": 0}, "update_leftovers": {"windows_old_present": false, "windows_update_cache_mb": 0, "delivery_optimization_mb": 0} },
+      "includes": ["disk_cleanup", "clear_windows_caches", "optimize_power_plan", "clean_component_store", "clear_windows_store_cache"],
+      "excludes": ["clear_temp_files", "remove_windows_old", "sfc_scan", "reset_network_stack", "flush_dns", "empty_recycle_bin", "clean_windows_update_cache", "disable_startup_item", "optimize_visual_effects", "driver_report", "hardware_report"]
+    },
+    {
+      "name": "temp_and_recycle_clutter",
+      "diagnostics": { "temp_files": [{"path": "t", "size_mb": 300}], "recycle_bin": {"size_mb": 500}, "memory": {"percent_used": 45}, "network": {"connectivity": {"internet_reachable": true}}, "dns_cache": {"entries": 0}, "update_leftovers": {"windows_old_present": false, "windows_update_cache_mb": 0, "delivery_optimization_mb": 0} },
+      "includes": ["clear_temp_files", "empty_recycle_bin"],
+      "excludes": ["remove_windows_old", "reset_network_stack"]
+    },
+    {
+      "name": "windows_old_present",
+      "diagnostics": { "update_leftovers": {"windows_old_present": true, "windows_old_gb": 12, "windows_update_cache_mb": 0, "delivery_optimization_mb": 0}, "memory": {"percent_used": 50}, "network": {"connectivity": {"internet_reachable": true}}, "dns_cache": {"entries": 0} },
+      "includes": ["remove_windows_old"],
+      "excludes": ["clear_temp_files", "empty_recycle_bin"]
+    },
+    {
+      "name": "network_down",
+      "diagnostics": { "network": {"connectivity": {"internet_reachable": false}}, "dns_cache": {"entries": 5}, "memory": {"percent_used": 40}, "update_leftovers": {"windows_old_present": false, "windows_update_cache_mb": 0, "delivery_optimization_mb": 0} },
+      "includes": ["reset_network_stack", "flush_dns"],
+      "excludes": ["remove_windows_old", "sfc_scan"]
+    },
+    {
+      "name": "corruption_and_crashes",
+      "diagnostics": { "bsod_history": [{"file": "a"}, {"file": "b"}], "device_errors": [{"device": "x", "error_code": 10}], "memory": {"percent_used": 55}, "network": {"connectivity": {"internet_reachable": true}}, "dns_cache": {"entries": 0}, "update_leftovers": {"windows_old_present": false, "windows_update_cache_mb": 0, "delivery_optimization_mb": 0} },
+      "includes": ["sfc_scan", "dism_restore", "chkdsk_scan", "hardware_report"],
+      "excludes": ["reset_network_stack", "remove_windows_old"]
+    },
+    {
+      "name": "browser_cache_heavy",
+      "diagnostics": { "browser_caches": [{"browser": "Chrome", "size_mb": 400}, {"browser": "Edge", "size_mb": 200}], "memory": {"percent_used": 40}, "network": {"connectivity": {"internet_reachable": true}}, "dns_cache": {"entries": 0}, "update_leftovers": {"windows_old_present": false, "windows_update_cache_mb": 0, "delivery_optimization_mb": 0} },
+      "includes": ["clear_all_browser_caches", "clear_chrome_cache", "clear_edge_cache"],
+      "excludes": ["remove_windows_old"]
+    },
+    {
+      "name": "update_cache_large",
+      "diagnostics": { "update_leftovers": {"windows_old_present": false, "windows_update_cache_mb": 2048, "delivery_optimization_mb": 300}, "memory": {"percent_used": 40}, "network": {"connectivity": {"internet_reachable": true}}, "dns_cache": {"entries": 0} },
+      "includes": ["clean_windows_update_cache", "reset_windows_update", "clean_delivery_optimization"],
+      "excludes": ["remove_windows_old"]
+    },
+    {
+      "name": "update_cache_small",
+      "diagnostics": { "update_leftovers": {"windows_old_present": false, "windows_update_cache_mb": 200, "delivery_optimization_mb": 0}, "memory": {"percent_used": 40}, "network": {"connectivity": {"internet_reachable": true}}, "dns_cache": {"entries": 0} },
+      "includes": ["clean_windows_update_cache"],
+      "excludes": ["reset_windows_update", "clean_delivery_optimization"]
+    },
+    {
+      "name": "many_startup_items",
+      "diagnostics": { "startup_programs": [{"name": "Foo", "hive": "HKCU"}, {"name": "Bar", "hive": "HKLM"}], "memory": {"percent_used": 40}, "network": {"connectivity": {"internet_reachable": true}}, "dns_cache": {"entries": 0}, "update_leftovers": {"windows_old_present": false, "windows_update_cache_mb": 0, "delivery_optimization_mb": 0} },
+      "includes": ["disable_startup_item"],
+      "excludes": ["sfc_scan", "remove_windows_old"]
+    },
+    {
+      "name": "memory_pressure",
+      "diagnostics": { "memory": {"percent_used": 88}, "network": {"connectivity": {"internet_reachable": true}}, "dns_cache": {"entries": 0}, "update_leftovers": {"windows_old_present": false, "windows_update_cache_mb": 0, "delivery_optimization_mb": 0} },
+      "includes": ["optimize_visual_effects"],
+      "excludes": ["remove_windows_old", "reset_network_stack"]
+    }
+  ]
+}

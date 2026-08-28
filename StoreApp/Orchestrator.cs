@@ -19,15 +19,8 @@ namespace ProntoPC;
 // Stage 1: the only author is the cloud broker. Stage 2 prepends the Gemma
 // local-model Satellite as the first author (offline, no billing cliff).
 
-// Result of one author attempt. null return from an author => fall through to the next.
-sealed record PlanResult(JsonElement Plan, string Provider, string Model);
-
-interface IPlanAuthor
-{
-    // Author a plan; the model may only choose from `admissible`. Return null to
-    // decline (unavailable/unreachable) so the Orchestrator tries the next author.
-    Task<PlanResult?> AuthorAsync(JsonElement diag, IReadOnlySet<string> admissible, CancellationToken ct);
-}
+// PlanResult + IPlanAuthor live in PlanContracts.cs (kept engine-free so the Pod eval
+// can compile the plan logic without the Windows-only repair engine).
 
 // Outcome the Orchestrator hands the view: a validated plan, or honest unavailable.
 sealed class PlanOutcome
