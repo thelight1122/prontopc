@@ -17,6 +17,18 @@ overstated the diagnostic as "35+ system areas"; the honest count is **25** (ver
 collectors in `Diagnostics.cs`). Corrected the copy to "25 system areas" and marked C4 RESOLVED in
 `pod/README.md`. No code path changed — an honesty fix to shipping listing copy. All 12 Totems HOLD.
 
+**Latest verification (2026-08-28, no code change — instrument reverted, not a Totem):**
+**FULL WPF END-TO-END RUN PROVEN with the model bundled.** Built `ProntoPC.csproj` Release (0/0), the
+~700 MB int4 model + `onnxruntime-genai` natives copied into the output, launched the real exe → UAC
+self-elevation → auto-scan (read-only WMI) → **the on-device Gemma authored the plan in the actual UI**
+(`provider=local-model`, `model=gemma-3-1b-it`; captured via a temporary `%TEMP%` provenance trace, since
+reverted). The Findings/consent screen rendered *"Here's what we found."* + the AI summary + a validated
+action + "Perform Repairs", with **no "OFFLINE BASIC PLAN" banner** — the C3 kill demonstrated in the
+shipping UI, not just `tests/ModelSmoke`. Stopped at consent (no repairs executed); app closed clean;
+tree clean, 12 Totems HOLD. **Quality note:** this run's summary was generic and surfaced only 1 action
+at ~0 MB (clean machine and/or vaguer 1B cold-run summary vs. the number-citing ModelSmoke run) — a
+specificity item to watch, not a failure.
+
 **Prior:** TOTEM-0011 — **Envelope now owns the reclaim estimate.** For measurable reclaim
 actions, `Envelope.cs` **sets** `estimated_mb_recovered` to the true diagnostics measure
 (`cap>0 ? round(cap) : 0`) instead of trusting the model and only clamping over-claims — so it now
@@ -61,9 +73,10 @@ spec; -0001 opened the Pod.)
 - **Placed (provisional):** repair-engine, diagnostics, session, loyalty, stripe-portal, cloudrun-portal.
 - **repair-plan: IMPLEMENTED** (code done, Auditor 4/4 static PASS) but trust_state still **draft**
   because **C3 is LIVE-only** and unrun. I2 is fixed in code.
-- **repair-plan Satellite `local-model`: SPECCED (draft).** v0.1 = Gemma 3 1B-it QAT, on-device,
-  client-side; cloud (Azure→Gemini) demoted to fallback. Not yet built — no ONNX runtime/model in
-  `ProntoPC.csproj` yet. Pro tier = Gemma 4 E2B/E4B multimodal (deferred).
+- **repair-plan Satellite `local-model`: BUILT + PROVEN (draft).** v0.1 = int4 `gemma-3-1b-it`,
+  on-device, client-side; cloud (Azure→Gemini) demoted to fallback. `Microsoft.ML.OnnxRuntimeGenAI`
+  0.15.2 + the model are bundled in `ProntoPC.csproj`; proven both by `tests/ModelSmoke` and a full
+  WPF end-to-end run (see Latest verification). Pro tier = Gemma 4 E2B/E4B multimodal (deferred).
 - **Action Envelope: BUILT + ENFORCED.** `action-envelope.json` (26 guards) + schema; the
   repair-plan Umbilical is **keyed** to it and the Orchestrator **holds** it. Now **consumed** by
   `StoreApp/Envelope.cs` at runtime (embedded via csproj Link — single source of truth). Runtime-
@@ -75,10 +88,12 @@ spec; -0001 opened the Pod.)
 - **Gemma Satellite: BUILT + PROVEN on-device.** `GemmaLocalPlanner` (author) + `OnnxGenAiInference`
   (ONNX Runtime GenAI 0.15.2, json_schema-guided, Gemma chat template) run the int4 model bundled at
   `StoreApp/Assets/models/gemma-3-1b-it` (~700 MB, gitignored build artifact). Proven offline with
-  `provenance:local-model`; `tests/ModelSmoke` PASS. `CreateOrAbsent` auto-activates it; falls through
-  to cloud if absent. **C3 satisfied on-device.**
+  `provenance:local-model` by `tests/ModelSmoke` PASS **and by a full WPF end-to-end run in the real UI**
+  (2026-08-28 — provider=local-model in the shipping app, no offline banner). `CreateOrAbsent`
+  auto-activates it; falls through to cloud if absent. **C3 satisfied on-device.**
 - **Draft — not built yet:** custodian-stage, llm-portal, mint-portal. **Ship readiness for repair-plan:**
-  full WPF end-to-end run with model bundled + Gemma license bundling + MSIX packaging → then promote to provisional.
+  ✅ full WPF end-to-end run with model bundled (DONE) → remaining: Gemma license bundling + MSIX
+  packaging → then promote to provisional.
 - Manifest of Completion: `docs/MANIFEST_OF_COMPLETION.md`. Opening audit: 5 PASS / 3 FAIL
   (I1, I2, U6) / 4 PARTIAL / 4 UNVERIFIABLE.
 - **I2 now fixed** in `StoreApp/MainWindow.xaml.cs` (no silent non-AI substitution; offline plan is
@@ -95,12 +110,13 @@ spec; -0001 opened the Pod.)
   (subsumed by `clear_all_browser_caches`).
 
 ## Next gated step
-**Ship readiness for `prontopc-repair-plan` (Stage 2b is DONE — on-device inference proven, TOTEM-0010):**
-run the full WPF app end-to-end with the int4 model bundled (confirm the local-first plan renders in
-the real UI), bundle the Gemma license + Prohibited Use Policy in-app and in the Store listing,
-package the MSIX (~700 MB model as Content), **then promote `prontopc-repair-plan` draft → provisional.**
-(Alternative cloud-C3 path remains available: Cloud Run + `certification_preflight.py`. After promotion:
-`prontopc-custodian-stage`.)
+**Ship readiness for `prontopc-repair-plan` (Stage 2b DONE; full WPF end-to-end run DONE 2026-08-28 —
+local-first plan proven in the real UI):** remaining before promotion — bundle the Gemma license +
+Prohibited Use Policy in-app and in the Store listing, then package the MSIX (~700 MB model as Content),
+**then promote `prontopc-repair-plan` draft → provisional.** (Alternative cloud-C3 path remains
+available: Cloud Run + `certification_preflight.py`. After promotion: `prontopc-custodian-stage`.)
+Watch item (not blocking): the 1B model's summary specificity was low on the WPF run (generic wording,
+1 action, ~0 MB) — consider prompt/decoding tuning if it recurs on a machine with real clutter.
 
 ## How to work here
 1. `python pod/totems/verify_totems.py` — confirm the picture holds.
