@@ -18,26 +18,22 @@ public partial class MainWindow : Window
     string _token;
     readonly List<(Dictionary<string, object?> action, CheckBox box)> _rows = new();
     bool _offline;
-    readonly Orchestrator? _orch;
+    readonly Orchestrator _orch;
 
     public MainWindow(string token)
     {
         InitializeComponent();
         _token = token;
-        // The Orchestrator holds the Action Envelope and keys the plan Umbilical to it.
-        // Provider order: local-model Satellite (on-device, offline) -> cloud broker.
-        // The Satellite runs only when a model is bundled (Stage 2b); until then
-        // AbsentInference makes it decline and the cloud broker authors, unchanged.
-        // If the envelope fails to load/key, degrade to a labelled offline plan.
-        try
+        // The Orchestrator holds the Action Envelope, keys the plan Umbilical to it, and
+        // sequences the phases. Provider order: local-model Satellite (on-device, offline)
+        // -> cloud broker. The Satellite runs only when a model is bundled (Stage 2b);
+        // until then AbsentInference makes it decline and the cloud broker authors,
+        // unchanged. An unkeyed envelope degrades only the plan phase (labelled offline).
+        _orch = new Orchestrator(new IPlanAuthor[]
         {
-            _orch = new Orchestrator(new IPlanAuthor[]
-            {
-                new GemmaLocalPlanner(new AbsentInference()),
-                new CloudPlanAuthor(CloudRun, () => _token),
-            });
-        }
-        catch { _orch = null; }
+            new GemmaLocalPlanner(new AbsentInference()),
+            new CloudPlanAuthor(CloudRun, () => _token),
+        });
         Loaded += async (_, __) => await Start();
     }
 
@@ -56,21 +52,16 @@ public partial class MainWindow : Window
 
         _offline = false;
 
-        // Plan phase: the Orchestrator authors a plan (cloud broker in Stage 1) and
-        // validates it against the keyed Action Envelope before it reaches consent.
-        if (_orch != null)
-        {
-            var outcome = await _orch.AuthorPlanAsync(diag);
-            if (outcome.IsOk) { ShowFindings(ToElement(outcome.Plan!)); return; }
-        }
+        // Plan phase: the Orchestrator authors a plan (local Satellite -> cloud broker)
+        // and validates it against the keyed Action Envelope before it reaches consent.
+        var outcome = await _orch.AuthorPlanAsync(diag);
+        if (outcome.IsOk) { ShowFindings(ToElement(outcome.Plan!)); return; }
 
-        // No genuine model plan (status:"unavailable" / unreachable / no envelope).
+        // No genuine model plan (status:"unavailable" / unreachable / unkeyed envelope).
         // Presenting a heuristic plan AS the AI plan is what failed Store certification
         // (10.1.2.10), so show it honestly labelled as offline — and still run it through
         // the envelope so even the fallback is admissible and honestly measured.
-        var offline = BuildLocalPlan(diag);
-        if (_orch != null) offline = ToElement(_orch.Sanitize(offline, diag));
-        ShowOfflinePlan(offline);
+        ShowOfflinePlan(ToElement(_orch.Sanitize(BuildLocalPlan(diag), diag)));
     }
 
     static JsonElement ToElement(JsonNode node) => JsonSerializer.SerializeToElement(node);
@@ -216,31 +207,23 @@ public partial class MainWindow : Window
     async Task RunRepair(List<Dictionary<string, object?>> approved)
     {
         ShowWorking("Repairing your PC…", "Please wait — this can take a few minutes.", repairing: true);
-        var results = new List<Dictionary<string, object?>>();
-        int i = 0, total = approved.Count;
-        foreach (var action in approved)
-        {
-            i++;
-            string name = action.GetValueOrDefault("friendly_name")?.ToString() ?? "";
-            SetStatus("Repairing your PC…", total > 0 ? $"[{i}/{total}] {name}" : name);
-            var r = await Task.Run(() => Repair.Execute(action));
-            results.Add(r);
-        }
 
+        // Repair + verify phases: the Orchestrator invokes the engine and summarizes.
+        var progress = new Progress<RepairProgress>(p =>
+            SetStatus("Repairing your PC…", p.Total > 0 ? $"[{p.Index}/{p.Total}] {p.Name}" : p.Name));
+        var outcome = await _orch.RunRepairAsync(approved, progress);
+
+        // Complete phase: persist results to the broker (best-effort), then show the report.
         SetStatus("Finishing up…", "Saving your report.");
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-            string payload = JsonSerializer.Serialize(new { token = _token, results });
+            string payload = JsonSerializer.Serialize(new { token = _token, results = outcome.Results });
             await http.PostAsync($"{CloudRun}/api/submit-repair-results", new StringContent(payload, Encoding.UTF8, "application/json"));
         }
         catch { }
 
-        int freed = results.Sum(r => Mb(r.GetValueOrDefault("mb_freed")));
-        int done = results.Count(r => r.GetValueOrDefault("status")?.ToString() == "done");
-        string msg = freed > 0 ? $"{done} repairs completed · {FormatMb(freed)} recovered." : $"{done} items completed.";
-        if (Repair.NeedsRestart(results)) msg += "\n\nA restart is recommended to finish applying some repairs.";
-        CompleteText.Text = msg;
+        CompleteText.Text = outcome.Message;
         ShowPanel(CompletePanel);
     }
 

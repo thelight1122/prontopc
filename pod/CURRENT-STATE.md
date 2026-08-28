@@ -12,13 +12,14 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0006** (2026-08-28) — **Stage 2a: built the Gemma Satellite author, wired first in provider
-order.** `StoreApp/LocalPlanner.cs` — `GemmaLocalPlanner:IPlanAuthor` behind an `ILocalInference`
-seam (prompt + admissible-set JSON-schema grammar + prose-tolerant parse + `provenance:local-model`);
-`AbsentInference` default so the app still falls through to the cloud unchanged. Runtime-proven with a
-fake inference. **Stage 2b (real ONNX inference) is one class, gated on the Gemma weights + license.**
-WPF build 0/0. All 6 Totems HOLD. (TOTEM-0005 built Orchestrator Stage 1; -0004 the envelope + Satellite
-spec; -0003 the repair-plan Orb; -0002 its spec; -0001 opened the Pod.)
+**TOTEM-0007** (2026-08-28) — **Migrated the repair + verify phases into the Orchestrator.**
+`Orchestrator.RunRepairAsync` now invokes the engine over the approved actions (progress + summary);
+`MainWindow.RunRepair` is a thin view. The ctor is now non-throwing — an unkeyed/unloadable envelope
+degrades ONLY the plan phase (labelled offline), leaving repair/verify working. The Orchestrator owns
+the full phase machine (plan+consent+repair+verify), with cloud IO in the view adapters. Behavior-
+preserving refactor; WPF build 0/0. All 7 Totems HOLD. (TOTEM-0006 built the Gemma Satellite author;
+-0005 Orchestrator Stage 1; -0004 the envelope + Satellite spec; -0003 the repair-plan Orb; -0002 its
+spec; -0001 opened the Pod.)
 
 ## What is true now
 - Clean Pod opened at `pod/`, validates against contracts. Pod trust_state: **draft**.
@@ -32,9 +33,10 @@ spec; -0003 the repair-plan Orb; -0002 its spec; -0001 opened the Pod.)
   repair-plan Umbilical is **keyed** to it and the Orchestrator **holds** it. Now **consumed** by
   `StoreApp/Envelope.cs` at runtime (embedded via csproj Link — single source of truth). Runtime-
   proven.
-- **Orchestrator: Stage 1 BUILT (client-side).** Holds the envelope, version-keys the Umbilical,
-  authors via provider order, validates before consent. `MainWindow` delegates the plan phase.
-  Repair/verify phases not yet migrated into it.
+- **Orchestrator: BUILT (client-side), owns the full phase machine.** Holds the envelope, version-keys
+  the Umbilical, authors via provider order + validates before consent (plan), and now runs
+  repair+verify (`RunRepairAsync`). `MainWindow` is a thin view (UI + cloud IO adapters). Unkeyed
+  envelope degrades only the plan phase.
 - **Gemma Satellite: Stage 2a BUILT.** `StoreApp/LocalPlanner.cs` — `GemmaLocalPlanner:IPlanAuthor`
   wired FIRST in provider order behind an `ILocalInference` seam (prompt + admissible-set grammar +
   prose-tolerant parse + `provenance:local-model`). `AbsentInference` default → app falls through to
