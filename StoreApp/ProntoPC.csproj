@@ -25,6 +25,11 @@
     <!-- Bundled Gemma model (Stage 2b). Globs nothing until the weights are placed in
          Assets\models\gemma-3-1b-it\ (genai_config.json + model.onnx + tokenizer). -->
     <Content Include="Assets\models\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Bundled AI-model + third-party license notices (Gemma Terms of Use +
+         Prohibited Use Policy). Shipped in every install so the required notices
+         travel with the distribution; also opened in-app from the "AI model &
+         licenses" link. -->
+    <Content Include="Assets\licenses\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

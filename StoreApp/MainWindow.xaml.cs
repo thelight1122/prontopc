@@ -233,6 +233,18 @@ public partial class MainWindow : Window
 
     void Close_Click(object sender, RoutedEventArgs e) => Close();
 
+    // Open the bundled AI-model + third-party license notices (Gemma Terms of Use +
+    // Prohibited Use Policy). Shipped as Content, so present in every install.
+    void OpenLicenses_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            string path = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "licenses", "GEMMA-NOTICE.txt");
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch { /* viewer unavailable — the file still ships in the install folder */ }
+    }
+
     static int Mb(object? v) { int m = 0; int.TryParse(v?.ToString(), out m); return m; }
     static string FormatMb(int mb) => mb >= 1024 ? $"{mb / 1024.0:0.0} GB" : $"{mb} MB";
 

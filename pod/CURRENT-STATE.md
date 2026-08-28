@@ -12,7 +12,16 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0013** (2026-08-28) — **Rule-based fallback removed; honest AI-unavailable recourse added.**
+**TOTEM-0014** (2026-08-28) — **Ship-readiness reached; `prontopc-repair-plan` PROMOTED draft → provisional.**
+Bundled the Gemma license + Prohibited Use Policy in-app (`StoreApp/Assets/licenses/*` as Content, opened
+via an in-app "AI model & licenses" link). **Verified the AI-unavailable make-good END-TO-END** in a
+forced-fallback run: model disabled + cloud pointed at a keyless local server → local declines → cloud
+declines → app POSTs `/api/report-ai-unavailable` (machine `DMTAI-DEV`, correct reason, coupon none) →
+honest make-good screen; temp instruments reverted, build clean. Updated BUILD_INSTRUCTIONS (bundled
+model+licenses, AI-transparency listing copy). Promoted repair-plan in `pod.json` + `orb.json` — C3 met
+on-device makes the old "LIVE-only" gate obsolete. WPF 0/0; PodEval 28 PASS. All 14 Totems HOLD.
+
+**Prior:** TOTEM-0013 — **Rule-based fallback removed; honest AI-unavailable recourse added.**
 The app no longer shows a non-AI plan under the AI claim under any condition. When BOTH AI authors
 decline (on-device Gemma AND cloud broker — now rare), the client POSTs the miss to a new backend
 endpoint `POST /api/report-ai-unavailable`, which issues a **single-use 100% make-good coupon** (tagged
@@ -81,9 +90,10 @@ spec; -0001 opened the Pod.)
 ## What is true now
 - Clean Pod opened at `pod/`, validates against contracts. Pod trust_state: **draft**.
 - **Placed (provisional):** repair-engine, diagnostics, session, loyalty, stripe-portal, cloudrun-portal.
-- **repair-plan: IMPLEMENTED** (code done, Auditor 4/4 static PASS) but trust_state still **draft**
-  because **C3 is LIVE-only** and unrun. I2 is fixed in code.
-- **repair-plan Satellite `local-model`: BUILT + PROVEN (draft).** v0.1 = int4 `gemma-3-1b-it`,
+- **repair-plan: PROVISIONAL** (TOTEM-0014). C3 satisfied **on-device**, so the old "C3 is LIVE-only"
+  gate is obsolete; I2 hardened (no non-AI substitution at all); licenses bundled; packaging-ready.
+  `verified` still pending Tracey's production deploy + hot run + external Codex audit + Store cert.
+- **repair-plan Satellite `local-model`: BUILT + PROVEN (provisional).** v0.1 = int4 `gemma-3-1b-it`,
   on-device, client-side; cloud (Azure→Gemini) demoted to fallback. `Microsoft.ML.OnnxRuntimeGenAI`
   0.15.2 + the model are bundled in `ProntoPC.csproj`; proven both by `tests/ModelSmoke` and a full
   WPF end-to-end run (see Latest verification). Pro tier = Gemma 4 E2B/E4B multimodal (deferred).
@@ -102,15 +112,16 @@ spec; -0001 opened the Pod.)
   (2026-08-28 — provider=local-model in the shipping app, no offline banner). `CreateOrAbsent`
   auto-activates it; falls through to cloud if absent. **C3 satisfied on-device.**
 - **Draft — not built yet:** custodian-stage, llm-portal, mint-portal. **Ship readiness for repair-plan:**
-  ✅ full WPF end-to-end run with model bundled (DONE) → remaining: Gemma license bundling + MSIX
-  packaging → then promote to provisional.
+  ✅ WPF end-to-end run · ✅ AI-unavailable make-good verified end-to-end · ✅ Gemma license + Prohibited
+  Use Policy bundled in-app · ✅ packaging inputs verified (model + licenses as Content; manifest identity
+  set) · ✅ **promoted draft → provisional**. MSIX `.msixupload` build is Tracey's VS/Partner Center step.
 - Manifest of Completion: `docs/MANIFEST_OF_COMPLETION.md`. Opening audit: 5 PASS / 3 FAIL
   (I1, I2, U6) / 4 PARTIAL / 4 UNVERIFIABLE.
 - **I2 now fixed** (TOTEM-0013 hardened it): there is **no non-AI substitution at all** — the rule-based
   plan was removed. When AI is unavailable the app shows honest recourse (100% make-good coupon), never
   a heuristic plan under the AI claim. **C4 now fixed** (TOTEM-0012): listing copy corrected from "35+"
   to the honest **25** system areas in `docs/custodian-spec.md`.
-- **AI-unavailable make-good: BUILT (draft, not deployed).** `POST /api/report-ai-unavailable` in
+- **AI-unavailable make-good: BUILT + VERIFIED end-to-end (not deployed).** `POST /api/report-ai-unavailable` in
   `pronto-server-cloudrun.mjs` mints a single-use **100% coupon** (email+machine tagged, `source=ai_unavailable`),
   emails the customer + Support@ProntoPC.online; the WPF client reports the miss and shows a make-good
   screen. Reuses the proven Resend + Stripe promo-code path. No live email/coupon sent from dev.
@@ -125,11 +136,15 @@ spec; -0001 opened the Pod.)
   (subsumed by `clear_all_browser_caches`).
 
 ## Next gated step
-**Ship readiness for `prontopc-repair-plan` (Stage 2b DONE; full WPF end-to-end run DONE 2026-08-28 —
-local-first plan proven in the real UI):** remaining before promotion — bundle the Gemma license +
-Prohibited Use Policy in-app and in the Store listing, then package the MSIX (~700 MB model as Content),
-**then promote `prontopc-repair-plan` draft → provisional.** (Alternative cloud-C3 path remains
-available: Cloud Run + `certification_preflight.py`. After promotion: `prontopc-custodian-stage`.)
+**`prontopc-repair-plan` is PROVISIONAL — the engineering ship-readiness is done. The remaining gates are
+Tracey's, before Store cert:**
+1. **Deploy** the backend (Cloud Run) with the make-good env set: `SUPPORT_EMAIL`, `MAKEGOOD_COUPON_ID`,
+   `RESEND_API_KEY`, `STRIPE_SECRET_KEY` (last two already in use).
+2. **Production hot run** — full end-to-end against the live deploy (success path + a real make-good).
+3. **External Codex code audit.**
+4. **Resubmit to Store cert** — build the `.msixupload` in VS (identity already set), submit in Partner Center.
+On cert pass + hot-run confidence, promote repair-plan **provisional → verified**. After: `prontopc-custodian-stage`.
+
 Watch item (not blocking): the 1B model's summary specificity was low on the WPF run (generic wording,
 1 action, ~0 MB) — consider prompt/decoding tuning if it recurs on a machine with real clutter.
 

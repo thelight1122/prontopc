@@ -85,6 +85,9 @@
         </Button>
         <TextBlock Text="Permission is already granted — repairs run immediately."
                    Foreground="#c3c8e6" FontSize="11" TextAlignment="Center" Margin="0,8,0,0"/>
+        <TextBlock TextAlignment="Center" Margin="0,4,0,0" FontSize="11">
+          <Hyperlink Click="OpenLicenses_Click" Foreground="#8b8fb0" TextDecorations="Underline">AI model &amp; licenses</Hyperlink>
+        </TextBlock>
       </StackPanel>
     </Grid>
 
@@ -130,6 +133,9 @@
               Foreground="#eef1ff" Background="#12142c" Cursor="Hand" HorizontalAlignment="Center"/>
       <TextBlock Text="support@prontopc.online" Foreground="#a78bfa" FontSize="12"
                  TextAlignment="Center" Margin="0,12,0,0"/>
+      <TextBlock TextAlignment="Center" Margin="0,4,0,0" FontSize="11">
+        <Hyperlink Click="OpenLicenses_Click" Foreground="#8b8fb0" TextDecorations="Underline">AI model &amp; licenses</Hyperlink>
+      </TextBlock>
     </StackPanel>
   </Grid>
 </Window>

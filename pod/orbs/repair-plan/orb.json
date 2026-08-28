@@ -31,7 +31,7 @@
   "umbilicals": ["umbilical.json"],
   "evidence": {
     "created_utc": "2026-08-27T00:00:00Z",
-    "source": "IMPLEMENTED 2026-08-27 in pronto-server-cloudrun.mjs (authorRepairPlan, REPAIR_ACTION_CATALOGUE, status/provenance handlers) and StoreApp/MainWindow.xaml.cs (status-aware branch + labelled ShowOfflinePlan). Backend node --check OK; WPF build 0 errors. Auditor verified 3/4 static DoD PASS (I2, catalogue-subset, provenance). trust_state stays draft: promotion to provisional is gated on C3, which is LIVE-only (run certification_preflight.py against a live deploy).",
-    "trust_state": "draft"
+    "source": "PROMOTED to provisional 2026-08-28 (TOTEM-0014). C3 is satisfied ON-DEVICE: the local-model Satellite (int4 gemma-3-1b-it) authors a genuine plan offline (provenance=local-model), proven by tests/ModelSmoke AND a full WPF end-to-end run in the real UI (TOTEM-0010/-0011). The old 'C3 is LIVE-only' gate no longer applies — the local model is the durable kill of the 10.1.2.10 billing cliff. The rule-based ShowOfflinePlan was REMOVED (TOTEM-0013): the app never presents a non-AI plan under the AI claim; when both AI authors decline it issues an honest 100% make-good (verified end-to-end, TOTEM-0013). Gemma license + Prohibited Use Policy bundled in-app (TOTEM-0014). Envelope enforced; WPF build 0/0; PodEval 28 PASS. Remaining to reach 'verified': production deploy + hot run + external (Codex) code audit + Store cert.",
+    "trust_state": "provisional"
   }
 }

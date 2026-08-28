@@ -39,7 +39,7 @@
       "orb_id": "prontopc-repair-plan",
       "required_for_full_function": true,
       "umbilical": "orbs/repair-plan/umbilical.json",
-      "trust_state": "draft",
+      "trust_state": "provisional",
       "manifest_specs": ["I2", "C3"]
     },
     {

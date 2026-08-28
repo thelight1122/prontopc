@@ -1,0 +1,27 @@
+PRONTO PC — THIRD-PARTY NOTICES
+================================
+
+Pronto PC includes the following third-party components. Each is the property of
+its respective owner and is used under its own license. Full license texts are
+available at the URLs below.
+
+1. Gemma 3 1B (google/gemma-3-1b-it)
+   Google LLC — Gemma Terms of Use.
+   Bundled on-device as an int4 ONNX build (a modified form of the weights).
+   Terms:            https://ai.google.dev/gemma/terms
+   Prohibited Use:   https://ai.google.dev/gemma/prohibited_use_policy
+   See GEMMA-NOTICE.txt in this folder for the required model notice.
+
+2. ONNX Runtime GenAI  (Microsoft.ML.OnnxRuntimeGenAI)
+   Microsoft — MIT License.
+   https://github.com/microsoft/onnxruntime-genai/blob/main/LICENSE
+
+3. ONNX Runtime  (Microsoft.ML.OnnxRuntime)
+   Microsoft — MIT License.
+   https://github.com/microsoft/onnxruntime/blob/main/LICENSE
+
+4. .NET / WPF runtime and System.Management
+   Microsoft — MIT License.
+   https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
+
+Pronto PC · 5D Service Solutions Global LLC · support@prontopc.online

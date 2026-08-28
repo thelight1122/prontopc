@@ -1,0 +1,42 @@
+PRONTO PC — BUNDLED AI MODEL NOTICE
+====================================
+
+Pronto PC builds your personalized repair plan on-device using an open weights
+model from Google's Gemma family. No diagnostic data leaves your PC to build the
+plan; inference runs locally.
+
+Model
+-----
+  Name:            Gemma 3 1B (instruction-tuned)  —  google/gemma-3-1b-it
+  As distributed:  quantized to int4 and converted to ONNX for on-device
+                   inference via ONNX Runtime GenAI. This is a modified form of
+                   the original Gemma weights.
+  Publisher:       Google
+
+Required notice
+---------------
+  Gemma is provided under and subject to the Gemma Terms of Use.
+
+  Your use of the bundled model — and any output it produces — is governed by:
+
+    Gemma Terms of Use
+      https://ai.google.dev/gemma/terms
+
+    Gemma Prohibited Use Policy
+      https://ai.google.dev/gemma/prohibited_use_policy
+
+  By using Pronto PC you agree to the Gemma Terms of Use and the Gemma
+  Prohibited Use Policy. The Prohibited Use Policy lists uses that are not
+  permitted; please read it. If you redistribute the bundled model or a
+  derivative of it, you must pass these terms (and this notice) along.
+
+Attribution
+-----------
+  Gemma is a trademark of Google LLC. This product is not endorsed by or
+  affiliated with Google. The Gemma model is used under the Gemma Terms of Use;
+  Google retains all rights in the original model weights.
+
+Full third-party attributions for Pronto PC are in THIRD-PARTY-NOTICES.txt in
+this same folder.
+
+Pronto PC · 5D Service Solutions Global LLC · support@prontopc.online
