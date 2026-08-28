@@ -84,9 +84,9 @@
     },
     "clean_windows_update_cache": {
       "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "present", "field": "update_leftovers.windows_update_cache_mb" },
+      "precondition": { "op": "gt", "field": "update_leftovers.windows_update_cache_mb", "value": 0 },
       "mb": { "source": "field", "field": "update_leftovers.windows_update_cache_mb", "unit": "mb", "fallback": 0 },
-      "notes": "Field name verified in buildDiagnosticText. Stops/starts wuauserv+bits around SoftwareDistribution\\Download purge; services are restored, so no reboot."
+      "notes": "Field verified in Diagnostics.cs (int mb). gt 0 so an empty cache is not offered. Stops/starts wuauserv+bits; services restored, no reboot."
     },
     "clean_component_store": {
       "risk": "low", "requires_restart": false, "outcome": "done",
@@ -96,7 +96,7 @@
     },
     "clean_delivery_optimization": {
       "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "present", "field": "update_leftovers.delivery_optimization_mb" },
+      "precondition": { "op": "gt", "field": "update_leftovers.delivery_optimization_mb", "value": 0 },
       "mb": { "source": "field", "field": "update_leftovers.delivery_optimization_mb", "unit": "mb", "fallback": 0 }
     },
     "remove_windows_old": {
@@ -107,8 +107,9 @@
     },
     "flush_dns": {
       "risk": "low", "requires_restart": false, "outcome": "done",
-      "precondition": { "op": "or", "of": [ { "op": "nonempty", "field": "dns_cache" }, { "op": "eq", "field": "network.connectivity.internet_reachable", "value": false } ] },
-      "mb": { "source": "none" }
+      "precondition": { "op": "or", "of": [ { "op": "gt", "field": "dns_cache.entries", "value": 0 }, { "op": "eq", "field": "network.connectivity.internet_reachable", "value": false } ] },
+      "mb": { "source": "none" },
+      "notes": "diag.dns_cache is an object {entries:N} (verified in Diagnostics.cs), so gate on entries>0, not object-nonempty."
     },
     "optimize_power_plan": {
       "risk": "low", "requires_restart": false, "outcome": "done",

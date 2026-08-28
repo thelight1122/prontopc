@@ -25,4 +25,11 @@
     <Resource Include="Assets\builder.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Action Envelope: the single source of truth (authored by the repair-engine Orb)
+         embedded by Link so the client keys to the same file, never a drifting copy.
+         Envelope.Load() reads it; the Orchestrator keys the plan Umbilical to it. -->
+    <EmbeddedResource Include="..\pod\orbs\repair-engine\action-envelope.json" Link="action-envelope.json" />
+  </ItemGroup>
+
 </Project>

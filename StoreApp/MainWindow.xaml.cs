@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,11 +18,17 @@ public partial class MainWindow : Window
     string _token;
     readonly List<(Dictionary<string, object?> action, CheckBox box)> _rows = new();
     bool _offline;
+    readonly Orchestrator? _orch;
 
     public MainWindow(string token)
     {
         InitializeComponent();
         _token = token;
+        // The Orchestrator holds the Action Envelope and keys the plan Umbilical to it.
+        // Provider order (Stage 1): cloud broker. If the envelope fails to load/key,
+        // degrade to a labelled offline plan rather than blocking the app.
+        try { _orch = new Orchestrator(new IPlanAuthor[] { new CloudPlanAuthor(CloudRun, () => _token) }); }
+        catch { _orch = null; }
         Loaded += async (_, __) => await Start();
     }
 
@@ -39,29 +46,25 @@ public partial class MainWindow : Window
             _token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
 
         _offline = false;
-        try
-        {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
-            string payload = JsonSerializer.Serialize(new { token = _token, diagnostics = diag });
-            var resp = await http.PostAsync($"{CloudRun}/api/submit-diagnostics",
-                new StringContent(payload, Encoding.UTF8, "application/json"));
-            string body = await resp.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(body);
-            var root = doc.RootElement;
-            string status = root.TryGetProperty("status", out var st) ? (st.GetString() ?? "") : "";
-            // The genuine, model-authored plan.
-            if (status == "ok" && root.TryGetProperty("plan", out var plan)) { ShowFindings(plan); return; }
-            // Back-compat: an older server with no "status" field but a plan present.
-            if (status == "" && resp.IsSuccessStatusCode && root.TryGetProperty("plan", out var legacyPlan))
-            { ShowFindings(legacyPlan); return; }
-        }
-        catch { }
 
-        // status:"unavailable" or the service was unreachable — the AI plan is genuinely
-        // absent. Presenting a heuristic plan AS the AI plan is what failed Store
-        // certification (10.1.2.10). Show it, but honestly labelled as an offline plan.
-        ShowOfflinePlan(BuildLocalPlan(diag));
+        // Plan phase: the Orchestrator authors a plan (cloud broker in Stage 1) and
+        // validates it against the keyed Action Envelope before it reaches consent.
+        if (_orch != null)
+        {
+            var outcome = await _orch.AuthorPlanAsync(diag);
+            if (outcome.IsOk) { ShowFindings(ToElement(outcome.Plan!)); return; }
+        }
+
+        // No genuine model plan (status:"unavailable" / unreachable / no envelope).
+        // Presenting a heuristic plan AS the AI plan is what failed Store certification
+        // (10.1.2.10), so show it honestly labelled as offline — and still run it through
+        // the envelope so even the fallback is admissible and honestly measured.
+        var offline = BuildLocalPlan(diag);
+        if (_orch != null) offline = ToElement(_orch.Sanitize(offline, diag));
+        ShowOfflinePlan(offline);
     }
+
+    static JsonElement ToElement(JsonNode node) => JsonSerializer.SerializeToElement(node);
 
     // ── Local fallback when backend is unreachable ───────────────────────────
     static JsonElement BuildLocalPlan(Dictionary<string, object?> diag)

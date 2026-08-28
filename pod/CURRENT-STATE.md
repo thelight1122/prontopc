@@ -12,15 +12,14 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0004** (2026-08-28) — **Specced the local-model Satellite + built the strict bounded
-Action Envelope.** v0.1 ships an embedded **Gemma 3 1B-it QAT** (text-only, <1GB, ONNX Runtime
-GenAI + DirectML, bundled in the MSIX) that authors the plan **on-device, client-side** — the
-durable kill for the C3 billing cliff; Gemma 4 E2B/E4B multimodal is deferred to **Pro**. The
-**Action Envelope** (`pod/orbs/repair-engine/action-envelope.json`, 26 guards grounded in
-`Repair.cs`) is a per-action admissibility contract: the **repair-engine owns** it, the
-**Orchestrator holds** it and **keys the plan Umbilical** to it. Safety is now structural — a 1B
-model can't emit an inadmissible/mislabelled/over-claiming action. All 4 Totems HOLD (drift on the
-two code files cleared by re-audit). (TOTEM-0003 implemented the repair-plan Orb; -0002 its spec;
+**TOTEM-0005** (2026-08-28) — **Built Orchestrator Stage 1: the client now holds the Action
+Envelope and keys the plan Umbilical to it.** `StoreApp/Envelope.cs` (loader + predicate evaluator +
+`AdmissibleSet` + `Validate`) and `StoreApp/Orchestrator.cs` (provider-order authors, version-key
+check, validate-before-consent) added; `MainWindow` delegates the plan phase to the Orchestrator.
+The cloud plan is now envelope-validated before consent — `risk`/`requires_restart` stamped from the
+envelope, `estimated_mb` clamped, out-of-catalogue/false-precondition/subsumed actions dropped.
+**Proven at runtime** (scratchpad console over the real `Envelope.cs`). WPF build 0/0. All 5 Totems
+HOLD. (TOTEM-0004 wrote the envelope + Satellite spec; -0003 the repair-plan Orb; -0002 its spec;
 -0001 opened the Pod.)
 
 ## What is true now
@@ -31,11 +30,15 @@ two code files cleared by re-audit). (TOTEM-0003 implemented the repair-plan Orb
 - **repair-plan Satellite `local-model`: SPECCED (draft).** v0.1 = Gemma 3 1B-it QAT, on-device,
   client-side; cloud (Azure→Gemini) demoted to fallback. Not yet built — no ONNX runtime/model in
   `ProntoPC.csproj` yet. Pro tier = Gemma 4 E2B/E4B multimodal (deferred).
-- **Action Envelope: BUILT (contract, draft).** `pod/orbs/repair-engine/action-envelope.json`
-  (26 guards) + `pod/contracts/action-envelope.schema.json`; the repair-plan Umbilical is **keyed**
-  to it (`working_parameters.envelope_ref`) and the Orchestrator **holds** it
-  (`orchestrator.holds_contracts`). No code consumes it yet — the Orchestrator is `to_build`.
-- **Draft — not built yet:** custodian-stage, llm-portal, mint-portal, **Orchestrator**.
+- **Action Envelope: BUILT + ENFORCED.** `action-envelope.json` (26 guards) + schema; the
+  repair-plan Umbilical is **keyed** to it and the Orchestrator **holds** it. Now **consumed** by
+  `StoreApp/Envelope.cs` at runtime (embedded via csproj Link — single source of truth). Runtime-
+  proven.
+- **Orchestrator: Stage 1 BUILT (client-side).** Holds the envelope, version-keys the Umbilical,
+  authors via provider order (Stage 1 = cloud broker), validates before consent. `MainWindow`
+  delegates the plan phase. **Stage 2 pending:** the Gemma local-model Satellite as first author.
+  Repair/verify phases not yet migrated into it.
+- **Draft — not built yet:** custodian-stage, llm-portal, mint-portal, **Gemma Satellite (Stage 2)**.
 - Manifest of Completion: `docs/MANIFEST_OF_COMPLETION.md`. Opening audit: 5 PASS / 3 FAIL
   (I1, I2, U6) / 4 PARTIAL / 4 UNVERIFIABLE.
 - **I2 now fixed** in `StoreApp/MainWindow.xaml.cs` (no silent non-AI substitution; offline plan is
@@ -51,13 +54,12 @@ two code files cleared by re-audit). (TOTEM-0003 implemented the repair-plan Orb
   (subsumed by `clear_all_browser_caches`).
 
 ## Next gated step
-**Two tracks. Preferred (durable C3): build the on-device model path.** Build the **Orchestrator**
-envelope-keying + client **`ILocalPlanner`** (Gemma 3 1B via ONNX Runtime GenAI): compile the
-per-machine admissible set from the envelope, constrained-decode, post-validate. This makes the AI
-plan present offline and retires the billing cliff **without** a live cloud deploy.
-**Alternative (cloud C3):** deploy backend to Cloud Run (us-central1) + rebuild MSIX + run
-`python certification_preflight.py` (needs Tracey — gcloud creds / VS packaging). After either:
-build `prontopc-custodian-stage` (the redesign).
+**Stage 2 — attach the Gemma 3 1B local-model Satellite** as the first `IPlanAuthor` (ONNX Runtime
+GenAI + DirectML; model bundled in the MSIX; grammar constrained to the Orchestrator's admissible
+set). This makes the AI plan present offline and is the durable C3 billing-cliff kill — no live
+cloud deploy required. Then: grow the runtime proof into a ~10-fixture eval suite; migrate the
+repair/verify phases into the Orchestrator. (Alternative cloud-C3 path still open: deploy to Cloud
+Run + `certification_preflight.py` — needs Tracey. After: `prontopc-custodian-stage`.)
 
 ## How to work here
 1. `python pod/totems/verify_totems.py` — confirm the picture holds.
