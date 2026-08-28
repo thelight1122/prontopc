@@ -56,8 +56,9 @@ Current state (from the opening audit — 5 PASS / 3 FAIL / 4 PARTIAL / 4 UNVERI
 | mint-portal | draft | **create** | — |
 
 Open items the audit flagged that a specific Orb now owns:
-- **C4 false claim**: the listing says "35+ categories"; the honest count is 25 (`Diagnostics.cs`).
-  The `diagnostics` Orb either grows to 35 real categories or the listing claim is corrected.
+- **C4 false claim — RESOLVED (TOTEM-0012):** the listing claim was corrected to the honest count.
+  `docs/custodian-spec.md` now says "25 system areas" (matching the 25 `Section(...)` collectors in
+  `Diagnostics.cs`) instead of "35+". Alternative path (grow `diagnostics` to 35 real categories) not taken.
 - **I3**: `llm-portal` must prove primary+fallback resilience; the local-model Satellite is the
   durable answer (no billing cliff).
 

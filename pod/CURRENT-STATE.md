@@ -12,7 +12,12 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0011** (2026-08-28) — **Envelope now owns the reclaim estimate.** For measurable reclaim
+**TOTEM-0012** (2026-08-28) — **C4 false claim killed.** The listing copy in `docs/custodian-spec.md`
+overstated the diagnostic as "35+ system areas"; the honest count is **25** (verified: 25 `Section(...)`
+collectors in `Diagnostics.cs`). Corrected the copy to "25 system areas" and marked C4 RESOLVED in
+`pod/README.md`. No code path changed — an honesty fix to shipping listing copy. All 12 Totems HOLD.
+
+**Prior:** TOTEM-0011 — **Envelope now owns the reclaim estimate.** For measurable reclaim
 actions, `Envelope.cs` **sets** `estimated_mb_recovered` to the true diagnostics measure
 (`cap>0 ? round(cap) : 0`) instead of trusting the model and only clamping over-claims — so it now
 also corrects the model's **under-claims upward** (the optional follow-up TOTEM-0010 flagged: the
@@ -77,7 +82,8 @@ spec; -0001 opened the Pod.)
 - Manifest of Completion: `docs/MANIFEST_OF_COMPLETION.md`. Opening audit: 5 PASS / 3 FAIL
   (I1, I2, U6) / 4 PARTIAL / 4 UNVERIFIABLE.
 - **I2 now fixed** in `StoreApp/MainWindow.xaml.cs` (no silent non-AI substitution; offline plan is
-  explicitly labelled). Still open: **C4** — "35+ categories" claim is really **25** (`Diagnostics.cs`).
+  explicitly labelled). **C4 now fixed** (TOTEM-0012): listing copy corrected from "35+" to the honest
+  **25** system areas in `docs/custodian-spec.md`.
 
 ## Open review items (carried, not blessed)
 - **Session gate:** `handleSubmitDiagnostics` now **auto-creates** a session instead of 404 on an
@@ -93,8 +99,7 @@ spec; -0001 opened the Pod.)
 run the full WPF app end-to-end with the int4 model bundled (confirm the local-first plan renders in
 the real UI), bundle the Gemma license + Prohibited Use Policy in-app and in the Store listing,
 package the MSIX (~700 MB model as Content), **then promote `prontopc-repair-plan` draft → provisional.**
-Still open: **C4** — the "35+ categories" claim is really **25** (`Diagnostics.cs`). (Alternative
-cloud-C3 path remains available: Cloud Run + `certification_preflight.py`. After promotion:
+(Alternative cloud-C3 path remains available: Cloud Run + `certification_preflight.py`. After promotion:
 `prontopc-custodian-stage`.)
 
 ## How to work here

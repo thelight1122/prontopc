@@ -484,7 +484,7 @@ Use a **Generative Answers** node pointed at the knowledge base below, or use Co
 > "$29 flat rate. That's it — no subscriptions, no upsells, no hidden fees."
 
 **What's included:**
-> "A comprehensive diagnostic covering 35+ system areas — drivers, security, network, storage, performance, and more. Plus an AI-generated repair plan and a detailed HTML report you keep forever."
+> "A comprehensive diagnostic covering 25 system areas — drivers, security, network, storage, performance, and more. Plus an AI-generated repair plan and a detailed HTML report you keep forever."
 
 **Safety:**
 > "Everything we do is transparent. You see every action before it runs, and nothing happens without your approval. The diagnostic scan only reads information — it doesn't change anything on your computer."
