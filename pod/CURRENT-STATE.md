@@ -12,7 +12,21 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0014** (2026-08-28) — **Ship-readiness reached; `prontopc-repair-plan` PROMOTED draft → provisional.**
+**TOTEM-0016** (2026-08-28) — **Repo review + drift cleared.** On resume the verifier flagged one DRIFT:
+`index.html` (authority TOTEM-0015). Root cause is benign — commit `f55fc8c` (hero CTA redesign: single
+Start-a-Repair CTA + Fix It Now card + new hero image) moved `index.html` forward **outside a Totem cycle**,
+so the TOTEM-0015 hash went stale. Audited it: a hero-section change (12 ins / 15 del + base64 asset data),
+**not a regression**. Re-verified the C4 honesty fix **survived** — `index.html` still reads "25 diagnostic
+categories" (×2) and **no genuine "35+" claim remains** (the only "35+" byte-matches are inside the base64
+image blobs, not visible copy). Re-bound `index.html` at its current hash; **all 16 Totems now HOLD**.
+No code authored — a review + re-record only. External gates (below) unchanged.
+
+**Prior:** TOTEM-0015 — **C4 fully fixed across the live site + legal pages.** Corrected every visible
+"35+ categories" claim to the honest **25** in `index.html` (×4), `guardian-offer.html`, `terms.html`.
+Flagged the **stale Vercel deploy** (serves a pre-AEGIS page) — a redeploy is required for the corrected
+copy to go live (Tracey's step).
+
+**Prior:** TOTEM-0014 (2026-08-28) — **Ship-readiness reached; `prontopc-repair-plan` PROMOTED draft → provisional.**
 Bundled the Gemma license + Prohibited Use Policy in-app (`StoreApp/Assets/licenses/*` as Content, opened
 via an in-app "AI model & licenses" link). **Verified the AI-unavailable make-good END-TO-END** in a
 forced-fallback run: model disabled + cloud pointed at a keyless local server → local declines → cloud
