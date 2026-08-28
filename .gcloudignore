@@ -17,3 +17,19 @@ test-pay.html
 guardian-offer.html
 guardian.html
 logo.png
+assets
+
+# Large caches, engineering, and non-server files — the Cloud Run service is only
+# pronto-server-cloudrun.mjs + package.json, so keep the source upload lean.
+.hf-cache
+CustodianPrototype
+archive
+pod
+tests
+deploy
+scratch_aegis_proof.html
+scratch_cube_stage.html
+*.msix
+*.cer
+*.ps1
+*.md
