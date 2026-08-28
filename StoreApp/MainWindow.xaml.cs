@@ -29,9 +29,13 @@ public partial class MainWindow : Window
         // -> cloud broker. The Satellite runs only when a model is bundled (Stage 2b);
         // until then AbsentInference makes it decline and the cloud broker authors,
         // unchanged. An unkeyed envelope degrades only the plan phase (labelled offline).
+        // The Satellite uses the bundled Gemma if present (Stage 2b), else AbsentInference
+        // (declines -> cloud). CreateOrAbsent keys off genai_config.json, so dropping the
+        // model into Assets/models/gemma-3-1b-it activates it with no code change.
+        string modelDir = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "models", "gemma-3-1b-it");
         _orch = new Orchestrator(new IPlanAuthor[]
         {
-            new GemmaLocalPlanner(new AbsentInference()),
+            new GemmaLocalPlanner(OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it")),
             new CloudPlanAuthor(CloudRun, () => _token),
         });
         Loaded += async (_, __) => await Start();

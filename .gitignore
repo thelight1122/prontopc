@@ -17,6 +17,10 @@ StoreApp/package-layout/
 ProntoAgent/build/
 ProntoAgent/dist/
 
+# Bundled on-device model weights (built via the onnxruntime-genai model builder;
+# ~0.7GB — a build artifact, not source. Packaged into the MSIX from disk.)
+StoreApp/Assets/models/
+
 # Logs & local tooling
 *.log
 server.err

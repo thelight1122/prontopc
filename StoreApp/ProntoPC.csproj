@@ -17,6 +17,14 @@
   <ItemGroup>
     <!-- WMI access for the native diagnostic collector (Diagnostics.cs) -->
     <PackageReference Include="System.Management" Version="8.0.0" />
+    <!-- On-device inference for the local-model Satellite (OnnxGenAiInference.cs) -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI" Version="0.15.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Bundled Gemma model (Stage 2b). Globs nothing until the weights are placed in
+         Assets\models\gemma-3-1b-it\ (genai_config.json + model.onnx + tokenizer). -->
+    <Content Include="Assets\models\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -12,7 +12,15 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0007** (2026-08-28) — **Migrated the repair + verify phases into the Orchestrator.**
+**TOTEM-0008** (2026-08-28) — **Stage 2b inference code complete + building.** `OnnxGenAiInference`
+(ONNX Runtime GenAI 0.15.2) implements `ILocalInference` — lazy off-thread model load, `json_schema`
+guided decoding, prompt-stripped decode; `CreateOrAbsent` auto-activates the bundled Gemma via
+`genai_config.json`, else `AbsentInference` (app unchanged). Package + `Assets/models/**` bundling in
+csproj. WPF build 0/0. **NOT runtime-tested — the <1GB model artifact is an open decision** (no
+ready-made <1GB GenAI Gemma-3-1b; ready ones ~1.9GB; on-budget needs an int4 build from
+`google/gemma-3-1b-it`). All 8 Totems HOLD.
+
+**Prior:** TOTEM-0007 — **Migrated the repair + verify phases into the Orchestrator.**
 `Orchestrator.RunRepairAsync` now invokes the engine over the approved actions (progress + summary);
 `MainWindow.RunRepair` is a thin view. The ctor is now non-throwing — an unkeyed/unloadable envelope
 degrades ONLY the plan phase (labelled offline), leaving repair/verify working. The Orchestrator owns
