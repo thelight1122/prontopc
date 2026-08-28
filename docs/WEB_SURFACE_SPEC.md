@@ -12,6 +12,30 @@ model** or listed in **§5 Honesty invariants**, it does not go on a page.
 
 ---
 
+## 0. Founding principle — never project force onto the customer
+
+Everything below derives from this one line: **the product never projects authority, force, or dominance
+onto the customer.**
+
+The customer arrives already stressed and feeling out of control — something is broken. That is exactly the
+state in which a command, a pressure tactic, or a dominance cue seizes their whole awareness and breaks their
+trust. ProntoPC's purpose is to be the *opposite* of force: a peer guide who never commands, pressures, or
+dominates, so the customer keeps their full attention on their own choice and stays fully in control.
+
+This is not a copy guideline among others — it is the spine the rest of the surface hangs from. Every rule in
+this spec is a **derivation** of it:
+
+- **Voice (§6):** confident invitation, never a directive.
+- **Motion (§7):** the Fix It Now *breath* — an invitation, not a demanding blink.
+- **Architecture (§2):** consent-gated repairs; "you see everything, you decide everything."
+- **Pricing (§2, §5):** no upsell, no pressure, and no reassurance that *plants a doubt* (e.g. "at no
+  additional cost") — planting a doubt to manage the customer is itself a small force move.
+- **The Custodian (`pod/orbs/custodian-stage/`):** defers when uncertain and hands every action back to the
+  customer's consent — the AI's manners are the same principle.
+
+**Test for any page, sentence, or interaction:** does it leave the customer in full awareness and full
+control, or does it push? If it pushes, it is wrong here — reword or remove it.
+
 ## 1. Purpose
 
 Give the web rebuild the same clean-rebuild discipline the Pod already has. Every customer-facing page is
@@ -78,6 +102,12 @@ Retired: the entire *Run box → PowerShell → Ctrl+V → scan command → repa
 - "nothing is installed", "nothing is downloaded", "runs in memory", "in memory", "no software to install".
 - any **category count** ("25 categories", "35+ categories") — name the **six areas** instead.
 - any non-AI / rule-based / "offline basic" plan presented under the AI claim (Manifest **I2**).
+- **redundant reassurances that plant a doubt** — "at no additional cost", "at no extra cost", "no hidden
+  fees" for something already included in the $29. Of course it's included; saying so implies a charge
+  *could* exist and quietly undercuts the transparency it sits under. State the fact plainly and stop
+  (e.g. "keep your diagnostic report." — not "…at no additional cost"). The single legitimate use of a
+  cost phrase is the **30-day guarantee re-repair** ("at no charge"), where a fresh service genuinely could
+  have carried one.
 
 **Required truths (must be derivable from §2):**
 - the product is a **downloaded, installed, Store-certified app**;
