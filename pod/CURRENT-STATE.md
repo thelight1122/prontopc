@@ -12,7 +12,21 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0018** (2026-08-28) — **Killed a copy-paste architecture drift in the site "how it works."**
+**TOTEM-0019** (2026-08-28) — **Opened the `custodian-stage` Orb — the conversational Custodian Technician
+(SPEC + Conversation Contract, no app code).** The on-device Gemma stops being a silent one-shot plan author
+and becomes a **session-scoped chat technician** — the chat window that replaces the command window
+(Tracey's direction; settles the A/B as **A, the certified app**). `custodian-stage` was already declared
+draft in `pod.json` (specs U1–U6) but its dir was empty and its umbilical dangled — now filled. Core artifact:
+the **Conversation Contract** (Tracey's "Model Contract") — a JSON schema + instance, **sibling of the Action
+Envelope** (envelope bounds what the model may *do*; this bounds how it may *talk*): fixes interactive params
+(temperature/top_p/max_new_tokens/max_turns), scopes talk to one repair session, and states the guardrails —
+may **explain** an action but never author/approve/execute it (handoff to the envelope-validated consent path =
+continuation of **I2**), defer-when-uncertain (**U2**), no credentials, injection-resistant. Curated Windows-repair
+reference (prose Markdown, grounded in the six areas + the real 26 actions) ingested into the **32k** context —
+no RAG for v0.1. **Build phases next (each its own Totem):** (2) multi-turn `ILocalInference`, (3) `ChatPanel`,
+(4) system-prompt ingestion. JSON validated; all 19 Totems HOLD.
+
+**Prior:** TOTEM-0018 (2026-08-28) — **Killed a copy-paste architecture drift in the site "how it works."**
 Tracey caught step 3 describing a **copy-paste-a-command** flow ("single command to paste… Nothing is
 installed") — which is **not the product**. The shipping product is the **Microsoft-Store-certified**
 Custodian app that self-elevates (UAC) and runs the scan itself: **no command for the customer to copy or

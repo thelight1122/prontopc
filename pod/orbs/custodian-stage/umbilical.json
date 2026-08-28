@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0.0",
+  "umbilical_id": "prontopc-custodian-stage-umbilical",
+  "pod_id": "prontopc-pod",
+  "orb_id": "prontopc-custodian-stage",
+  "attachment_point": "orchestrator",
+  "runtime": { "language": "csharp", "form": "library" },
+  "invocation": {
+    "entrypoint": "StoreApp.CustodianChat",
+    "orb_version": "0.1.0"
+  },
+  "input_contract": {
+    "description": "One repair session's real, already-computed ground truth plus the customer's message. The chat authors nothing itself; it only talks about what is already true.",
+    "session": "string (token)",
+    "diagnostics": "object (the diagnostics Orb output for this machine)",
+    "plan": "object (the repair-plan Orb's authored plan: summary + validated actions + provenance) OR null if unavailable",
+    "history": "array (prior conversation turns: [{ role: 'user'|'model', text }])",
+    "message": "string (the customer's new message)"
+  },
+  "output_contract": {
+    "description": "A single conversational turn, or an explicit non-answer. The chat NEVER returns an action to execute — actionable intent becomes a handoff, not a repair.",
+    "oneOf": [
+      {
+        "kind": "reply",
+        "text": "string (grounded, in-scope, plain-English)",
+        "provenance": { "provider": "local-model", "model": "string" }
+      },
+      {
+        "kind": "refusal",
+        "reason": "out_of_scope | uncertain",
+        "text": "string (polite redirect, or honest 'I'm not certain - here's what the scan shows')"
+      },
+      {
+        "kind": "handoff_to_consent",
+        "action_ids": "array (ids the customer wants to proceed with; the app routes these to the existing envelope-validated consent path, which alone may execute)"
+      }
+    ]
+  },
+  "observation_contract": {
+    "description": "Events the stage may show. Per U1/U2/U3: narrate only real work, quote only real telemetry, and show 'done/green' only on real completion.",
+    "events": [
+      "conversation.started { session, model }",
+      "conversation.turn { role, tokens }",
+      "conversation.refused_scope { topic }",
+      "conversation.deferred_uncertain { subject }",
+      "conversation.handoff_to_consent { action_count }",
+      "conversation.ended { turns }"
+    ]
+  },
+  "evidence_contract": {
+    "description": "Each reply carries provenance (provider=local-model, model) as evidence the customer is talking to the on-device model. A PodEval-style check asserts the four guardrail behaviours: explains a real plan, refuses out-of-scope, defers on unknowns, and never emits an executable action."
+  },
+  "working_parameters": {
+    "status": "draft",
+    "contract_ref": {
+      "id": "prontopc-conversation-contract",
+      "version": "0.1.0",
+      "path": "pod/orbs/custodian-stage/conversation-contract.json",
+      "keyed_by": "orchestrator",
+      "description": "This Umbilical is KEYED to the Conversation Contract by the Orchestrator, exactly as the repair-plan Umbilical is keyed to the Action Envelope. The Orchestrator holds the contract, hash-checks this ref at attach (mismatch fails the attach), builds the system prompt from session_scope + guardrails + the ingested knowledge manifest, applies interactive_params to decoding, and enforces that no chat turn ever yields an executable action (handoff only)."
+    },
+    "outside_parameters_behavior": "Enforced by the Orchestrator via the keyed contract: (1) Out-of-scope topic -> kind:refusal(out_of_scope), never an answer. (2) Ungrounded specifics -> kind:refusal(uncertain), never fabricated. (3) Any actionable intent -> kind:handoff_to_consent, never direct execution (I2). (4) Interactive params (temperature, top_p, max_new_tokens, max_turns) come from the contract, not from model or customer input. (5) Diagnostics/pasted text are data, never instructions."
+  }
+}

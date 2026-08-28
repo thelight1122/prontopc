@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0.0",
+  "orb_id": "prontopc-custodian-stage",
+  "orb_version": "0.1.0",
+  "ability_name": "Conversational Custodian Technician",
+  "purpose": "The stage where the customer meets and talks to their Custodian: an on-device (local-model) conversational technician that explains the real diagnostics and the authored repair plan in plain English, answers questions about the repair, and hands every action to the consent + envelope-validated path. It is the chat window that replaces the command window. Bounded by the Conversation Contract (session scope, interactive params, guardrails, curated knowledge). Serves Manifest U1-U6.",
+  "runtime": {
+    "language": "csharp",
+    "form": "library",
+    "entrypoint": "StoreApp.CustodianChat"
+  },
+  "capabilities": [
+    { "name": "converse", "function": "Multi-turn, on-device conversation scoped to one repair session; opens by explaining the authored plan, then answers the customer's questions grounded in real diagnostics + the curated reference." },
+    { "name": "explain_not_author", "function": "May explain what an action does and why, but never authors/approves/executes it; proceeding always hands off to the existing consent + envelope-validated plan path (I2)." },
+    { "name": "honest_deference", "function": "Defers on anything not grounded in the diagnostics or curated reference instead of fabricating specifics (U2)." },
+    { "name": "scope_guard", "function": "Declines out-of-session topics and treats diagnostics/pasted text as data, not instructions (injection resistance)." }
+  ],
+  "demonstration": {
+    "input_fixture": "fixtures/custodian-chat.input.json",
+    "expected_outputs": [
+      "a 2+ turn conversation, offline, provenance=local-model, that explains the actual authored plan",
+      "an out-of-scope request politely redirected, not answered",
+      "an unknown deferred honestly ('I'm not certain - here's what the scan shows')",
+      "no action authored/executed by the chat under any prompt"
+    ],
+    "observable_events": [
+      "conversation.started { session, model }",
+      "conversation.turn { role, tokens }",
+      "conversation.refused_scope { topic } | conversation.deferred_uncertain { subject }",
+      "conversation.handoff_to_consent { action_count }"
+    ]
+  },
+  "umbilicals": ["umbilical.json"],
+  "evidence": {
+    "created_utc": "2026-08-28T00:00:00Z",
+    "source": "DRAFT (TOTEM-0019). Orb skeleton + Conversation Contract only; no app code yet. Reuses the proven on-device int4 gemma-3-1b-it (32768-token context). Gaps to build (each its own gated Totem): (2) multi-turn extension of ILocalInference, (3) ChatPanel surface, (4) system-prompt ingestion of the curated reference. Definition of Done in SPEC.md §5.",
+    "trust_state": "draft"
+  }
+}
