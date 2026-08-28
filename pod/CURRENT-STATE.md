@@ -119,8 +119,10 @@ spec; -0001 opened the Pod.)
   (I1, I2, U6) / 4 PARTIAL / 4 UNVERIFIABLE.
 - **I2 now fixed** (TOTEM-0013 hardened it): there is **no non-AI substitution at all** — the rule-based
   plan was removed. When AI is unavailable the app shows honest recourse (100% make-good coupon), never
-  a heuristic plan under the AI claim. **C4 now fixed** (TOTEM-0012): listing copy corrected from "35+"
-  to the honest **25** system areas in `docs/custodian-spec.md`.
+  a heuristic plan under the AI claim. **C4 now FULLY fixed:** the "35+" claim corrected to the honest
+  **25** in `docs/custodian-spec.md` (TOTEM-0012) **and across the live site + legal pages** — `index.html`
+  (×4), `guardian-offer.html`, `terms.html` (TOTEM-0015). **Note:** the live Vercel deploy is STALE (still
+  shows a pre-AEGIS page); a **redeploy to Vercel is needed** for the corrected repo copy to go live.
 - **AI-unavailable make-good: BUILT + VERIFIED end-to-end (not deployed).** `POST /api/report-ai-unavailable` in
   `pronto-server-cloudrun.mjs` mints a single-use **100% coupon** (email+machine tagged, `source=ai_unavailable`),
   emails the customer + Support@ProntoPC.online; the WPF client reports the miss and shows a make-good
