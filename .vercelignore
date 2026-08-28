@@ -1,0 +1,35 @@
+# The Vercel deploy is the STATIC SITE only (index + legal/marketing pages + assets).
+# Everything below is app code, build artifacts, docs, or scratch — never web content.
+# Keeps `vercel --prod` uploads small and prevents publishing non-site files.
+
+# App + agent + server source (the API lives on Cloud Run, not Vercel)
+StoreApp/
+ProntoAgent/
+CustodianPrototype/
+pronto-server-cloudrun.mjs
+package.json
+package-lock.json
+
+# Pod / engineering / docs / logs (not web content)
+pod/
+tests/
+docs/
+logs/
+archive/
+
+# Large local caches & tooling (1.9 GB HF cache must never upload)
+.hf-cache/
+.claude/
+.vercel/
+node_modules/
+__pycache__/
+
+# Scratch / proof / prototype files — never publish
+scratch_*.html
+*.py
+*.ps1
+*.bat
+*.sh
+*.md
+
+# Kept (do NOT ignore): *.html at root, logo.png, assets/  — the served site.
