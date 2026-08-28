@@ -14,8 +14,9 @@ namespace ProntoPC;
 public partial class MainWindow : Window
 {
     const string CloudRun = "https://pronto-pc-108655745293.us-central1.run.app";
-    readonly string _token;
+    string _token;
     readonly List<(Dictionary<string, object?> action, CheckBox box)> _rows = new();
+    bool _offline;
 
     public MainWindow(string token)
     {
@@ -24,15 +25,7 @@ public partial class MainWindow : Window
         Loaded += async (_, __) => await Start();
     }
 
-    async Task Start()
-    {
-        if (string.IsNullOrWhiteSpace(_token))
-        {
-            ShowError("No active session found. Please open ProntoPC from your purchase confirmation at prontopc.online.");
-            return;
-        }
-        await RunScan();
-    }
+    async Task Start() => await RunScan();
 
     // ── Scan ─────────────────────────────────────────────────────────────────
     async Task RunScan()
@@ -41,6 +34,11 @@ public partial class MainWindow : Window
         var diag = await Task.Run(() => Diagnostics.Collect());
 
         SetStatus("Analyzing…", "Building your personalized repair plan.");
+
+        if (string.IsNullOrWhiteSpace(_token))
+            _token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+
+        _offline = false;
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
@@ -48,19 +46,112 @@ public partial class MainWindow : Window
             var resp = await http.PostAsync($"{CloudRun}/api/submit-diagnostics",
                 new StringContent(payload, Encoding.UTF8, "application/json"));
             string body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode) { ShowError("We couldn't analyze your scan just now. Please try again in a moment."); return; }
-
             using var doc = JsonDocument.Parse(body);
-            if (!doc.RootElement.TryGetProperty("plan", out var plan)) { ShowError("The repair plan came back empty. Please try again."); return; }
-            ShowFindings(plan);
+            var root = doc.RootElement;
+            string status = root.TryGetProperty("status", out var st) ? (st.GetString() ?? "") : "";
+            // The genuine, model-authored plan.
+            if (status == "ok" && root.TryGetProperty("plan", out var plan)) { ShowFindings(plan); return; }
+            // Back-compat: an older server with no "status" field but a plan present.
+            if (status == "" && resp.IsSuccessStatusCode && root.TryGetProperty("plan", out var legacyPlan))
+            { ShowFindings(legacyPlan); return; }
         }
-        catch (Exception ex) { ShowError("Could not reach our service: " + ex.Message); }
+        catch { }
+
+        // status:"unavailable" or the service was unreachable — the AI plan is genuinely
+        // absent. Presenting a heuristic plan AS the AI plan is what failed Store
+        // certification (10.1.2.10). Show it, but honestly labelled as an offline plan.
+        ShowOfflinePlan(BuildLocalPlan(diag));
+    }
+
+    // ── Local fallback when backend is unreachable ───────────────────────────
+    static JsonElement BuildLocalPlan(Dictionary<string, object?> diag)
+    {
+        try
+        {
+            var actions = new List<Dictionary<string, object?>>();
+            var findings = new List<string>();
+
+            int tempMb = SumSizeMb(diag, "temp_files");
+            if (tempMb > 10)
+            {
+                actions.Add(PlanAction("clear_temp_files", "cleanup", "Clear temporary files", tempMb));
+                findings.Add($"{tempMb} MB in temporary files");
+            }
+
+            int cacheMb = SumSizeMb(diag, "browser_caches");
+            if (cacheMb > 10)
+            {
+                actions.Add(PlanAction("clear_all_browser_caches", "browser", "Clear browser caches", cacheMb));
+                findings.Add($"{cacheMb} MB in browser caches");
+            }
+
+            actions.Add(PlanAction("clear_windows_caches", "cleanup", "Clear Windows thumbnail and icon caches", 0));
+
+            int rbMb = DictSizeMb(diag, "recycle_bin");
+            if (rbMb > 10)
+            {
+                actions.Add(PlanAction("empty_recycle_bin", "cleanup", "Empty Recycle Bin", rbMb));
+                findings.Add($"{rbMb} MB in Recycle Bin");
+            }
+
+            actions.Add(PlanAction("flush_dns", "network", "Flush DNS cache", 0));
+
+            string summary = findings.Count > 0
+                ? $"Your system scan found {string.Join(", ", findings)} that can be cleaned up, along with other optimization opportunities."
+                : "Your system scan completed. We found standard maintenance items to help keep your PC running smoothly.";
+
+            return ToJsonElement(new Dictionary<string, object?> { ["summary"] = summary, ["actions"] = actions });
+        }
+        catch
+        {
+            return ToJsonElement(new Dictionary<string, object?>
+            {
+                ["summary"] = "Your system scan completed. We found maintenance items to help keep your PC running smoothly.",
+                ["actions"] = new List<Dictionary<string, object?>>
+                {
+                    PlanAction("clear_temp_files", "cleanup", "Clear temporary files", 0),
+                    PlanAction("clear_windows_caches", "cleanup", "Clear Windows caches", 0),
+                    PlanAction("flush_dns", "network", "Flush DNS cache", 0),
+                }
+            });
+        }
+    }
+
+    static Dictionary<string, object?> PlanAction(string id, string cat, string name, int mb) =>
+        new() { ["id"] = id, ["category"] = cat, ["friendly_name"] = name, ["risk"] = "low", ["estimated_mb_recovered"] = mb };
+
+    static JsonElement ToJsonElement(Dictionary<string, object?> plan)
+    {
+        string json = JsonSerializer.Serialize(plan);
+        using var doc = JsonDocument.Parse(json);
+        return doc.RootElement.Clone();
+    }
+
+    static int SumSizeMb(Dictionary<string, object?> diag, string key)
+    {
+        if (!diag.TryGetValue(key, out var val) || val is not IList<object> list) return 0;
+        int total = 0;
+        foreach (var item in list)
+            if (item is Dictionary<string, object?> d && d.TryGetValue("size_mb", out var mb))
+                try { total += (int)Math.Round(Convert.ToDouble(mb)); } catch { }
+        return total;
+    }
+
+    static int DictSizeMb(Dictionary<string, object?> diag, string key)
+    {
+        if (!diag.TryGetValue(key, out var val) || val is not Dictionary<string, object?> d || !d.TryGetValue("size_mb", out var mb)) return 0;
+        try { return (int)Math.Round(Convert.ToDouble(mb)); } catch { return 0; }
     }
 
     // ── Findings ─────────────────────────────────────────────────────────────
+    void ShowOfflinePlan(JsonElement plan) { _offline = true; ShowFindings(plan); }
+
     void ShowFindings(JsonElement plan)
     {
-        FindingsSummary.Text = plan.TryGetProperty("summary", out var s) ? (s.GetString() ?? "") : "";
+        string summary = plan.TryGetProperty("summary", out var s) ? (s.GetString() ?? "") : "";
+        FindingsSummary.Text = _offline
+            ? "⚠ OFFLINE BASIC PLAN — our AI service was unavailable, so this is a basic rule-based cleanup, not your AI-personalised plan.\n\n" + summary
+            : summary;
         ActionList.Children.Clear();
         _rows.Clear();
 
@@ -76,7 +167,7 @@ public partial class MainWindow : Window
                 var text = new TextBlock
                 {
                     Text = mb > 0 ? $"{name}   (~{FormatMb(mb)})" : name,
-                    Foreground = new SolidColorBrush(Color.FromRgb(0xd4, 0xe4, 0xfa)),
+                    Foreground = new SolidColorBrush(Color.FromRgb(0xee, 0xf1, 0xff)),
                     FontSize = 14, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(10, 0, 0, 0)
                 };
@@ -112,7 +203,7 @@ public partial class MainWindow : Window
     // ── Repair ───────────────────────────────────────────────────────────────
     async Task RunRepair(List<Dictionary<string, object?>> approved)
     {
-        ShowWorking("Repairing your PC…", "Please wait — this can take a few minutes.");
+        ShowWorking("Repairing your PC…", "Please wait — this can take a few minutes.", repairing: true);
         var results = new List<Dictionary<string, object?>>();
         int i = 0, total = approved.Count;
         foreach (var action in approved)
@@ -142,7 +233,13 @@ public partial class MainWindow : Window
     }
 
     // ── UI helpers ───────────────────────────────────────────────────────────
-    void ShowWorking(string title, string sub) { WorkingTitle.Text = title; WorkingSub.Text = sub; ShowPanel(WorkingPanel); }
+    void ShowWorking(string title, string sub, bool repairing = false)
+    {
+        WorkingTitle.Text = title; WorkingSub.Text = sub;
+        WorkingAuditor.Visibility = repairing ? Visibility.Collapsed : Visibility.Visible;
+        WorkingBuilder.Visibility = repairing ? Visibility.Visible : Visibility.Collapsed;
+        ShowPanel(WorkingPanel);
+    }
     void SetStatus(string title, string sub) { WorkingTitle.Text = title; WorkingSub.Text = sub; }
     void ShowError(string msg) { ErrorText.Text = msg; ShowPanel(ErrorPanel); }
 

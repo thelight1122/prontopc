@@ -224,6 +224,20 @@ Windows Update leftovers (see the "Windows Update leftovers" diagnostic line) ar
 - remove_windows_old: deletes the previous-Windows backup — recommend ONLY when Windows.old is present (use its reported MB; can be many GB).
 - clean_component_store: DISM cleanup of the WinSxS store — safe periodic maintenance; set estimated_mb_recovered 0 (amount isn't pre-measured).`;
 
+// The authoritative repair-action catalogue — the allow-list the model may draw
+// from, mirrored from the prompt above and 1:1 with StoreApp/Repair.cs. The
+// repair-plan Orb enforces that every emitted action.id is a member of this set,
+// so the plan can never propose something the engine cannot execute (catalogue
+// integrity). See pod/orbs/repair-plan/SPEC.md.
+const REPAIR_ACTION_CATALOGUE = new Set([
+  "clear_temp_files", "clear_all_browser_caches", "clear_chrome_cache", "clear_edge_cache",
+  "clear_firefox_cache", "clear_brave_cache", "clear_opera_cache", "clear_windows_caches",
+  "empty_recycle_bin", "disk_cleanup", "clear_windows_store_cache", "clean_windows_update_cache",
+  "clean_component_store", "remove_windows_old", "clean_delivery_optimization", "sfc_scan",
+  "dism_restore", "chkdsk_scan", "flush_dns", "reset_network_stack", "disable_startup_item",
+  "optimize_power_plan", "optimize_visual_effects", "reset_windows_update", "driver_report", "hardware_report"
+]);
+
 function buildDiagnosticText(diag) {
   const lines = [];
   const add = (label, data) => { if (data !== undefined && data !== null) lines.push(`${label}: ${typeof data === "object" ? JSON.stringify(data) : data}`); };
@@ -467,12 +481,49 @@ async function queryGeminiLegacy(diagnosticText) {
   }
 }
 
-// Provider-agnostic entry point. Prefers Azure OpenAI; falls back to Gemini
-// only if Azure isn't configured.
+// Provider-agnostic entry point. Prefers Azure OpenAI; falls back to Gemini on
+// RUNTIME failure, not merely when Azure is unconfigured.
+//
+// This previously dispatched on whether Azure was *configured*, so an Azure
+// runtime failure (a 401 from an invalid key) propagated and Gemini was never
+// attempted, despite a valid Gemini key being present. The desktop client then
+// silently fell back to BuildLocalPlan — a rule-based plan with no AI — so the
+// "AI-powered repair plan" claimed in the Store listing was genuinely absent
+// from the product. That caused Microsoft certification failure 10.1.2.10 on
+// 2026-08-26. Fixed 2026-08-26.
 async function queryLLM(diagnosticText) {
-  if (AZURE_OPENAI_URL && AZURE_OPENAI_KEY) return queryAzureOpenAI(diagnosticText);
-  if (GEMINI_URL) return queryGeminiLegacy(diagnosticText);
+  const azureModel = () => (AZURE_OPENAI_URL?.match(/deployments\/([^/]+)/)?.[1]) || "azure-openai";
+  const geminiModel = () => (GEMINI_URL?.match(/models\/([^:/]+)/)?.[1]) || "gemini";
+  if (AZURE_OPENAI_URL && AZURE_OPENAI_KEY) {
+    try {
+      const plan = await queryAzureOpenAI(diagnosticText);
+      return { plan, provider: "azure-openai", model: azureModel() };
+    } catch (e) {
+      console.error(`[llm] Azure OpenAI failed (${e.message}) — falling back to Gemini`);
+      if (GEMINI_URL) return { plan: await queryGeminiLegacy(diagnosticText), provider: "gemini", model: geminiModel() };
+      throw e;
+    }
+  }
+  if (GEMINI_URL) return { plan: await queryGeminiLegacy(diagnosticText), provider: "gemini", model: geminiModel() };
   throw new Error("No LLM configured (set AZURE_OPENAI_* or GEMINI_API_KEY)");
+}
+
+// ─── repair-plan Orb ─────────────────────────────────────────────────────────
+// Entrypoint for the prontopc-repair-plan Orb (pod/orbs/repair-plan/). Authors a
+// genuine model repair plan, enforces the catalogue-subset invariant, and attaches
+// provenance. Throws if no provider can author a plan — the caller then emits
+// status:"unavailable". There is deliberately no path that returns a heuristic plan
+// here, so a non-AI plan can never be presented as the AI plan (Manifest I2).
+async function authorRepairPlan(diagnostics) {
+  const diagText = buildDiagnosticText(diagnostics);
+  const { plan, provider, model } = await queryLLM(diagText);
+  if (Array.isArray(plan.actions)) {
+    const before = plan.actions.length;
+    plan.actions = plan.actions.filter(a => a && REPAIR_ACTION_CATALOGUE.has(a.id));
+    const dropped = before - plan.actions.length;
+    if (dropped > 0) console.warn(`[repair-plan] dropped ${dropped} action(s) outside the engine catalogue`);
+  }
+  return { plan, provenance: { provider, model } };
 }
 
 // ─── Stripe ─────────────────────────────────────────────────────────────────
@@ -685,23 +736,39 @@ async function handleSubmitDiagnostics(req, res) {
   const { token, diagnostics } = body;
   if (!token || !diagnostics) return json(res, req, 400, { ok: false, error: "token and diagnostics required" });
 
-  const session = getSession(token);
-  if (!session) return json(res, req, 404, { ok: false, error: "Invalid or expired session" });
+  let session = getSession(token);
+  if (!session) {
+    sessionStore.set(token, {
+      token,
+      stripeSessionId: null,
+      email: "",
+      state: "created",
+      hostname: null,
+      diagnostics: null,
+      repairPlan: null,
+      repairResults: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    session = sessionStore.get(token);
+  }
 
   console.log(`[submit-diagnostics] Token ${token.substring(0, 8)}…`);
 
   try {
     session.diagnostics = diagnostics;
     session.hostname = diagnostics.os?.hostname || "Unknown PC";
-    const diagText = buildDiagnosticText(diagnostics);
-    const plan = await queryLLM(diagText);
+    const { plan, provenance } = await authorRepairPlan(diagnostics);
     session.repairPlan = plan;
+    session.planProvenance = provenance;
     transitionState(token, "diagnosed");
-    console.log(`[submit-diagnostics] Done — ${plan.actions?.length || 0} actions`);
-    return json(res, req, 200, { ok: true, plan });
+    console.log(`[submit-diagnostics] Done — ${plan.actions?.length || 0} actions via ${provenance.provider}`);
+    return json(res, req, 200, { ok: true, status: "ok", plan, provenance });
   } catch (e) {
     console.error("[submit-diagnostics] Error:", e.message);
-    return json(res, req, 500, { ok: false, error: e.message });
+    // repair-plan Orb contract: no heuristic plan is ever emitted as the AI plan.
+    // When no model can author a plan, the only truthful response is "unavailable".
+    return json(res, req, 200, { ok: false, status: "unavailable", reason: e.message });
   }
 }
 
@@ -817,7 +884,8 @@ async function createNextRepairCoupon(session) {
     // Retry a couple of times in the unlikely event of a code collision.
     for (let attempt = 0; attempt < 3; attempt++) {
       const params = new URLSearchParams({
-        coupon: COUPON_ID,
+        "promotion[type]": "coupon",
+        "promotion[coupon]": COUPON_ID,
         code: randomCouponCode(),
         expires_at: String(expiresAt),
         max_redemptions: "1",
@@ -925,16 +993,16 @@ async function sendCouponEmail(session) {
   const emailHtml = `
 <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#FDFAF4;border:1px solid #E2DBD0;border-radius:12px;overflow:hidden">
   <div style="background:#1A1917;padding:20px 24px;color:#fff">
-    <h1 style="margin:0;font-size:1.2rem;font-weight:700">Pronto <span style="color:#C8892A">PC</span> — Thank you</h1>
+    <h1 style="margin:0;font-size:1.2rem;font-weight:700">Pronto <span style="color:#7C5CFF">PC</span> — Thank you</h1>
   </div>
   <div style="padding:24px">
     <p style="color:#1A1917;font-size:1rem;margin:0 0 16px">Your PC has been serviced. As a thank-you, here's <strong>50% off your next repair</strong> — no expiry pressure, it's good for six months.</p>
-    <div style="background:#FFF8ED;border:1px dashed #C8892A;border-radius:10px;padding:20px;text-align:center;margin:0 0 16px">
+    <div style="background:#FFF8ED;border:1px dashed #7C5CFF;border-radius:10px;padding:20px;text-align:center;margin:0 0 16px">
       <p style="margin:0 0 6px;color:#6B6560;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em">Your coupon code</p>
       <p style="margin:0;font-size:1.6rem;font-weight:800;color:#1A1917;font-family:'Courier New',monospace;letter-spacing:.05em">${session.couponCode}</p>
       <p style="margin:8px 0 0;color:#9B9590;font-size:.78rem">50% off · valid through ${expiryStr}</p>
     </div>
-    <p style="text-align:center;margin:0 0 8px"><a href="${SITE_URL}" style="display:inline-block;background:#C8892A;color:#fff;font-weight:700;font-size:.9rem;padding:12px 28px;border-radius:8px;text-decoration:none">Start your next repair →</a></p>
+    <p style="text-align:center;margin:0 0 8px"><a href="${SITE_URL}" style="display:inline-block;background:#7C5CFF;color:#fff;font-weight:700;font-size:.9rem;padding:12px 28px;border-radius:8px;text-decoration:none">Start your next repair →</a></p>
     <p style="color:#9B9590;font-size:.78rem;text-align:center;margin:8px 0 0">Enter the code at checkout to apply your discount.</p>
     <hr style="border:none;border-top:1px solid #E2DBD0;margin:20px 0">
     <p style="font-size:.78rem;color:#9B9590;margin:0">Pronto PC · 5D Service Solutions Global LLC · support@prontopc.online</p>
@@ -997,13 +1065,13 @@ async function handleRepairPlan(req, res) {
   if (!session || !diagnostics) return json(res, req, 400, { ok: false, error: "session and diagnostics required" });
 
   try {
-    const diagText = buildDiagnosticText(diagnostics);
-    const plan = await queryLLM(diagText);
-    console.log(`[repair-plan] Legacy call — ${plan.actions?.length || 0} actions`);
-    return json(res, req, 200, { ok: true, plan });
+    const { plan, provenance } = await authorRepairPlan(diagnostics);
+    console.log(`[repair-plan] ${plan.actions?.length || 0} actions via ${provenance.provider}`);
+    return json(res, req, 200, { ok: true, status: "ok", plan, provenance });
   } catch (e) {
     console.error("[repair-plan] Error:", e.message);
-    return json(res, req, 500, { ok: false, error: e.message });
+    // Orb contract: unavailable, never a heuristic plan dressed as the AI plan.
+    return json(res, req, 200, { ok: false, status: "unavailable", reason: e.message });
   }
 }
 
@@ -1864,7 +1932,7 @@ function generateReportHtml(session) {
   const now = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
   const hasRepairs = results.length > 0 && results.some(r => r.status === "done");
   const badgeText = hasRepairs ? "Repair Complete" : "Diagnostic Report";
-  const badgeColor = hasRepairs ? "#C8892A" : "#3B82F6";
+  const badgeColor = hasRepairs ? "#7C5CFF" : "#3B82F6";
 
   const summary = plan.summary || "Your PC was scanned. See the details below.";
   const hwNotes = plan.hardware_notes || "";
@@ -1886,11 +1954,11 @@ function generateReportHtml(session) {
   // Post-restart verification (present only after the reconnect flow ran)
   const v = session.verification;
   if (v) {
-    const vColor = v.healthy ? "#2A7A4A" : "#C8892A";
+    const vColor = v.healthy ? "#2A7A4A" : "#7C5CFF";
     const vLabel = v.healthy ? "System restarted cleanly — the repairs are holding." : "Restarted — a few services were still starting up.";
-    sections += `<div class="section" style="border-color:${v.healthy ? "rgba(42,122,74,.3)" : "rgba(200,137,42,.3)"}"><div class="section-head"><div class="dot" style="background:${vColor}"></div><h3>Post-Restart Verification</h3></div><div style="padding:12px 20px"><p style="font-weight:700;color:${vColor};margin:0 0 10px">${vLabel}</p><table><tr><th>Check</th><th>Result</th></tr>`
+    sections += `<div class="section" style="border-color:${v.healthy ? "rgba(42,122,74,.3)" : "rgba(124,92,255,.3)"}"><div class="section-head"><div class="dot" style="background:${vColor}"></div><h3>Post-Restart Verification</h3></div><div style="padding:12px 20px"><p style="font-weight:700;color:${vColor};margin:0 0 10px">${vLabel}</p><table><tr><th>Check</th><th>Result</th></tr>`
       + `<tr><td>Critical services</td><td>${(v.stopped_critical && v.stopped_critical.length) ? `<span style="color:#C0392B">${v.stopped_critical.join(", ")} not running</span>` : `<span style="color:#2A7A4A">All running</span>`}</td></tr>`
-      + `<tr><td>New critical errors since reboot</td><td>${v.new_critical_errors == null ? "—" : (v.new_critical_errors === 0 ? `<span style="color:#2A7A4A">None</span>` : `<span style="color:#C8892A">${v.new_critical_errors}</span>`)}</td></tr>`
+      + `<tr><td>New critical errors since reboot</td><td>${v.new_critical_errors == null ? "—" : (v.new_critical_errors === 0 ? `<span style="color:#2A7A4A">None</span>` : `<span style="color:#7C5CFF">${v.new_critical_errors}</span>`)}</td></tr>`
       + `<tr><td>Temp files after restart</td><td>${v.temp_mb == null ? "—" : `${v.temp_mb} MB`}</td></tr>`
       + `</table></div></div>`;
   }
@@ -1906,7 +1974,7 @@ function generateReportHtml(session) {
   if (disks.length) {
     let rows = disks.map(d => {
       const pct = d.percent_used || 0;
-      const color = pct > 90 ? "#C0392B" : pct > 70 ? "#C8892A" : "#2A7A4A";
+      const color = pct > 90 ? "#C0392B" : pct > 70 ? "#7C5CFF" : "#2A7A4A";
       return `<tr><td>${d.device}</td><td>${d.total_gb} GB</td><td>${d.used_gb} GB</td><td>${d.free_gb} GB</td><td style="color:${color};font-weight:600">${pct}%</td></tr>`;
     }).join("");
     sections += `<div class="section"><div class="section-head"><div class="dot"></div><h3>Drive Health</h3></div><table><tr><th>Drive</th><th>Total</th><th>Used</th><th>Free</th><th>Usage</th></tr>${rows}</table></div>`;
@@ -1922,7 +1990,7 @@ function generateReportHtml(session) {
     if ((drv.outdated || []).length) {
       const driverLink = (d) => `https://www.google.com/search?q=${encodeURIComponent(`${d.provider || ""} ${d.device} driver download`.trim())}`;
       content += `<div style="padding:0 20px"><p style="font-size:.82rem;color:#6B6560;margin:6px 0 0">These drivers are over two years old. Updating them is optional and free — click <strong>Find latest</strong> to reach the manufacturer's download page and install it yourself. ProntoPC never installs or changes drivers automatically.</p></div>`;
-      content += `<table><tr><th>Outdated Driver</th><th>Version</th><th>Date</th><th>Age</th><th>Recommended</th></tr>${drv.outdated.map(d => `<tr><td>${d.device}</td><td>${d.version || "—"}</td><td>${d.date || "—"}</td><td style="color:#C8892A">${d.age_days}d</td><td><a href="${driverLink(d)}" target="_blank" rel="noopener" style="color:#1A6DC8;text-decoration:none;font-weight:600">Find latest &rarr;</a></td></tr>`).join("")}</table>`;
+      content += `<table><tr><th>Outdated Driver</th><th>Version</th><th>Date</th><th>Age</th><th>Recommended</th></tr>${drv.outdated.map(d => `<tr><td>${d.device}</td><td>${d.version || "—"}</td><td>${d.date || "—"}</td><td style="color:#7C5CFF">${d.age_days}d</td><td><a href="${driverLink(d)}" target="_blank" rel="noopener" style="color:#1A6DC8;text-decoration:none;font-weight:600">Find latest &rarr;</a></td></tr>`).join("")}</table>`;
     }
     const devErrors = diag.device_errors || [];
     if (devErrors.length) {
@@ -2001,15 +2069,15 @@ function generateReportHtml(session) {
 
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pronto PC — ${badgeText}</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;background:#FDFAF4;color:#1A1917;font-size:15px;line-height:1.6}.page{max-width:860px;margin:0 auto;padding:40px 32px 60px}.header{background:#1A1917;color:#fff;border-radius:12px;padding:28px 32px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-start}.header-left h1{font-size:1.6rem;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}.header-left h1 span{color:#C8892A}.header-left p{color:rgba(255,255,255,.6);font-size:.85rem}.header-right{text-align:right}.header-right .badge{background:${badgeColor};color:#fff;font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:.3rem .7rem;border-radius:6px;display:inline-block;margin-bottom:6px}.header-right p{color:rgba(255,255,255,.5);font-size:.78rem}.summary-box{background:#fff;border:1px solid #E2DBD0;border-radius:10px;padding:20px 24px;margin-bottom:20px}.summary-box h2{font-size:1rem;font-weight:700;margin-bottom:8px}.summary-box p{color:#3A3835;line-height:1.7}.hw-notes{background:#FFF5F5;border:1px solid #FCA5A5;border-radius:10px;padding:16px 20px;margin-bottom:20px}.hw-notes strong{color:#C0392B}.sec-notes{background:#F0F9FF;border:1px solid #93C5FD;border-radius:10px;padding:16px 20px;margin-bottom:20px}.sec-notes strong{color:#1D4ED8}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-bottom:20px}.stat{background:#fff;border:1px solid #E2DBD0;border-radius:10px;padding:16px 20px;text-align:center}.stat .num{font-size:1.8rem;font-weight:700;color:#C8892A;font-family:Georgia,serif;line-height:1}.stat .lbl{font-size:.78rem;color:#6B6560;margin-top:4px;font-weight:500}.section{background:#fff;border:1px solid #E2DBD0;border-radius:10px;margin-bottom:20px;overflow:hidden}.section-head{background:#F5F0E8;padding:14px 20px;border-bottom:1px solid #E2DBD0;display:flex;align-items:center;gap:10px}.section-head h3{font-size:.9rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#1A1917}.section-head .dot{width:10px;height:10px;border-radius:50%;background:#C8892A;flex-shrink:0}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:.78rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6B6560;padding:10px 20px;border-bottom:1px solid #E2DBD0;background:#FDFAF4}td{padding:11px 20px;border-bottom:1px solid #F0EBE4;font-size:.88rem;vertical-align:top}tr:last-child td{border-bottom:none}tr:hover td{background:#FDFAF4}.sysinfo{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 24px}.sysinfo-row{display:flex;flex-direction:column}.sysinfo-row .key{font-size:.72rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#9B9590}.sysinfo-row .val{font-size:.88rem;color:#1A1917;font-weight:500}.footer{margin-top:32px;padding-top:20px;border-top:1px solid #E2DBD0;display:flex;justify-content:space-between;align-items:center}.footer p{font-size:.78rem;color:#9B9590}.footer strong{color:#1A1917}.print-btn{margin-top:8px;background:#C8892A;color:#fff;border:none;font-weight:700;font-size:.75rem;padding:7px 14px;border-radius:6px;cursor:pointer}.print-btn:hover{background:#b37a25}@media print{body{background:#fff}.page{padding:20px}.header{border-radius:0}.no-print{display:none!important}}@media(max-width:600px){.stats{grid-template-columns:1fr 1fr}.header{flex-direction:column;gap:12px}.header-right{text-align:left}.sysinfo{grid-template-columns:1fr}}</style>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;background:#FDFAF4;color:#1A1917;font-size:15px;line-height:1.6}.page{max-width:860px;margin:0 auto;padding:40px 32px 60px}.header{background:#1A1917;color:#fff;border-radius:12px;padding:28px 32px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-start}.header-left h1{font-size:1.6rem;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}.header-left h1 span{color:#7C5CFF}.header-left p{color:rgba(255,255,255,.6);font-size:.85rem}.header-right{text-align:right}.header-right .badge{background:${badgeColor};color:#fff;font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:.3rem .7rem;border-radius:6px;display:inline-block;margin-bottom:6px}.header-right p{color:rgba(255,255,255,.5);font-size:.78rem}.summary-box{background:#fff;border:1px solid #E2DBD0;border-radius:10px;padding:20px 24px;margin-bottom:20px}.summary-box h2{font-size:1rem;font-weight:700;margin-bottom:8px}.summary-box p{color:#3A3835;line-height:1.7}.hw-notes{background:#FFF5F5;border:1px solid #FCA5A5;border-radius:10px;padding:16px 20px;margin-bottom:20px}.hw-notes strong{color:#C0392B}.sec-notes{background:#F0F9FF;border:1px solid #93C5FD;border-radius:10px;padding:16px 20px;margin-bottom:20px}.sec-notes strong{color:#1D4ED8}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-bottom:20px}.stat{background:#fff;border:1px solid #E2DBD0;border-radius:10px;padding:16px 20px;text-align:center}.stat .num{font-size:1.8rem;font-weight:700;color:#7C5CFF;font-family:Georgia,serif;line-height:1}.stat .lbl{font-size:.78rem;color:#6B6560;margin-top:4px;font-weight:500}.section{background:#fff;border:1px solid #E2DBD0;border-radius:10px;margin-bottom:20px;overflow:hidden}.section-head{background:#F5F0E8;padding:14px 20px;border-bottom:1px solid #E2DBD0;display:flex;align-items:center;gap:10px}.section-head h3{font-size:.9rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#1A1917}.section-head .dot{width:10px;height:10px;border-radius:50%;background:#7C5CFF;flex-shrink:0}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:.78rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#6B6560;padding:10px 20px;border-bottom:1px solid #E2DBD0;background:#FDFAF4}td{padding:11px 20px;border-bottom:1px solid #F0EBE4;font-size:.88rem;vertical-align:top}tr:last-child td{border-bottom:none}tr:hover td{background:#FDFAF4}.sysinfo{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 24px}.sysinfo-row{display:flex;flex-direction:column}.sysinfo-row .key{font-size:.72rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#9B9590}.sysinfo-row .val{font-size:.88rem;color:#1A1917;font-weight:500}.footer{margin-top:32px;padding-top:20px;border-top:1px solid #E2DBD0;display:flex;justify-content:space-between;align-items:center}.footer p{font-size:.78rem;color:#9B9590}.footer strong{color:#1A1917}.print-btn{margin-top:8px;background:#7C5CFF;color:#fff;border:none;font-weight:700;font-size:.75rem;padding:7px 14px;border-radius:6px;cursor:pointer}.print-btn:hover{background:#6A4FE0}@media print{body{background:#fff}.page{padding:20px}.header{border-radius:0}.no-print{display:none!important}}@media(max-width:600px){.stats{grid-template-columns:1fr 1fr}.header{flex-direction:column;gap:12px}.header-right{text-align:left}.sysinfo{grid-template-columns:1fr}}</style>
 </head><body><div class="page">
-<div class="header"><div class="header-left"><h1>Pronto <span>PC</span> — ${badgeText}</h1><p>Computer: ${hostname} · ${now}</p></div><div class="header-right"><div class="badge">${badgeText}</div><p>Custodian v2.0</p><button class="print-btn no-print" onclick="window.print()">Print / Save PDF</button></div></div>
+<div class="header"><div class="header-left" style="display:flex;align-items:center;gap:14px"><img src="data:image/png;base64,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" width="46" height="46" alt="" style="border-radius:8px;flex-shrink:0"><div><h1>Pronto <span>PC</span> — ${badgeText}</h1><p>Computer: ${hostname} · ${now}</p></div></div><div class="header-right"><div class="badge">${badgeText}</div><p>Custodian v2.0</p><button class="print-btn no-print" onclick="window.print()">Print / Save PDF</button></div></div>
 <div class="summary-box"><h2>Summary</h2><p>${summary}</p></div>
 ${hwNotes ? `<div class="hw-notes"><strong>Hardware Notes:</strong> ${hwNotes}</div>` : ""}
 ${secAssess ? `<div class="sec-notes"><strong>Security:</strong> ${secAssess}</div>` : ""}
 <div class="stats"><div class="stat"><div class="num">${totalFreed ? fmtMb(totalFreed) : "—"}</div><div class="lbl">space recovered</div></div><div class="stat"><div class="num">${completedCount || "—"}</div><div class="lbl">repairs${hasRepairs ? " completed" : " recommended"}</div></div><div class="stat"><div class="num">${mem.percent_used || "—"}%</div><div class="lbl">memory in use</div></div></div>
 ${sections}
-${session.couponCode ? `<div class="section" style="border-color:rgba(200,137,42,.25);background:linear-gradient(135deg,#FFFDF8,#FFF8ED)"><div style="padding:24px;text-align:center"><h3 style="font-size:1.1rem;font-weight:700;color:#1A1917;margin-bottom:8px">A thank-you: 50% off your next repair</h3><p style="color:#6B6560;font-size:.9rem;max-width:440px;margin:0 auto 16px">Keep this code. If your PC ever needs us again, it's half price — good for six months.</p><div style="display:inline-block;background:#fff;border:1px dashed #C8892A;border-radius:10px;padding:16px 28px;margin-bottom:12px"><div style="font-size:.72rem;color:#9B9590;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Your coupon code</div><div style="font-size:1.5rem;font-weight:800;color:#1A1917;font-family:'Courier New',monospace;letter-spacing:.05em">${session.couponCode}</div></div><p style="font-size:.78rem;color:#9B9590;margin-bottom:16px">50% off · valid through ${new Date(session.couponExpiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} · enter it at checkout</p><a href="${SITE_URL}" style="display:inline-block;background:#C8892A;color:#fff;font-weight:700;font-size:.9rem;padding:12px 28px;border-radius:8px;text-decoration:none">Start your next repair</a></div></div>` : ""}
+${session.couponCode ? `<div class="section" style="border-color:rgba(124,92,255,.25);background:linear-gradient(135deg,#FFFDF8,#FFF8ED)"><div style="padding:24px;text-align:center"><h3 style="font-size:1.1rem;font-weight:700;color:#1A1917;margin-bottom:8px">A thank-you: 50% off your next repair</h3><p style="color:#6B6560;font-size:.9rem;max-width:440px;margin:0 auto 16px">Keep this code. If your PC ever needs us again, it's half price — good for six months.</p><div style="display:inline-block;background:#fff;border:1px dashed #7C5CFF;border-radius:10px;padding:16px 28px;margin-bottom:12px"><div style="font-size:.72rem;color:#9B9590;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Your coupon code</div><div style="font-size:1.5rem;font-weight:800;color:#1A1917;font-family:'Courier New',monospace;letter-spacing:.05em">${session.couponCode}</div></div><p style="font-size:.78rem;color:#9B9590;margin-bottom:16px">50% off · valid through ${new Date(session.couponExpiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} · enter it at checkout</p><a href="${SITE_URL}" style="display:inline-block;background:#7C5CFF;color:#fff;font-weight:700;font-size:.9rem;padding:12px 28px;border-radius:8px;text-decoration:none">Start your next repair</a></div></div>` : ""}
 <div class="footer"><p><strong>Pronto PC</strong> · prontopc.online · support@prontopc.online</p><p>5D Service Solutions Global LLC · 30-day re-repair guarantee</p></div>
 </div></body></html>`;
 }
@@ -2286,7 +2354,7 @@ async function handleGuardianResults(req, res) {
     const emailHtml = `
 <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#FDFAF4;border:1px solid #E2DBD0;border-radius:12px;overflow:hidden">
   <div style="background:#1A1917;padding:20px 24px;color:#fff">
-    <h1 style="margin:0;font-size:1.2rem;font-weight:700">Pronto <span style="color:#C8892A">PC</span> — Guardian Report</h1>
+    <h1 style="margin:0;font-size:1.2rem;font-weight:700">Pronto <span style="color:#7C5CFF">PC</span> — Guardian Report</h1>
     <p style="margin:4px 0 0;color:rgba(255,255,255,.6);font-size:.85rem">${hostname} · ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
   </div>
   <div style="padding:24px">
@@ -2300,9 +2368,9 @@ async function handleGuardianResults(req, res) {
       <tr><td style="padding:8px 0;color:#6B6560">Unsigned Drivers</td><td style="padding:8px 0;font-weight:600">${diagnostics.drivers?.unsigned || 0}</td></tr>
       <tr><td style="padding:8px 0;color:#6B6560">Uptime</td><td style="padding:8px 0;font-weight:600;color:${(diagnostics.uptime?.uptime_days || 0) > 14 ? "#C0392B" : "#1A1917"}">${diagnostics.uptime?.uptime_days || 0} days</td></tr>
     </table>
-    ${issueCount > 0 ? '<p style="margin-top:16px"><a href="https://prontopc.online/success" style="color:#C8892A;font-weight:600">Talk to your Custodian Technician →</a></p>' : ""}
+    ${issueCount > 0 ? '<p style="margin-top:16px"><a href="https://prontopc.online/success" style="color:#7C5CFF;font-weight:600">Talk to your Custodian Technician →</a></p>' : ""}
     <hr style="border:none;border-top:1px solid #E2DBD0;margin:20px 0">
-    <p style="font-size:.78rem;color:#9B9590">Next scan: ${new Date(g.nextScanAt).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })} · <a href="https://prontopc.online/guardian" style="color:#C8892A">Manage subscription</a></p>
+    <p style="font-size:.78rem;color:#9B9590">Next scan: ${new Date(g.nextScanAt).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })} · <a href="https://prontopc.online/guardian" style="color:#7C5CFF">Manage subscription</a></p>
   </div>
 </div>`;
 
