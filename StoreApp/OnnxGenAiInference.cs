@@ -40,7 +40,11 @@ sealed class OnnxGenAiInference : ILocalInference
             EnsureLoaded();
             if (_model is null || _tokenizer is null) return null;
 
-            var sequences = _tokenizer.Encode(prompt);
+            // Gemma is instruction-tuned and expects its chat template; without the
+            // <start_of_turn> framing the raw prompt yields garbage. ORT GenAI's Encode
+            // does not apply the template, so we wrap it here.
+            string wrapped = $"<start_of_turn>user\n{prompt}<end_of_turn>\n<start_of_turn>model\n";
+            var sequences = _tokenizer.Encode(wrapped);
             var inputIds = sequences[0];
             int inputLen = inputIds.Length;
 

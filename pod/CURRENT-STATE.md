@@ -12,7 +12,15 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0009** (2026-08-28) — **Committed Pod eval suite (`tests/PodEval`) — ALL 28 checks PASS.**
+**TOTEM-0010** (2026-08-28) — **ON-DEVICE INFERENCE PROVEN — the durable C3 kill.** Built int4
+`google/gemma-3-1b-it` (**~700 MB, under budget**) and ran it through `OnnxGenAiInference` +
+`GemmaLocalPlanner`: a genuine plan **referencing the real diagnostics, offline,
+`provenance.provider=local-model`**, ~29s cold CPU; envelope validated it. This kills the 10.1.2.10
+billing cliff without any cloud deploy. Fixed the Gemma chat-template wrap; committed self-skipping
+`tests/ModelSmoke` (PASS). Build recipe (transformers==4.57.1 pin) in the Satellite SPEC §6c. All 10
+Totems HOLD.
+
+**Prior:** TOTEM-0009 — Pod eval suite (`tests/PodEval`), 28 checks PASS.
 Compiles the shipping `Envelope`/`GemmaLocalPlanner` and asserts 10 admissibility fixtures + 6
 `Validate` checks (clamp, gb→mb, risk-stamp, catalogue-drop, false-precondition-drop, subsumption) +
 3 Gemma author-path checks. Extracted `IPlanAuthor`/`PlanResult` into `PlanContracts.cs` (engine-free)
@@ -52,12 +60,13 @@ spec; -0001 opened the Pod.)
   the Umbilical, authors via provider order + validates before consent (plan), and now runs
   repair+verify (`RunRepairAsync`). `MainWindow` is a thin view (UI + cloud IO adapters). Unkeyed
   envelope degrades only the plan phase.
-- **Gemma Satellite: Stage 2a BUILT.** `StoreApp/LocalPlanner.cs` — `GemmaLocalPlanner:IPlanAuthor`
-  wired FIRST in provider order behind an `ILocalInference` seam (prompt + admissible-set grammar +
-  prose-tolerant parse + `provenance:local-model`). `AbsentInference` default → app falls through to
-  cloud unchanged. Runtime-proven with a fake inference. **Stage 2b GATED on Tracey:** Gemma weights
-  + license, then `Microsoft.ML.OnnxRuntimeGenAI` + `OnnxGenAiInference` (recipe in the Satellite SPEC).
-- **Draft — not built yet:** custodian-stage, llm-portal, mint-portal, **Gemma Stage 2b (on-device inference)**.
+- **Gemma Satellite: BUILT + PROVEN on-device.** `GemmaLocalPlanner` (author) + `OnnxGenAiInference`
+  (ONNX Runtime GenAI 0.15.2, json_schema-guided, Gemma chat template) run the int4 model bundled at
+  `StoreApp/Assets/models/gemma-3-1b-it` (~700 MB, gitignored build artifact). Proven offline with
+  `provenance:local-model`; `tests/ModelSmoke` PASS. `CreateOrAbsent` auto-activates it; falls through
+  to cloud if absent. **C3 satisfied on-device.**
+- **Draft — not built yet:** custodian-stage, llm-portal, mint-portal. **Ship readiness for repair-plan:**
+  full WPF end-to-end run with model bundled + Gemma license bundling + MSIX packaging → then promote to provisional.
 - Manifest of Completion: `docs/MANIFEST_OF_COMPLETION.md`. Opening audit: 5 PASS / 3 FAIL
   (I1, I2, U6) / 4 PARTIAL / 4 UNVERIFIABLE.
 - **I2 now fixed** in `StoreApp/MainWindow.xaml.cs` (no silent non-AI substitution; offline plan is

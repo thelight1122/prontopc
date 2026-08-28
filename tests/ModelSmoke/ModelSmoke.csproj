@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>ProntoPC.ModelSmoke</RootNamespace>
+  </PropertyGroup>
+  <!-- Integration smoke test for the on-device Satellite. Self-skips when the model is
+       not bundled (it is a ~700MB gitignored build artifact), so CI stays green; when the
+       model IS present it proves OnnxGenAiInference authors a validated local-model plan. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI" Version="0.15.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\StoreApp\Envelope.cs" />
+    <Compile Include="..\..\StoreApp\PlanContracts.cs" />
+    <Compile Include="..\..\StoreApp\LocalPlanner.cs" />
+    <Compile Include="..\..\StoreApp\OnnxGenAiInference.cs" />
+  </ItemGroup>
+</Project>

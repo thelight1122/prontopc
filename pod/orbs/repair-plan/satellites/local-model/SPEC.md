@@ -158,6 +158,25 @@ offline plan.** The Orb's own `orb.json` `provider_order` already names this seq
   bundling; it is not OSI-open and carries pass-through obligations — legal must confirm before
   ship.)
 
+## 6c. BUILT + PROVEN (2026-08-28)
+
+The on-device path is proven end-to-end: the bundled int4 Gemma authored a genuine plan that
+references the real diagnostics, offline, with `provenance.provider == "local-model"`, and the
+envelope validated it (subsumption, risk-stamp, catalogue). C3's billing cliff is dead. Committed
+smoke test: `tests/ModelSmoke` (self-skips when the model is absent). Runtime ~29s cold on CPU.
+
+**Reproducible build recipe (verified):**
+- Toolchain: `pip install onnxruntime-genai==0.15.2 onnx onnx-ir torch transformers==4.57.1`.
+  **The transformers pin matters:** 5.x dropped Gemma3 `rope_local_base_freq` (builder crashes);
+  4.53 lacked `Qwen3VLForConditionalGeneration` (builder import crashes); **4.57.1 has both.**
+- Build: `python -m onnxruntime_genai.models.builder -m google/gemma-3-1b-it -o StoreApp/Assets/models/gemma-3-1b-it -p int4 -e cpu -c .hf-cache`
+  → **~700 MB** (model.onnx.data 693 MB + tokenizer), under the <1GB budget.
+- Code note: `OnnxGenAiInference` wraps the prompt in Gemma's chat template
+  (`<start_of_turn>user\n…<end_of_turn>\n<start_of_turn>model\n`) — ORT GenAI's `Encode` does not
+  apply it, and without it the instruction-tuned model emits garbage.
+- Gemma license: accepted on `google/gemma-3-1b-it` (gated). Bundle the license + Prohibited Use
+  Policy in-app and the Store listing before ship.
+
 ## 6b. Build status (Stage 2a done; Stage 2b gated on the weights)
 
 **Stage 2a — DONE (`StoreApp/LocalPlanner.cs`, wired first in provider order).** `GemmaLocalPlanner :
