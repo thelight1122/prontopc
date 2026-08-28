@@ -51,43 +51,67 @@ Non-secret values live in [`cloudrun.env.yaml`](cloudrun.env.yaml) (committed, n
 
 ---
 
-## 1. Secrets → Secret Manager (once)
+## Current live env (checked 2026-08-28)
 
-Easiest: enter the value in the **Cloud Console** (Security → Secret Manager → the secret
-→ *New version*) so the key never touches your shell history. CLI alternative (paste the
-value at the prompt; `--data-file=-` reads stdin):
+The `pronto-pc` service holds **all 13 vars as PLAIN env vars** (no Secret Manager refs),
+including the secrets `STRIPE_SECRET_KEY`, `RESEND_API_KEY`, `GEMINI_API_KEY`,
+`AZURE_OPENAI_KEY`, `LOYALTY_ADMIN_KEY`, `STRIPE_WEBHOOK_SECRET`. `FROM_EMAIL` =
+support@prontopc.online. **`STRIPE_SECRET_KEY` + `RESEND_API_KEY` are already present, so
+the make-good works on a code-only redeploy.**
+
+Issues found (not make-good blockers):
+- **`GUARDIAN_PRICE_MONTHLY` is malformed** — its value is
+  `price_1Ts7SDLLKFLplB2ZVANtEuBr GUARDIAN_PRICE_WEEKLY=price_1Ts7SDLLKFLplB2ZVEueHusZ`
+  (a space instead of a comma mashed the weekly price into the monthly value; there is no
+  real `GUARDIAN_PRICE_WEEKLY`). Guardian weekly pricing is broken until fixed. Fix (only
+  if you use Guardian) — see option B below with:
+  `GUARDIAN_PRICE_MONTHLY=price_1Ts7SDLLKFLplB2ZVANtEuBr,GUARDIAN_PRICE_WEEKLY=price_1Ts7SDLLKFLplB2ZVEueHusZ`
+- Set-but-unused by the current server code: `STRIPE_WEBHOOK_SECRET`, `DOWNLOAD_URL`,
+  `GUARDIAN_PRICE_ID`. Harmless cruft.
+
+---
+
+## Deploy — the SAFE path (env is all plain today)
+
+⚠️ **Do NOT use `--env-vars-file` or `--set-secrets` on this service** — both *replace* the
+whole env, and since the secrets live as plain vars, that would **wipe** them. (They only
+become safe once every secret is migrated into Secret Manager — the optional hardening at
+the bottom.)
+
+**A. Code-only redeploy (recommended)** — new code, existing env preserved. The make-good
+works immediately (Stripe + Resend already set; every make-good var defaults):
+
+```bash
+cd 'H:\PRONTOPC_PRODUCTION'; gcloud run deploy pronto-pc --source . --region us-central1
+```
+
+**B. If you also want the make-good vars set explicitly** — `--update-env-vars` *merges*
+(keeps every existing var; adds/overrides only these). Non-destructive:
+
+```bash
+cd 'H:\PRONTOPC_PRODUCTION'; gcloud run deploy pronto-pc --source . --region us-central1 --update-env-vars SUPPORT_EMAIL=support@prontopc.online,MAKEGOOD_COUPON_ID=AIMAKEGOOD100,MAKEGOOD_VALID_DAYS=180,SITE_URL=https://prontopc.online
+```
+
+---
+
+## Optional hardening — move secrets to Secret Manager (later, not required to ship)
+
+Enter each value in the **Cloud Console** (Security → Secret Manager → *New version*) so it
+never touches your shell history, or via CLI (`--data-file=-` reads stdin):
 
 ```bash
 cd 'H:\PRONTOPC_PRODUCTION'; gcloud secrets create STRIPE_SECRET_KEY --replication-policy=automatic 2>$null; gcloud secrets versions add STRIPE_SECRET_KEY --data-file=-
 ```
 
-```bash
-cd 'H:\PRONTOPC_PRODUCTION'; gcloud secrets create RESEND_API_KEY --replication-policy=automatic 2>$null; gcloud secrets versions add RESEND_API_KEY --data-file=-
-```
-
-Grant the Cloud Run runtime service account read access (replace `PROJECT_NUMBER`):
+Grant the runtime service account read access:
 
 ```bash
 cd 'H:\PRONTOPC_PRODUCTION'; gcloud projects add-iam-policy-binding 108655745293 --member="serviceAccount:108655745293-compute@developer.gserviceaccount.com" --role="roles/secretmanager.secretAccessor"
 ```
 
-If Stripe/Resend are already set on the live service (as plain env vars from an earlier
-deploy), you can skip Secret Manager and just keep them — but moving them to secrets is
-the safer end state.
-
----
-
-## 2. Deploy
-
-```bash
-cd 'H:\PRONTOPC_PRODUCTION'; gcloud run deploy pronto-pc --source . --region us-central1 --allow-unauthenticated --env-vars-file deploy/cloudrun.env.yaml --set-secrets "STRIPE_SECRET_KEY=STRIPE_SECRET_KEY:latest,RESEND_API_KEY=RESEND_API_KEY:latest"
-```
-
-Add optional secrets to the same `--set-secrets` list if used, comma-separated, e.g.
-`AZURE_OPENAI_KEY=AZURE_OPENAI_KEY:latest,LOYALTY_ADMIN_KEY=LOYALTY_ADMIN_KEY:latest`.
-
-`--env-vars-file` and `--set-secrets` **replace** the service's env each deploy, so list
-every var you want on the service (the yaml covers the non-secret ones).
+Only *after* all secrets are in Secret Manager does the `--env-vars-file` +
+`--set-secrets` form (listing every non-secret var from `cloudrun.env.yaml` and every
+secret) become the correct, non-wiping deploy.
 
 ---
 
