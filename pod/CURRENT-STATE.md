@@ -12,7 +12,15 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0016** (2026-08-28) — **Repo review + drift cleared.** On resume the verifier flagged one DRIFT:
+**TOTEM-0017** (2026-08-28) — **Fix It Now now breathes — a "push me" invitation.** Added `@keyframes
+ppFixPulse` (soft iris halo: ring 0→7px + glow 16→40px, `#7c5cff`/`#8b6bff` low-alpha, + 1.5% scale,
+2.8s ease-in-out infinite) to **both** Fix It Now CTAs — the desktop hotspot `.repair` (halo over the
+baked hero card) and the mobile `.primary` button. Slow + low-amplitude by design = **confident
+invitation, never a directive** (the mascot-voice rule). Honors `prefers-reduced-motion`. Wiring verified
+via computed styles; live breath not frame-captured (preview pane is `document.hidden`, Chrome pauses
+animations — env limit, not a bug). All 17 Totems HOLD.
+
+**Prior:** TOTEM-0016 (2026-08-28) — **Repo review + drift cleared.** On resume the verifier flagged one DRIFT:
 `index.html` (authority TOTEM-0015). Root cause is benign — commit `f55fc8c` (hero CTA redesign: single
 Start-a-Repair CTA + Fix It Now card + new hero image) moved `index.html` forward **outside a Totem cycle**,
 so the TOTEM-0015 hash went stale. Audited it: a hero-section change (12 ins / 15 del + base64 asset data),
