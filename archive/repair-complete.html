@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" style="scroll-behavior:smooth">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProntoPC — Repair Complete</title>
+<meta name="description" content="Your PC has been serviced. Everything Pronto checked, cleaned, and restored — with a full report you keep.">
+<link rel="icon" type="image/png" href="./assets/characters/pronto-emblem-128.png">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: { extend: { colors: {
+    "ink":"#05060f","ink-2":"#0a0d1c","iris":"#8b6bff","iris-bright":"#a78bfa",
+    "azure":"#4f7dff","azure-bright":"#60a5fa","mint":"#5be3a0",
+    "on-ink":"#eef1ff","on-ink-soft":"#c3c8e6",
+  }, fontFamily:{ sans:['Inter','sans-serif'], mono:['JetBrains Mono','monospace'] } } }
+}
+</script>
+<style>
+  body{ background:#05060f; color:#eef1ff; font-family:'Inter',sans-serif; }
+  .bg-stage{
+    background:
+      radial-gradient(60% 55% at 74% 40%, rgba(139,107,255,0.20), transparent 60%),
+      radial-gradient(45% 45% at 88% 72%, rgba(79,125,255,0.16), transparent 60%),
+      radial-gradient(40% 50% at 8% 18%, rgba(91,227,160,0.08), transparent 60%),
+      linear-gradient(180deg,#05060f 0%, #070a18 60%, #05060f 100%);
+  }
+  .gradient-text{ background:linear-gradient(90deg,#eef1ff 0%, #b9a8ff 45%, #8b6bff 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .btn-primary{ background:linear-gradient(90deg,#7c5cff 0%, #4f7dff 100%);
+    box-shadow:0 0 0 1px rgba(167,139,250,0.35), 0 10px 30px rgba(124,92,255,0.35); }
+  .btn-primary:hover{ box-shadow:0 0 0 1px rgba(167,139,250,0.55), 0 12px 42px rgba(124,92,255,0.5); }
+  .glass{ background:rgba(18,20,44,0.55); backdrop-filter:blur(14px); border:1px solid rgba(139,107,255,0.16); }
+  .card{ background:rgba(12,14,32,0.66); border:1px solid rgba(139,107,255,0.14); }
+  .halo{ background:radial-gradient(circle at center, rgba(139,107,255,0.42) 0%, rgba(79,125,255,0.22) 38%, transparent 66%); filter:blur(6px); }
+  @keyframes ringspin{ to{ transform:rotate(360deg); } }
+  .ring{ animation:ringspin 26s linear infinite; }
+  @keyframes floaty{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-10px) } }
+  .float{ animation:floaty 5.5s ease-in-out infinite; }
+  @keyframes pop{ 0%{ transform:scale(.96); opacity:0 } 60%{ transform:scale(1.02) } 100%{ transform:scale(1); opacity:1 } }
+  .bubble{ animation:pop .5s ease-out .3s both; }
+  .bubble::after{ content:""; position:absolute; left:38px; bottom:-11px; width:22px; height:22px;
+    background:inherit; border-right:1px solid rgba(139,107,255,0.28); border-bottom:1px solid rgba(139,107,255,0.28); transform:rotate(45deg); }
+  @keyframes checkpop{ 0%{ transform:scale(0); opacity:0 } 70%{ transform:scale(1.15) } 100%{ transform:scale(1); opacity:1 } }
+  .chk{ animation:checkpop .45s ease-out both; }
+  @media (prefers-reduced-motion: reduce){ .ring,.float,.bubble,.chk{ animation:none } }
+</style>
+</head>
+<body class="min-h-screen flex flex-col bg-stage">
+
+<!-- Nav -->
+<nav class="sticky top-0 z-50 px-6 md:px-10 py-4 flex items-center justify-between backdrop-blur bg-ink/70 border-b border-white/5">
+  <div class="flex items-center gap-3">
+    <img src="./assets/characters/pronto-emblem-128.png" alt="ProntoPC" class="h-10 w-10">
+    <span class="text-xl font-extrabold tracking-tight">Pronto<span class="text-iris-bright">PC</span></span>
+  </div>
+  <div class="flex items-center gap-3 text-sm">
+    <span class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass text-on-ink-soft font-mono text-xs tracking-wider">
+      <span class="w-2 h-2 rounded-full" style="background:#5be3a0;box-shadow:0 0 10px #5be3a0"></span>
+      DIAGNOSTICS · ALL CLEAR
+    </span>
+    <a href="./index.html" class="px-4 py-2 rounded-xl border border-white/15 font-semibold hover:border-white/35 transition-colors">Home</a>
+  </div>
+</nav>
+
+<!-- Hero / completion -->
+<section class="relative flex-1 px-6 md:px-10 pt-10 md:pt-14 pb-10">
+  <div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-10 items-center">
+
+    <!-- Left: the result -->
+    <div class="relative z-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-mint/30 bg-mint/10 mb-6">
+        <span class="material-symbols-outlined text-mint text-base" style="font-variation-settings:'FILL' 1">task_alt</span>
+        <span class="text-mint font-mono text-xs tracking-widest uppercase">Repair Complete</span>
+      </div>
+
+      <h1 class="text-5xl md:text-7xl font-black leading-[0.95] tracking-tight">
+        <span class="gradient-text">YOUR PC.</span><br>
+        <span class="gradient-text">RESTORED.</span><br>
+        <span class="gradient-text">PRONTO.</span>
+      </h1>
+
+      <p class="mt-6 max-w-md text-lg leading-relaxed text-on-ink-soft">
+        Everything’s checked, cleaned, and running smooth again. Here’s what Pronto took care of — and a full report that’s yours to keep.
+      </p>
+
+      <!-- What was handled -->
+      <div class="card mt-8 rounded-2xl p-5 md:p-6">
+        <div class="text-xs font-mono uppercase tracking-widest text-iris-bright mb-4">What Pronto handled</div>
+        <ul class="space-y-3">
+          <li class="chk flex items-center gap-3" style="animation-delay:.05s"><span class="material-symbols-outlined text-mint" style="font-variation-settings:'FILL' 1">check_circle</span><span class="text-on-ink">Junk &amp; temporary files cleared</span><span class="ml-auto font-mono text-sm text-on-ink-soft">12.3&nbsp;GB freed</span></li>
+          <li class="chk flex items-center gap-3" style="animation-delay:.13s"><span class="material-symbols-outlined text-mint" style="font-variation-settings:'FILL' 1">check_circle</span><span class="text-on-ink">Startup &amp; performance tuned</span><span class="ml-auto font-mono text-sm text-on-ink-soft">2.4× faster boot</span></li>
+          <li class="chk flex items-center gap-3" style="animation-delay:.21s"><span class="material-symbols-outlined text-mint" style="font-variation-settings:'FILL' 1">check_circle</span><span class="text-on-ink">Security threats removed</span><span class="ml-auto font-mono text-sm text-on-ink-soft">3 cleared</span></li>
+          <li class="chk flex items-center gap-3" style="animation-delay:.29s"><span class="material-symbols-outlined text-mint" style="font-variation-settings:'FILL' 1">check_circle</span><span class="text-on-ink">Drivers updated</span><span class="ml-auto font-mono text-sm text-on-ink-soft">8 updated</span></li>
+          <li class="chk flex items-center gap-3" style="animation-delay:.37s"><span class="material-symbols-outlined text-mint" style="font-variation-settings:'FILL' 1">check_circle</span><span class="text-on-ink">Storage health verified</span><span class="ml-auto font-mono text-sm text-mint">Healthy</span></li>
+        </ul>
+      </div>
+
+      <div class="mt-7 flex flex-wrap items-center gap-4">
+        <a href="#" onclick="window.print();return false;" class="btn-primary inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl text-base font-bold text-white transition-all">
+          <span class="material-symbols-outlined">download</span> Download Your Report
+        </a>
+        <a href="#" onclick="window.print();return false;" class="inline-flex items-center gap-2 text-on-ink font-semibold border border-white/15 hover:border-white/35 px-5 py-3.5 rounded-2xl transition-colors">
+          <span class="material-symbols-outlined text-base">print</span> Print / Save PDF
+        </a>
+      </div>
+
+      <p class="mt-6 text-sm text-on-ink-soft/80">
+        <span class="material-symbols-outlined text-iris-bright text-sm align-middle" style="font-variation-settings:'FILL' 1">verified_user</span>
+        Backed by our 30-day guarantee. Your report is yours to keep — forever.
+      </p>
+    </div>
+
+    <!-- Right: Pronto celebrating, in the rings -->
+    <div class="relative flex justify-center items-center min-h-[440px]">
+      <div class="ring absolute w-[380px] h-[380px] md:w-[460px] md:h-[460px] rounded-full border border-iris/25"></div>
+      <div class="ring absolute w-[300px] h-[300px] md:w-[360px] md:h-[360px] rounded-full border border-azure/20" style="animation-direction:reverse;animation-duration:34s"></div>
+      <div class="halo absolute w-[420px] h-[420px] rounded-full"></div>
+
+      <!-- Pronto's completion line: confident, no directive -->
+      <div class="bubble glass absolute -top-1 left-1/2 -translate-x-1/2 md:left-2 md:translate-x-0 z-20 max-w-[300px] px-5 py-4 rounded-2xl border border-iris/28">
+        <div class="text-[11px] font-mono uppercase tracking-widest text-iris-bright mb-1">Pronto</div>
+        <p class="text-[15px] leading-snug text-on-ink font-semibold">
+          All done — your PC’s running like new.
+        </p>
+      </div>
+
+      <img src="./assets/characters/pronto-thumbsup.png" alt="Pronto giving a thumbs up — repair complete"
+           class="float relative z-10 w-[260px] md:w-[330px] drop-shadow-[0_20px_60px_rgba(124,92,255,0.35)]">
+
+      <div class="glass absolute top-6 right-2 md:right-0 z-20 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono tracking-wider text-on-ink-soft">
+        <span class="w-2 h-2 rounded-full" style="background:#5be3a0;box-shadow:0 0 10px #5be3a0"></span>
+        SERVICE · COMPLETE
+      </div>
+    </div>
+  </div>
+
+  <!-- Next steps -->
+  <div class="max-w-7xl mx-auto mt-10 md:mt-14">
+    <div class="text-xs font-mono uppercase tracking-widest text-on-ink-soft/70 mb-4 text-center">Keep it running smooth</div>
+    <div class="grid sm:grid-cols-3 gap-4">
+      <a href="./index.html" class="card group flex items-center gap-4 px-6 py-6 rounded-2xl hover:border-iris-bright/50 transition-all">
+        <span class="shrink-0 w-12 h-12 rounded-xl grid place-items-center border border-iris/30 text-iris-bright group-hover:scale-105 transition-transform"><span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">event_repeat</span></span>
+        <span><span class="block text-lg font-semibold">Schedule a Check-Up</span><span class="text-sm text-on-ink-soft">Stay ahead of the next issue</span></span>
+      </a>
+      <a href="#" class="card group flex items-center gap-4 px-6 py-6 rounded-2xl hover:border-iris-bright/50 transition-all">
+        <span class="shrink-0 w-12 h-12 rounded-xl grid place-items-center border border-iris/30 text-iris-bright group-hover:scale-105 transition-transform"><span class="material-symbols-outlined">confirmation_number</span></span>
+        <span><span class="block text-lg font-semibold">Your Loyalty Coupon</span><span class="text-sm text-on-ink-soft">Save on your next service</span></span>
+      </a>
+      <a href="mailto:support@prontopc.online" class="card group flex items-center gap-4 px-6 py-6 rounded-2xl hover:border-iris-bright/50 transition-all">
+        <span class="shrink-0 w-12 h-12 rounded-xl grid place-items-center border border-iris/30 text-iris-bright group-hover:scale-105 transition-transform"><span class="material-symbols-outlined">support_agent</span></span>
+        <span><span class="block text-lg font-semibold">Talk to a Human</span><span class="text-sm text-on-ink-soft">Real people, when you need them</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="px-6 md:px-10 py-8 border-t border-white/5 text-center text-sm text-on-ink-soft/70">
+  <span>ProntoPC · 5D Service Solutions Global LLC</span>
+  <span class="mx-2 opacity-30">•</span>
+  <a href="./privacy.html" class="hover:text-on-ink transition-colors">Privacy</a>
+  <span class="mx-2 opacity-30">•</span>
+  <a href="./terms.html" class="hover:text-on-ink transition-colors">Terms</a>
+</footer>
+
+</body>
+</html>
