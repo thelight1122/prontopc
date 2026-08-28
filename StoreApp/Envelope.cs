@@ -157,8 +157,10 @@ sealed class Envelope
             bool gb = mb.TryGetProperty("unit", out var u) && u.GetString() == "gb";
             double cap = MeasureField(field, diag);
             if (gb) cap *= 1024.0;
-            if (cap <= 0) return authored;              // no measure -> trust author (already >=0)
-            return (int)Math.Min(authored, Math.Round(cap));
+            // The envelope knows the true reclaimable amount from diagnostics, so it SETS
+            // the estimate rather than trusting the model's guess — which both caps
+            // over-claims and corrects under-claims. A truer sign than the model's number.
+            return cap > 0 ? (int)Math.Round(cap) : 0;
         }
         return authored;
     }

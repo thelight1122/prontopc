@@ -49,7 +49,7 @@ var messy = JsonDocument.Parse(@"{
   ""memory"":{""percent_used"":50}, ""network"":{""connectivity"":{""internet_reachable"":true}}, ""dns_cache"":{""entries"":0}
 }").RootElement;
 var authored = JsonDocument.Parse(@"{""summary"":""s"",""actions"":[
-  {""id"":""clear_temp_files"",""friendly_name"":""T"",""risk"":""low"",""estimated_mb_recovered"":999999},
+  {""id"":""clear_temp_files"",""friendly_name"":""T"",""risk"":""low"",""estimated_mb_recovered"":5},
   {""id"":""remove_windows_old"",""friendly_name"":""W"",""risk"":""low"",""estimated_mb_recovered"":99999},
   {""id"":""clear_all_browser_caches"",""friendly_name"":""B"",""risk"":""low"",""estimated_mb_recovered"":300},
   {""id"":""clear_chrome_cache"",""friendly_name"":""C"",""risk"":""low"",""estimated_mb_recovered"":300},
@@ -58,7 +58,7 @@ var authored = JsonDocument.Parse(@"{""summary"":""s"",""actions"":[
 ]}").RootElement;
 var (plan, dropped) = env.Validate(authored, messy);
 var kept = plan["actions"]!.AsArray().ToDictionary(a => a!["id"]!.GetValue<string>(), a => a!);
-Check(kept.ContainsKey("clear_temp_files") && kept["clear_temp_files"]!["estimated_mb_recovered"]!.GetValue<int>() == 500, "clear_temp_files mb clamped 999999 -> 500");
+Check(kept.ContainsKey("clear_temp_files") && kept["clear_temp_files"]!["estimated_mb_recovered"]!.GetValue<int>() == 500, "clear_temp_files mb set to true measure 5 -> 500 (under-claim corrected up)");
 Check(kept.ContainsKey("remove_windows_old") && kept["remove_windows_old"]!["risk"]!.GetValue<string>() == "medium", "remove_windows_old risk stamped low -> medium");
 Check(kept.ContainsKey("remove_windows_old") && kept["remove_windows_old"]!["estimated_mb_recovered"]!.GetValue<int>() == 8192, "remove_windows_old mb clamped 99999 -> 8192 (gb->mb)");
 Check(!kept.ContainsKey("reset_network_stack") && dropped.Any(d => d.StartsWith("reset_network_stack")), "reset_network_stack dropped (false precondition)");

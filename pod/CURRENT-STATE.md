@@ -12,13 +12,20 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0010** (2026-08-28) — **ON-DEVICE INFERENCE PROVEN — the durable C3 kill.** Built int4
+**TOTEM-0011** (2026-08-28) — **Envelope now owns the reclaim estimate.** For measurable reclaim
+actions, `Envelope.cs` **sets** `estimated_mb_recovered` to the true diagnostics measure
+(`cap>0 ? round(cap) : 0`) instead of trusting the model and only clamping over-claims — so it now
+also corrects the model's **under-claims upward** (the optional follow-up TOTEM-0010 flagged: the
+model under-estimated temp/Windows.old). Unmeasurable actions report 0 rather than an unverifiable
+guess. Paired eval fixture flipped `999999`→`5` to prove upward correction; `tests/PodEval` **28
+checks PASS**. All 11 Totems HOLD.
+
+**Prior:** TOTEM-0010 — **ON-DEVICE INFERENCE PROVEN — the durable C3 kill.** Built int4
 `google/gemma-3-1b-it` (**~700 MB, under budget**) and ran it through `OnnxGenAiInference` +
 `GemmaLocalPlanner`: a genuine plan **referencing the real diagnostics, offline,
 `provenance.provider=local-model`**, ~29s cold CPU; envelope validated it. This kills the 10.1.2.10
 billing cliff without any cloud deploy. Fixed the Gemma chat-template wrap; committed self-skipping
-`tests/ModelSmoke` (PASS). Build recipe (transformers==4.57.1 pin) in the Satellite SPEC §6c. All 10
-Totems HOLD.
+`tests/ModelSmoke` (PASS). Build recipe (transformers==4.57.1 pin) in the Satellite SPEC §6c.
 
 **Prior:** TOTEM-0009 — Pod eval suite (`tests/PodEval`), 28 checks PASS.
 Compiles the shipping `Envelope`/`GemmaLocalPlanner` and asserts 10 admissibility fixtures + 6
@@ -82,12 +89,13 @@ spec; -0001 opened the Pod.)
   (subsumed by `clear_all_browser_caches`).
 
 ## Next gated step
-**Stage 2b (needs Tracey):** accept the Gemma license + download `gemma-3-1b-it` int4 ONNX into
-`StoreApp/Assets/models/`, add `Microsoft.ML.OnnxRuntimeGenAI`, implement
-`OnnxGenAiInference:ILocalInference`, swap `AbsentInference`. Recipe in the Satellite SPEC §6b. Then:
-offline-VM DoD (`provenance:"local-model"`, no network), grow the runtime proof into a ~10-fixture
-eval suite, and migrate the repair/verify phases into the Orchestrator. (Alternative cloud-C3 path
-still open: deploy to Cloud Run + `certification_preflight.py`. After: `prontopc-custodian-stage`.)
+**Ship readiness for `prontopc-repair-plan` (Stage 2b is DONE — on-device inference proven, TOTEM-0010):**
+run the full WPF app end-to-end with the int4 model bundled (confirm the local-first plan renders in
+the real UI), bundle the Gemma license + Prohibited Use Policy in-app and in the Store listing,
+package the MSIX (~700 MB model as Content), **then promote `prontopc-repair-plan` draft → provisional.**
+Still open: **C4** — the "35+ categories" claim is really **25** (`Diagnostics.cs`). (Alternative
+cloud-C3 path remains available: Cloud Run + `certification_preflight.py`. After promotion:
+`prontopc-custodian-stage`.)
 
 ## How to work here
 1. `python pod/totems/verify_totems.py` — confirm the picture holds.
