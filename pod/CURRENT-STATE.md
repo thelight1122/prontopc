@@ -12,7 +12,20 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0025** (2026-08-28) — **Implemented + documented the AEGIS Build Invariants standard, seeded from the
+**TOTEM-0026** (2026-08-28) — **custodian-stage Phase 2: multi-turn inference plumbing built + proven (echo is
+an open quality issue).** Additive — `ILocalInference.Complete` (single-shot plan authoring) untouched; **added
+`ILocalInference.Chat(history)`** for free-form multi-turn, implemented in `OnnxGenAiInference` (Gemma
+`<start_of_turn>` template, free-form decode) + `AbsentInference` (null). New `StoreApp/CustodianChat.cs` = the
+orb's declared entrypoint (history + `ReplyAsync`; **nothing executes an action**). **Proven:** `dotnet build`
+**0/0**; `tests/ModelSmoke` extended with a 2-turn on-device exchange — ran the real int4 `gemma-3-1b-it`,
+history carried (4 turns), plumbing PASS. **Open (honest):** the raw 1B replies **echo the prompt** instead of
+answering — root causes found in the model config: template omits `<bos>` (`bos_token_id=2`); sampling is
+`temperature=1.0` vs the Conversation Contract's 0.5; placeholder system prompt (not yet Canon-seeded). **Next:
+decode tuning** (add `<bos>`; apply the Conversation Contract interactive_params), then re-prove a *coherent*
+2-turn exchange. (Also noted: plan authoring intermittently fails valid-JSON at temp 1.0 — pre-existing
+sampling flakiness; the Phase-2 change is purely additive and doesn't touch that path.) All 26 Totems HOLD.
+
+**Prior:** TOTEM-0025 (2026-08-28) — **Implemented + documented the AEGIS Build Invariants standard, seeded from the
 real Canon.** Read `AEGIS CORE FOUNDATIONAL CANON v1.0` (Canon-Locked 2026-05-31) + the Responsible-AI spec +
 Concept Ledger + integration template + Interceptor blueprint (on `I:\`/`H:\`) — not an approximation. Two new
 docs: **`docs/AEGIS_BUILD_INVARIANTS.md`** — the pre-offering standard for all Si Energized Applications (non-force

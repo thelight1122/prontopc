@@ -27,6 +27,12 @@ interface ILocalInference
     // Run the model. `jsonSchema` constrains output when the backend supports guided
     // decoding. Returns the completion text, or null on any failure.
     string? Complete(string prompt, string jsonSchema, CancellationToken ct);
+
+    // Multi-turn free-form chat (the conversational Custodian — SPEC Phase 2). `history`
+    // ends on the latest user turn; render it through the model's chat template and
+    // generate the next model reply. No guided decoding — this is conversation, not the
+    // schema-constrained plan authoring above. Returns the reply text, or null on failure.
+    string? Chat(IReadOnlyList<ChatTurn> history, CancellationToken ct);
 }
 
 // Default until Stage 2b: no model bundled -> the Satellite declines every request.
@@ -35,6 +41,7 @@ sealed class AbsentInference : ILocalInference
     public bool Available => false;
     public string ModelName => "none";
     public string? Complete(string prompt, string jsonSchema, CancellationToken ct) => null;
+    public string? Chat(IReadOnlyList<ChatTurn> history, CancellationToken ct) => null;
 }
 
 sealed class GemmaLocalPlanner : IPlanAuthor

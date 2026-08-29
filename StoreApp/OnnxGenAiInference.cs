@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 using Microsoft.ML.OnnxRuntimeGenAI;
 
@@ -71,6 +73,47 @@ sealed class OnnxGenAiInference : ILocalInference
             var full = generator.GetSequence(0);
             var generated = full.Slice(inputLen);
             return _tokenizer.Decode(generated);
+        }
+        catch { return null; }
+    }
+
+    // Multi-turn conversational reply (SPEC Phase 2). Renders the whole history through
+    // Gemma's chat template and opens a model turn. Free-form: no guided decoding.
+    public string? Chat(IReadOnlyList<ChatTurn> history, CancellationToken ct)
+    {
+        try
+        {
+            EnsureLoaded();
+            if (_model is null || _tokenizer is null || history is null || history.Count == 0) return null;
+
+            var sb = new StringBuilder();
+            foreach (var t in history)
+                sb.Append("<start_of_turn>").Append(t.Role == ChatRole.User ? "user" : "model")
+                  .Append('\n').Append(t.Text).Append("<end_of_turn>\n");
+            sb.Append("<start_of_turn>model\n");
+
+            var sequences = _tokenizer.Encode(sb.ToString());
+            var inputIds = sequences[0];
+            int inputLen = inputIds.Length;
+
+            using var gp = new GeneratorParams(_model);
+            gp.SetSearchOption("max_length", (double)(inputLen + 512));
+
+            using var generator = new Generator(_model, gp);
+            generator.AppendTokens(inputIds);
+            while (!generator.IsDone())
+            {
+                ct.ThrowIfCancellationRequested();
+                generator.GenerateNextToken();
+            }
+
+            var full = generator.GetSequence(0);
+            var generated = full.Slice(inputLen);
+            string reply = _tokenizer.Decode(generated);
+            // Trim any trailing turn marker the model may emit after its reply.
+            int cut = reply.IndexOf("<end_of_turn>", StringComparison.Ordinal);
+            if (cut >= 0) reply = reply.Substring(0, cut);
+            return reply.Trim();
         }
         catch { return null; }
     }

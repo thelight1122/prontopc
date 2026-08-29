@@ -39,6 +39,7 @@ var r = await planner.AuthorAsync(diag, env.AdmissibleSet(diag), new Cancellatio
 
 int fail = 0;
 void Check(bool ok, string label) { Console.WriteLine((ok ? "  PASS " : "  FAIL ") + label); if (!ok) fail++; }
+string Trunc(string s) => s.Length <= 160 ? s : s.Substring(0, 160) + "…";
 Check(r != null, "on-device author returned a plan");
 Check(r != null && r.Provider == "local-model", "provenance.provider == local-model");
 if (r != null)
@@ -48,5 +49,26 @@ if (r != null)
     string summary = r.Plan.TryGetProperty("summary", out var s) ? (s.GetString() ?? "") : "";
     Check(summary.Length > 0, "plan carries a non-empty summary");
 }
+
+// ── Phase 2: conversational Custodian — prove a 2-turn on-device exchange ──
+Console.WriteLine("\nCUSTODIAN CHAT (Phase 2 — multi-turn inference):");
+// Minimal role framing (Phase 2 placeholder — the Canon seed + Reflective Boundary
+// Conditions land here in a later phase). Without any system prompt the bare 1B model
+// completes text instead of answering; the role turns it into a responder.
+var chat = new CustodianChat(inf,
+    "You are the ProntoPC Custodian, a warm, plain-English PC repair technician talking to a " +
+    "worried customer. Answer their question directly in one or two short sentences. Never repeat " +
+    "their question back. Never invent specifics you were not given.");
+var chatCt = new CancellationTokenSource(TimeSpan.FromSeconds(240)).Token;
+string? a1 = await chat.ReplyAsync(
+    "Hi — in one sentence, what will your diagnostic scan check on my PC?", chatCt);
+Check(!string.IsNullOrWhiteSpace(a1), "chat turn 1: Custodian replied");
+if (a1 != null) Console.WriteLine("    turn1> " + Trunc(a1));
+string? a2 = await chat.ReplyAsync(
+    "Thanks. Will that scan change anything on my computer?", chatCt);
+Check(!string.IsNullOrWhiteSpace(a2), "chat turn 2: Custodian replied (history carried forward)");
+if (a2 != null) Console.WriteLine("    turn2> " + Trunc(a2));
+Check(chat.History.Count == 4, "history holds 4 turns (2 user, 2 model)");
+
 Console.WriteLine(fail == 0 ? "\nMODEL SMOKE PASS" : $"\n{fail} FAILURE(S)");
 Environment.Exit(fail == 0 ? 0 : 1);

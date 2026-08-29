@@ -17,5 +17,6 @@
     <Compile Include="..\..\StoreApp\PlanContracts.cs" />
     <Compile Include="..\..\StoreApp\LocalPlanner.cs" />
     <Compile Include="..\..\StoreApp\OnnxGenAiInference.cs" />
+    <Compile Include="..\..\StoreApp\CustodianChat.cs" />
   </ItemGroup>
 </Project>
