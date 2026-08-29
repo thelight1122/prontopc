@@ -52,7 +52,10 @@
     "conversation.turn { role, tokens }",
     "conversation.refused_scope { topic }",
     "conversation.deferred_uncertain { subject }",
+    "conversation.gate_shown { phase }",
     "conversation.handoff_to_consent { action_count }",
+    "conversation.certified { verified, of_total }",
+    "conversation.coupon_presented { code }",
     "conversation.ended { turns }"
   ]
 }

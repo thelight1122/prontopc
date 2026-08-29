@@ -12,7 +12,25 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0021** (2026-08-28) — **Greenlit web-surface reference spec drafted.** `docs/WEB_SURFACE_SPEC.md` is
+**TOTEM-0024** (2026-08-28) — **Captured the Custodian conversation choreography (SPEC §3b).** Tracey's
+greenlit flow: the AI Technician is the **through-line narrator** across the whole repair, with a yes/no
+question-gate at every boundary (No→proceed, Yes→chat then re-offer — the customer always chooses the step,
+= §0 in motion). Journey: pre-scan brief+gate → reconnaissance → findings+intended-actions+gate → repairs
+(existing consent/envelope path; chat never executes) → **Final Audit & Certification** (Technician *verifies*
+repairs actually completed — real per-action check grounded in the Orchestrator's existing verify output,
+certifies only what truly completed, U2/U3) +gate → **Technician personally presents the 50% coupon**
+(`NEXTREPAIR50`) as relationship-building, not a page element. Build phases revised; contract gained
+`gate_shown`/`certified`/`coupon_presented` events. **Still SPEC-only — first build unit is Phase 2
+(multi-turn inference).** All 24 Totems HOLD.
+
+**Also this session (Tracey's gates):** backend **A1 deploy DONE** (Cloud Run rev `pronto-pc-00075-pkz`,
+100% traffic, make-good code live) + **A2 verified** (`/health` 200; `/api/report-ai-unavailable` → 400 wired).
+
+**Prior:** TOTEM-0023 — **Founding principle set atop the web spec (§0):** the product never projects
+authority/force/dominance onto the customer; every other rule derives from it. TOTEM-0022 — banned redundant
+doubt-planting reassurances ("at no additional cost") in the web spec's honesty checklist.
+
+**Prior:** TOTEM-0021 (2026-08-28) — **Greenlit web-surface reference spec drafted.** `docs/WEB_SURFACE_SPEC.md` is
 the source of truth the web rebuild is authored **against** (Tracey's clean-rebuild rule: new files by
 reference, never edited clones). Holds the one true product model (certified Store app, no copy-paste,
 on-device conversational Custodian, read-only consent-gated scan, six areas, $29, honest make-good), the true

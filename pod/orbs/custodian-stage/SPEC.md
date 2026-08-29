@@ -72,14 +72,50 @@ The stage's honesty specs are not just about 3D workers — they govern what the
 - **U5** (clean worker taxonomy) → one voice, no invented roles.
 - **U6** (AEGIS palette) → the ChatPanel uses the chrome / faceted-violet / ink system.
 
+## 3b. Conversation choreography — the Technician's journey (greenlit, Tracey)
+
+The Custodian is the **through-line narrator** across the whole repair, not a chatbox bolted on at the end.
+He appears at every phase boundary, hands the customer the floor with a yes/no gate, and only advances on the
+customer's assent. This choreography **is §0 in motion** — the customer is never rushed, and closure is
+offered, never imposed.
+
+| # | Phase | The Technician does | Gate | On "No" / "Yes" |
+| - | --- | --- | --- | --- |
+| 1 | **Pre-scan brief** | Explains, in plain English, what the scan is about to do (read-only, the six areas, nothing changes) | *"Any questions before I start?"* (yes/no) | **No →** proceed to scan · **Yes →** open chat for Q&A, then re-offer the gate |
+| 2 | **Reconnaissance** | Runs the read-only diagnostic (existing scan) | — | narrates only real progress (U1) |
+| 3 | **Findings + intent** | Explains **what was found** *and* **what actions he'll take**, grounded in the real diagnostics + authored plan | *"Any questions?"* (yes/no) | **No →** proceed to consent/repairs · **Yes →** chat, then re-offer |
+| 4 | **Repairs** | Runs the approved actions (existing consent + envelope-validated path — the chat never executes) | — | — |
+| 5 | **Final Audit & Certification** | **Verifies the repairs actually completed** — a real check per action, not a claim — and certifies the result | *"Any further questions?"* (yes/no) | **No →** proceed · **Yes →** chat, then re-offer |
+| 6 | **Coupon (relationship)** | **Personally presents** the 50% next-repair coupon (`COUPON_ID` / `NEXTREPAIR50`) as a thank-you, rather than it just appearing on the page | — | closes warmly |
+
+**Two design notes that matter:**
+
+- **Certification is a real capability, not theater.** Step 5 must be grounded in the actual **verify** output
+  the Orchestrator already produces (`RunRepairAsync` → per-action verify), surfaced honestly: the Technician
+  certifies **only** what genuinely completed, and names anything that didn't (**U2/U3** — "done/green" only
+  on real completion). The *presentation* is warm; the *substance* is a true post-repair check.
+- **The coupon delivery is deliberate "theater" in service of relationship, not deception.** Moving the coupon
+  from a page element to the Technician's hand is a trust/relationship move (§0). It changes *who presents* it,
+  not *what it is* — same real `NEXTREPAIR50`, same terms.
+
+**Gate mechanics.** Each yes/no gate is a small, non-forcing prompt (a *"Any questions?"* the customer can
+dismiss with one tap). "No" is proceed; "Yes" opens the multi-turn chat, and after the exchange the gate is
+**re-offered** rather than auto-advancing — the customer always chooses the step forward. New observable
+events for these phases: `conversation.gate_shown { phase }`, `conversation.certified { verified, of_total }`,
+`conversation.coupon_presented { code }`.
+
 ## 4. Build phases (each its own gated Totem)
 
 1. **Contract** *(this draft)* — Conversation Contract schema + instance + curated reference v0.1. No app code.
 2. **Multi-turn inference** — extend `ILocalInference` to accept message history; free-form decode for chat,
    keep JSON-schema decode for the plan-authoring turn. Prove a 2-turn exchange offline in `tests/ModelSmoke`.
-3. **ChatPanel** — the conversational surface over the findings; the Custodian opens by explaining the plan,
-   answers questions, and hands every action to the existing consent/envelope path.
-4. **Ingestion** — load the curated reference into the system prompt under the contract's `knowledge`
+3. **ChatPanel + the choreography (§3b)** — the conversational surface woven through the phase machine: the
+   Technician's pre-scan brief, findings+intent, and the yes/no gates at each boundary (No → proceed, Yes →
+   chat then re-offer). The Custodian explains, answers, and hands every action to the existing
+   consent/envelope path — he never executes.
+4. **Certification** — wire step 5 to the Orchestrator's real per-action **verify** output so the Technician
+   certifies only what genuinely completed and names what didn't (U2/U3). Then the coupon-presentation step.
+5. **Ingestion** — load the curated reference into the system prompt under the contract's `knowledge`
    manifest; measure token cost against the 32k budget.
 
 ## 5. Definition of Done (draft → provisional)
