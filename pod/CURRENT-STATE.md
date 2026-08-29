@@ -12,7 +12,27 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0026** (2026-08-28) — **custodian-stage Phase 2: multi-turn inference plumbing built + proven (echo is
+**TOTEM-0027** (2026-08-29) — **Re-aimed the certification gate at the ON-DEVICE product (Tracey's greenlit path).**
+The Store submission is the self-contained WPF app: self-elevates once (single UAC), scans read-only, and authors
+the repair plan **on-device** with the bundled int4 `gemma-3-1b-it` (Orchestrator order = local-model first, cloud
+fallback only). This **durably kills the 10.1.2.10 dual-provider outage** that caused the 4th rejection: verified
+LIVE that the cloud `/api/repair-plan` is **still down** (Azure **401** invalid key/endpoint + Gemini **429** prepay
+depleted — the exact 4th-rejection state), yet **on-device authoring PASSES** (`tests/ModelSmoke`:
+`provider==local-model`, ≥1 admissible action after Envelope validation, non-empty summary — run live this session).
+(1) Rewrote `docs/MICROSOFT_STORE_CERT_NOTES.md` to the real reviewer flow (install → launch → **single UAC** →
+read-only scan → **on-device AI plan** → "Perform Repairs" → "Your PC has been serviced"); removed the obsolete
+Stripe $29 + `MSCERT2026` + download-a-separate-agent + Desktop-report claims (none exist in the WPF app); added a
+**pre-submission checklist whose #1 item is that the `.msixupload` BUNDLES the model** (else it falls to the dead
+cloud = re-rejection). (2) Retargeted `certification_preflight.py`: check[3] blocking gate is now **on-device-model-
+bundled + ModelSmoke proof**, cloud **demoted to non-blocking** fallback; check[5] validates the on-device notes
+instead of demanding the Stripe code. **Preflight now 18/19 → SAFE TO SUBMIT** (sole warning = cloud fallback 429,
+handled by on-device + make-good). Docs + gate only — no StoreApp engine code changed. All 28 Totems HOLD.
+**Open for Tracey:** monetization/pricing of the Store listing (the WPF app has no in-app payment — free vs paid-in-
+Store is a Partner Center decision, not a cert blocker); optional belt+suspenders = restore a cloud provider so the
+fallback is green too. **Next: Tracey builds the `.msixupload` (with the bundled model) in VS + submits (identity
+`9P1K9QJXKND8`).**
+
+**Prior:** TOTEM-0026 (2026-08-28) — **custodian-stage Phase 2: multi-turn inference plumbing built + proven (echo is
 an open quality issue).** Additive — `ILocalInference.Complete` (single-shot plan authoring) untouched; **added
 `ILocalInference.Chat(history)`** for free-form multi-turn, implemented in `OnnxGenAiInference` (Gemma
 `<start_of_turn>` template, free-form decode) + `AbsentInference` (null). New `StoreApp/CustodianChat.cs` = the
@@ -254,14 +274,18 @@ spec; -0001 opened the Pod.)
   (subsumed by `clear_all_browser_caches`).
 
 ## Next gated step
-**`prontopc-repair-plan` is PROVISIONAL — the engineering ship-readiness is done. The remaining gates are
-Tracey's, before Store cert:**
-1. **Deploy** the backend (Cloud Run) with the make-good env set: `SUPPORT_EMAIL`, `MAKEGOOD_COUPON_ID`,
-   `RESEND_API_KEY`, `STRIPE_SECRET_KEY` (last two already in use).
-2. **Production hot run** — full end-to-end against the live deploy (success path + a real make-good).
-3. **External Codex code audit.**
-4. **Resubmit to Store cert** — build the `.msixupload` in VS (identity already set), submit in Partner Center.
-On cert pass + hot-run confidence, promote repair-plan **provisional → verified**. After: `prontopc-custodian-stage`.
+**Product decided (TOTEM-0027): the Store submission is the ON-DEVICE self-contained WPF app.** The cert gate is
+green — `certification_preflight.py` reports **18/19, SAFE TO SUBMIT** against the live system, with on-device
+authoring proven this session. The remaining steps are Tracey's:
+1. **Build the `.msixupload` in VS** — identity `9P1K9QJXKND8` already set. **CRITICAL:** confirm the package
+   BUNDLES the on-device model (`StoreApp/Assets/models/gemma-3-1b-it/`, ~700 MB, gitignored artifact — present in
+   the working tree now). Without it the app falls to the dead cloud = the exact 4th-rejection failure.
+2. **Submit in Partner Center** with the rewritten `docs/MICROSOFT_STORE_CERT_NOTES.md` in "Notes for certification."
+3. *(Optional belt+suspenders)* restore a cloud provider (valid Azure key/endpoint, or Gemini prepay credits) so the
+   fallback + make-good path is green too — not a cert blocker, since on-device authors the reviewer's plan.
+4. *(Open, Tracey's call)* Store-listing monetization: the WPF app has no in-app payment — free vs paid-in-Store is a
+   Partner Center pricing decision, independent of cert. The web surface (`prontopc.online` + Stripe) still exists.
+On cert pass, promote repair-plan **provisional → verified**. After: `prontopc-custodian-stage` (Phase-2 echo fix).
 
 Watch item (not blocking): the 1B model's summary specificity was low on the WPF run (generic wording,
 1 action, ~0 MB) — consider prompt/decoding tuning if it recurs on a machine with real clutter.

@@ -4,50 +4,58 @@ Product: ProntoPC
 Product ID: 9P1K9QJXKND8
 
 Paste the block below into Partner Center -> Submission -> "Notes for certification"
-when resubmitting. Fill nothing else in - ProntoPC needs no test account (access
-is granted by the checkout session, there is no login).
-
-Before submitting, confirm in the Stripe Dashboard (LIVE mode) that the promotion
-code MSCERT2026 still exists and is 100% off.
+when resubmitting. ProntoPC needs no test account and no promo code - the app is
+self-contained and requires no sign-in.
 
 ------------------------------------------------------------------
-ProntoPC is an AI-powered Windows diagnostic and repair service. The core feature
-is a one-time $29 diagnostic + repair run. No account or sign-in is required -
-access is granted by the checkout session. To test the full paid experience at no
-cost, use the 100%-off promotion code below. No payment card is required.
+ProntoPC is an AI-powered Windows diagnostic and repair app. Everything runs on
+the local PC - there is no account, no sign-in, and no internet connection is
+required to use the core feature. The AI that builds the repair plan is a model
+bundled inside the app and runs on the device itself.
 
-HOW TO TEST (full functionality, free):
-1. Launch ProntoPC. It opens the diagnostic experience at https://prontopc.online.
-2. Click "Start Your Diagnostic" (or "Get Started"). This opens the Stripe
-   checkout page.
-3. On the checkout page, click "Add promotion code" and enter:
-       MSCERT2026
-   The total changes from $29.00 to $0.00 and NO payment card is required.
-4. Enter any valid email address, then complete the (free) checkout.
-5. You are returned to https://prontopc.online/success and your Custodian session
-   opens.
-6. From the success page, download the Pronto Agent and run it on the Windows PC
-   you want checked. The agent scans the system, sends the diagnostics to our AI
-   engine, shows the proposed repair plan, and (after you confirm) runs safe,
-   reversible repairs, saving an audit report to the Desktop.
+HOW TO TEST (full functionality):
+1. Install ProntoPC from the Microsoft Store and launch it.
+2. Approve the single Windows (UAC) prompt. ProntoPC elevates once so it can both
+   scan and repair; you will not be prompted again.
+3. The app reads the system - "Reading your system..." - for about a minute. This
+   phase is read-only; nothing on the PC is changed.
+4. The bundled on-device AI builds a personalized repair plan. No internet
+   connection is needed for this step. The app then shows "Here's what we found."
+   with a list of recommended repairs.
+5. Uncheck any item you would rather skip, then click "Perform Repairs." Repairs
+   run immediately (permission was already granted by the UAC prompt in step 2).
+6. When finished, the app shows "Your PC has been serviced."
 
 NOTES:
-- No real payment is taken anywhere in this flow with the code above.
-- No account or sign-in is required; the session is created from the checkout.
-- A confirmation email with the agent download link is also sent to the address
-  entered at checkout.
+- No account or sign-in is required. No promotion code or external website is
+  involved, and there is no separate download - the Store app is the product.
+- The AI repair plan is generated on-device by a bundled model, so the core
+  feature works with no network connection.
 - Support: support@prontopc.online
 ------------------------------------------------------------------
 
 ## What changed since the last submission (for our records)
-Prior rejection (10.1.2.10 Functionality): after completing the $0 checkout, the
-redirect to /success failed with "Could not reach our server."
+Prior rejection (10.1.2.10 Functionality, Aug 26 2026): "repair plan built by AI"
+was absent because BOTH cloud AI providers were down at review time (Azure OpenAI
+401 + Gemini 429), and the app depended on the cloud to author the plan.
 
-Root causes fixed:
-1. Payment verification (verifyStripeSession in pronto-server-cloudrun.mjs) only
-   accepted payment_status "paid". The 100%-off tester checkout settles as
-   "no_payment_required"/status "complete", so it threw and /api/verify-payment
-   returned 402. It now accepts paid, no_payment_required, or a complete session.
-   Deployed to Cloud Run (us-central1), revision pronto-pc-00070+.
-2. The AI engine (Azure OpenAI) billing tier was restored so repair-plan
-   generation succeeds.
+Root cause fixed - durably:
+- The repair plan is now authored by an on-device AI model bundled in the app
+  (int4 google/gemma-3-1b-it via ONNX Runtime GenAI). The Orchestrator's provider
+  order is on-device first, cloud only as a fallback, so the plan is generated
+  locally with no network dependency. The prior cloud-outage failure mode cannot
+  recur during review: the reviewer's plan is authored on the device.
+- If, on some machine, the on-device author cannot produce a plan, the app never
+  substitutes a non-AI (rule-based) plan under the AI claim. It shows honest
+  recourse instead (a make-good). There is no code path that presents a heuristic
+  plan as the AI plan.
+
+## Pre-submission checklist (ours, not for the reviewer)
+- [ ] The .msixupload BUNDLES the on-device model at
+      Assets/models/gemma-3-1b-it/ (genai_config.json + weights). Without it the
+      app falls through to the cloud fallback, which reintroduces the exact
+      failure that caused the last rejection. This is the single most important
+      packaging check.
+- [ ] `python certification_preflight.py` reports safe to submit.
+- [ ] The bundled Gemma license + Prohibited Use Policy open from the in-app
+      "AI model & licenses" link.

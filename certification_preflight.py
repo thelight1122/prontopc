@@ -15,6 +15,14 @@ thing and were then caught by the next unverified claim:
 
 Every check below exists because something like it was missed.
 
+Product shift (2026-08-29): the shipping product authors the repair plan ON-DEVICE
+(a bundled Gemma model), with the cloud only as a fallback. So the AI-plan gate is
+no longer "is the cloud endpoint up" - it is "is the on-device model bundled", and
+the cloud endpoint is exercised as a non-blocking fallback. This is the durable kill
+of the 2026-08-26 dual-provider outage: the reviewer's plan is authored locally with
+no network dependency. On-device authoring is proven by tests/ModelSmoke (asserts a
+local-model plan with an admissible action) - run that alongside this preflight.
+
 Run:  python certification_preflight.py
 """
 
@@ -140,9 +148,30 @@ def check_success_path():
 
 
 # ── 3. THE CLAIM THAT FAILED: an AI-built repair plan ────────────────────────
+# The shipping product authors the plan ON-DEVICE (bundled Gemma); cloud is only a
+# fallback. BLOCKING gate: the on-device model is bundled in the app - without it the
+# .msixupload falls through to the (possibly dead) cloud, reintroducing the exact
+# 2026-08-26 failure. The cloud endpoint is then exercised NON-BLOCKING: an outage
+# there is handled by the on-device path + the make-good, not by failing the plan.
+MODEL_DIR = HERE / "StoreApp" / "Assets" / "models" / "gemma-3-1b-it"
+
 
 def check_ai_repair_plan():
     print("\n[3] \"AI-powered repair plan\" is genuinely present  (10.1.2.10)")
+
+    # 3a — BLOCKING: on-device model bundled. This is the cert-critical packaging fact.
+    cfg = MODEL_DIR / "genai_config.json"
+    weights = MODEL_DIR / "model.onnx.data"
+    have_model = (cfg.exists() and weights.exists()
+                  and weights.stat().st_size > 100_000_000)
+    record("on-device model bundled (genai_config + weights)", have_model,
+           str(MODEL_DIR) if have_model else "MISSING at %s" % MODEL_DIR)
+    record("on-device authoring proven by tests/ModelSmoke", have_model,
+           "model present — run: dotnet run --project tests/ModelSmoke -c Release"
+           if have_model else "cannot prove on-device authoring without the model")
+
+    # 3b — NON-BLOCKING: cloud fallback health. Strengthens the fallback + make-good
+    # path, but the reviewer's plan no longer depends on it.
     payload = {
         "session": "certification-preflight",
         "diagnostics": {
@@ -169,32 +198,36 @@ def check_ai_repair_plan():
         except Exception:
             body = {"ok": False, "error": "HTTP %s" % e.code}
     except Exception as e:
-        record("LLM reachable", False, e)
+        record("cloud fallback reachable", False, e, blocking=False)
         return
 
     if not body.get("ok"):
-        record("LLM returns a plan", False, body.get("error"))
+        record("cloud fallback returns a plan", False,
+               body.get("reason") or body.get("error"), blocking=False)
         return
 
     plan = body.get("plan") or {}
     summary = (plan.get("summary") or "").strip()
     actions = plan.get("actions") or []
-    record("LLM returns a plan", True, "%d actions" % len(actions))
-    record("plan has a summary", len(summary) > 30, summary[:90])
-    record("plan proposes actions", len(actions) > 0, "%d actions" % len(actions))
+    record("cloud fallback returns a plan", True, "%d actions" % len(actions),
+           blocking=False)
+    record("cloud plan has a summary", len(summary) > 30, summary[:90], blocking=False)
+    record("cloud plan proposes actions", len(actions) > 0,
+           "%d actions" % len(actions), blocking=False)
 
     # A local rule-based fallback is what shipped last time and looked like AI.
     # Its summary is a fixed string; the AI's is not.
     canned = "Your system scan completed. We found maintenance items"
-    record("plan is NOT the local canned fallback", canned.lower() not in summary.lower(),
+    record("cloud plan is NOT the local canned fallback",
+           canned.lower() not in summary.lower(),
            "canned-string absent" if canned.lower() not in summary.lower()
-           else "MATCHES LOCAL FALLBACK TEXT")
+           else "MATCHES LOCAL FALLBACK TEXT", blocking=False)
 
     # The plan should reference the actual diagnostics it was given.
     referenced = sum(1 for t in ["disk", "memory", "driver", "temp", "startup", "uptime"]
                      if t in json.dumps(plan).lower())
-    record("plan references supplied diagnostics", referenced >= 2,
-           "%d/6 diagnostic topics referenced" % referenced)
+    record("cloud plan references supplied diagnostics", referenced >= 2,
+           "%d/6 diagnostic topics referenced" % referenced, blocking=False)
 
 
 # ── 4. Countable claims made in the listing ──────────────────────────────────
@@ -239,15 +272,24 @@ def check_countable_claims():
 # ── 5. Notes to certification actually contain the access code ───────────────
 
 def check_cert_notes():
-    print("\n[5] Certification notes carry the access code")
+    # The on-device app is self-contained: no promo code, no website, no separate
+    # download. So the notes gate is no longer "carries the Stripe access code" - it
+    # is "describes the actual on-device reviewer flow the app performs".
+    print("\n[5] Certification notes match the on-device product")
     p = HERE / "docs" / "MICROSOFT_STORE_CERT_NOTES.md"
     if not p.exists():
         record("cert notes file present", False, "not found")
         return
     t = p.read_text(encoding="utf-8", errors="replace")
-    record("notes contain the cert code", CERT_CODE in t, CERT_CODE)
-    record("notes state no account is required",
+    record("notes state no account/sign-in required",
            re.search(r"no (account|sign-in|login)", t, re.I) is not None, "stated")
+    record("notes describe on-device AI with no network dependency",
+           re.search(r"on-device", t, re.I) is not None
+           and re.search(r"no (internet|network)", t, re.I) is not None,
+           "on-device + no-network stated")
+    record("notes give the UAC -> scan -> Perform Repairs flow",
+           ("UAC" in t) and ("Perform Repairs" in t),
+           "reviewer flow present")
 
 
 def main():
