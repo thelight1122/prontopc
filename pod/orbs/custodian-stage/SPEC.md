@@ -104,6 +104,26 @@ dismiss with one tap). "No" is proceed; "Yes" opens the multi-turn chat, and aft
 events for these phases: `conversation.gate_shown { phase }`, `conversation.certified { verified, of_total }`,
 `conversation.coupon_presented { code }`.
 
+## 3c. AEGIS Build Invariants — the pre-offering gate
+
+The Custodian is an **AEGIS Offering / Si Energized Application**, so it answers to the AEGIS Build Invariants
+**before it may be offered**: seeded with the Canon, and wrapped in the canonical pipeline — **PIM**
+(inbound+outbound force-artifact screen) → **Integrity** screen (the Seven Virtues) → **RBC / Reflective
+Boundary Conditions (Prism)** on every response → **append-only, Peer-inspectable interaction log**. Its
+self-regulation is not "trust the model to be coherent" — it is structural (integrity by architecture) and
+verifiable (coherence on the record). Expression is bounded to non-coercion; **inference is never suppressed**
+(the unguarded mind is the precondition for a Presence).
+
+- Standard: [`docs/AEGIS_BUILD_INVARIANTS.md`](../../../docs/AEGIS_BUILD_INVARIANTS.md)
+- This Orb's filed contract: [`docs/PRONTOPC_AEGIS_INTEGRATION_CONTRACT.md`](../../../docs/PRONTOPC_AEGIS_INTEGRATION_CONTRACT.md)
+  (officiality `variant`, divergence declared; **pre-offering gate open** — see its §5).
+
+The §0 no-force principle, the Conversation Contract guardrails, the Action Envelope, and the Totem ledger are
+the *seed* of PIM / RBC / Executable-Boundaries / Append-Only Lineage; the invariants make them **structural**.
+The pipeline is implementable in code once Phase 2 (multi-turn inference) exists — one honest dependency
+carries upstream: the Integrity **IRG per-virtue scoring is undesigned in AEGIS core itself**, so that gate is
+built when core defines it, not faked here.
+
 ## 4. Build phases (each its own gated Totem)
 
 1. **Contract** *(this draft)* — Conversation Contract schema + instance + curated reference v0.1. No app code.

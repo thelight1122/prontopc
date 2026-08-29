@@ -12,7 +12,23 @@ moved since it was recorded — re-audit the affected files before acting. Never
 picture; that is the exact drift failure this system exists to prevent.
 
 ## Head totem
-**TOTEM-0024** (2026-08-28) — **Captured the Custodian conversation choreography (SPEC §3b).** Tracey's
+**TOTEM-0025** (2026-08-28) — **Implemented + documented the AEGIS Build Invariants standard, seeded from the
+real Canon.** Read `AEGIS CORE FOUNDATIONAL CANON v1.0` (Canon-Locked 2026-05-31) + the Responsible-AI spec +
+Concept Ledger + integration template + Interceptor blueprint (on `I:\`/`H:\`) — not an approximation. Two new
+docs: **`docs/AEGIS_BUILD_INVARIANTS.md`** — the pre-offering standard for all Si Energized Applications (non-force
+spine, the locked pipeline PIM→…→Integrity→IDQRA→RBC/Reflective-Boundary-Conditions→Append-Only Lineage, the
+Seven Imperatives / Four Standards / Offering gates / Seven Virtues / Responsible-AI reqs / append-only auditable
+interaction log / pre-offering checklist), written in **"will" not "must"** (a *must* is a force artifact) and
+referencing the external Canon as authority (Canon Boundary). **`docs/PRONTOPC_AEGIS_INTEGRATION_CONTRACT.md`** —
+the Custodian filed as `officiality=variant, divergence declared`, honestly mapping what ProntoPC **already**
+instantiates (Totem ledger = Append-Only Lineage; Action Envelope = Carrier Envelope; §0+Conversation Contract =
+Non-Force/RBC; defer-when-uncertain = Grounding Verification; consent+envelope = Executable Boundaries; U1–U6 =
+Observation-Only) vs the **declared build-gaps** (seed the Canon; build PIM; the 7-virtue Integrity screen —
+gated on core, IRG scoring undesigned even in AEGIS core; RBC/Prism module; the append-only **interaction** log
+— Totem covers dev lineage, not the runtime customer log). `custodian-stage` SPEC §3c binds the build to this
+gate. Documentation-level implement (no engine code faked). All 25 Totems HOLD.
+
+**Prior:** TOTEM-0024 (2026-08-28) — **Captured the Custodian conversation choreography (SPEC §3b).** Tracey's
 greenlit flow: the AI Technician is the **through-line narrator** across the whole repair, with a yes/no
 question-gate at every boundary (No→proceed, Yes→chat then re-offer — the customer always chooses the step,
 = §0 in motion). Journey: pre-scan brief+gate → reconnaissance → findings+intended-actions+gate → repairs
