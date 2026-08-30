@@ -577,6 +577,41 @@ function findSessionByClientRef(clientRef) {
   return null;
 }
 
+// Stateless payment confirmation. Cloud Run runs multiple instances and cold-starts
+// from zero, so the instance that created the session (success.html → verify-payment)
+// may not be the one answering the app's await-payment poll. When the in-process store
+// misses, ask STRIPE directly whether a fulfilled checkout carrying this nonce exists —
+// Stripe is the durable source of truth, so the poll no longer depends on which instance
+// handled the browser redirect.
+//
+// Stripe's list endpoint has no client_reference_id filter, so we scan the most-recent
+// page (limit 100). The app polls within seconds of paying, so the just-paid session is
+// at the top of that page. Fail-closed: any error/absence returns null → the app keeps
+// polling (a false "pending" that self-heals), never a false "paid".
+async function findFulfilledStripeSessionByClientRef(clientRef) {
+  if (!clientRef || !STRIPE_SECRET_KEY) return null;
+  try {
+    const resp = await fetch("https://api.stripe.com/v1/checkout/sessions?limit=100", {
+      headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` },
+      signal: AbortSignal.timeout(15_000)
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    for (const s of data.data || []) {
+      if (s.client_reference_id !== clientRef) continue;
+      // Same fulfilled test as verifyStripeSession (a 100%-off comp settles as
+      // "no_payment_required"/"complete", not "paid").
+      const fulfilled = s.payment_status === "paid"
+        || s.payment_status === "no_payment_required"
+        || s.status === "complete";
+      if (fulfilled) return s;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function readBody(req) {
@@ -657,10 +692,22 @@ async function handleVerifyPayment(req, res) {
 //     No deep-link, so a Start-menu launch never spawns a second instance or a second UAC.
 //   verify-token?token=<token>  The app arrived via prontopc://run?token=… (pure-web entry);
 //     it re-confirms the token still names a live, fulfilled session before scanning.
-function handleAwaitPayment(req, res, ref) {
+async function handleAwaitPayment(req, res, ref) {
   if (!ref) return json(res, req, 400, { ok: false, paid: false, error: "ref required" });
+  // Fast path: the session was created on THIS instance — no Stripe call needed.
   const found = findSessionByClientRef(ref);
   if (found) return json(res, req, 200, { ok: true, paid: true, token: found.token });
+  // Cross-instance / cold-start path: confirm the paid checkout straight from Stripe,
+  // then materialize the local session here so the run can proceed and carry state.
+  const stripeSession = await findFulfilledStripeSessionByClientRef(ref);
+  if (stripeSession) {
+    const existing = findSessionByStripeId(stripeSession.id);
+    const token = existing
+      ? existing.token
+      : createSession(stripeSession.id, stripeSession.customer_details?.email || "", ref);
+    console.log(`[await-payment] Confirmed via Stripe for nonce ${ref.substring(0, 8)}…`);
+    return json(res, req, 200, { ok: true, paid: true, token });
+  }
   return json(res, req, 200, { ok: false, paid: false, pending: true });
 }
 
@@ -2641,7 +2688,7 @@ const server = http.createServer(async (req, res) => {
     if (method === "POST" && pathname === "/api/verify-payment") return await handleVerifyPayment(req, res);
 
     // Native Store-app pay-per-run gate (poll after checkout, or re-verify a deep-link token)
-    if (method === "GET" && pathname === "/api/await-payment") return handleAwaitPayment(req, res, url.searchParams.get("ref"));
+    if (method === "GET" && pathname === "/api/await-payment") return await handleAwaitPayment(req, res, url.searchParams.get("ref"));
     if (method === "GET" && pathname === "/api/verify-token") return handleVerifyToken(req, res, url.searchParams.get("token"));
 
     // Session management
