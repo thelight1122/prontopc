@@ -10,8 +10,8 @@
     <SelfContained>false</SelfContained>
     <AssemblyName>ProntoPC</AssemblyName>
     <RootNamespace>ProntoPC</RootNamespace>
-    <ApplicationDisplayVersion>1.1.0</ApplicationDisplayVersion>
-    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>1.2.0</ApplicationDisplayVersion>
+    <ApplicationVersion>2</ApplicationVersion>
   </PropertyGroup>
 
   <ItemGroup>

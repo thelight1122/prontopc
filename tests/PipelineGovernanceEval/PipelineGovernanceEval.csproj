@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>ProntoPC.PipelineGovernanceEval</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Compile the real seam + adapter + governance module set directly (all engine-free,
+       no WPF), so the eval proves the shipping code, not a copy. -->
+  <ItemGroup>
+    <Compile Include="..\..\StoreApp\Governance.cs" />
+    <Compile Include="..\..\StoreApp\PipelineGovernance.cs" />
+    <Compile Include="..\..\StoreApp\Governance\*.cs" Link="Governance\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

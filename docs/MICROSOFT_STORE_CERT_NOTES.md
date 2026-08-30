@@ -4,40 +4,61 @@ Product: ProntoPC
 Product ID: 9P1K9QJXKND8
 
 Paste the block below into Partner Center -> Submission -> "Notes for certification"
-when resubmitting. ProntoPC needs no test account and no promo code - the app is
-self-contained and requires no sign-in.
+when resubmitting. ProntoPC is a free download; each diagnostic + repair run is a
+one-time $29 purchase via Stripe checkout. To test the full paid experience at no
+cost, the reviewer applies the 100%-off promotion code below - no payment card and
+no account/sign-in are required.
 
 ------------------------------------------------------------------
-ProntoPC is an AI-powered Windows diagnostic and repair app. Everything runs on
-the local PC - there is no account, no sign-in, and no internet connection is
-required to use the core feature. The AI that builds the repair plan is a model
-bundled inside the app and runs on the device itself.
+ProntoPC is an AI-powered Windows diagnostic and repair app. The app is a free
+download; each repair run is unlocked by a one-time $29 checkout. The AI that builds
+the repair plan is a model bundled inside the app and runs on the device itself, so
+the repair plan is generated locally and does not depend on any internet service.
+
+BEFORE YOU START: use promotion code  MSCERT2026  at checkout (step 4). It makes the
+total $0.00 and requires no payment card. There is no account and no sign-in anywhere
+in this flow.
 
 HOW TO TEST (full functionality):
 1. Install ProntoPC from the Microsoft Store and launch it.
 2. Approve the single Windows (UAC) prompt. ProntoPC elevates once so it can both
    scan and repair; you will not be prompted again.
-3. The app reads the system - "Reading your system..." - for about a minute. This
+3. On the "Ready to service your PC" screen, click "Start your $29 diagnostic." Your
+   browser opens the secure Stripe checkout.
+4. On the checkout page, click "Add promotion code" and enter:
+       MSCERT2026
+   The total changes from $29.00 to $0.00 and NO payment card is required. Enter any
+   valid email address and complete the (free) checkout.
+5. Return to the ProntoPC window. It detects the completed checkout automatically
+   (it is polling) and continues on its own - no code to copy, nothing to paste.
+6. The app reads the system - "Reading your system..." - for about a minute. This
    phase is read-only; nothing on the PC is changed.
-4. The bundled on-device AI builds a personalized repair plan. No internet
-   connection is needed for this step. The app then shows "Here's what we found."
-   with a list of recommended repairs.
-5. Uncheck any item you would rather skip, then click "Perform Repairs." Repairs
-   run immediately (permission was already granted by the UAC prompt in step 2).
-6. When finished, the app shows "Your PC has been serviced."
+7. The bundled on-device AI builds a personalized repair plan (no internet connection
+   is needed for this step). The app then shows "Here's what we found." with a list of
+   recommended repairs.
+8. Uncheck any item you would rather skip, then click "Perform Repairs." Repairs run
+   immediately (permission was already granted by the UAC prompt in step 2).
+9. When finished, the app shows "Your PC has been serviced."
 
 NOTES:
-- No account or sign-in is required. No promotion code or external website is
-  involved, and there is no separate download - the Store app is the product.
-- The AI repair plan is generated on-device by a bundled model, so the core
-  feature works with no network connection.
+- Pricing: the app is a free download; each run is a one-time $29 Stripe checkout.
+  There is no subscription and no in-app purchase inside the Store package - the
+  charge is a standard Stripe checkout in the browser.
+- No real payment is taken anywhere in this flow when the MSCERT2026 code is applied,
+  and no account or sign-in is required - the run is unlocked by the checkout itself.
+- After checkout the ProntoPC window continues automatically; the reviewer does not
+  need to return a code to the app or paste anything.
+- The AI repair plan is generated on-device by a bundled model, so the plan step
+  works even with no network connection.
 - Support: support@prontopc.online
 ------------------------------------------------------------------
 
 ## What changed since the last submission (for our records)
 Prior rejection (10.1.2.10 Functionality, Aug 26 2026): "repair plan built by AI"
 was absent because BOTH cloud AI providers were down at review time (Azure OpenAI
-401 + Gemini 429), and the app depended on the cloud to author the plan.
+401 + Gemini 429), and the app depended on the cloud to author the plan. (An earlier
+rejection was a Stripe $0-checkout redirect bug, since fixed - a 100%-off checkout
+settles as "no_payment_required"/"complete", which /api/verify-payment now accepts.)
 
 Root cause fixed - durably:
 - The repair plan is now authored by an on-device AI model bundled in the app
@@ -50,12 +71,29 @@ Root cause fixed - durably:
   recourse instead (a make-good). There is no code path that presents a heuristic
   plan as the AI plan.
 
+## Payment wiring (pay-per-run, for our records)
+- Gate: the app runs nothing until a fulfilled checkout exists. On launch it either
+  re-verifies a token it arrived with (prontopc://run?token=..., via /api/verify-token)
+  or, on a Start-menu launch, shows the checkout gate.
+- Checkout: "Start your $29 diagnostic" opens the Stripe Payment Link tagged with a
+  per-launch nonce (?client_reference_id=...). The app polls /api/await-payment?ref=...
+  until the paid session carrying that nonce appears, then continues in the same
+  window. No deep-link is required, so a Start-menu launch never spawns a second
+  instance or a second UAC prompt.
+- A session exists server-side ONLY after Stripe confirms a fulfilled (paid or
+  100%-off comped) checkout, so a poll hit is proof of payment.
+
 ## Pre-submission checklist (ours, not for the reviewer)
 - [ ] The .msixupload BUNDLES the on-device model at
       Assets/models/gemma-3-1b-it/ (genai_config.json + weights). Without it the
       app falls through to the cloud fallback, which reintroduces the exact
       failure that caused the last rejection. This is the single most important
       packaging check.
+- [ ] Confirm in the Stripe Dashboard (LIVE mode) that promotion code MSCERT2026
+      still exists and is 100% off, and that the $29 Payment Link's after-payment
+      redirect points at the success page (success.html?session={CHECKOUT_SESSION_ID}).
+- [ ] The backend (pronto-server-cloudrun.mjs) with /api/await-payment +
+      /api/verify-token is deployed to Cloud Run.
 - [ ] `python certification_preflight.py` reports safe to submit.
 - [ ] The bundled Gemma license + Prohibited Use Policy open from the in-app
       "AI model & licenses" link.

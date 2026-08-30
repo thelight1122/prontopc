@@ -1,0 +1,389 @@
+<UserControl x:Class="ProntoPC.Custodian"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      THE CUSTODIAN — pure vector, zero assets, no credits, no downloads.
+
+      Built from the five Stellar primitives, each carrying its own meaning:
+        Dot             fundamental anchor      the core, always present
+        Crescent        amplitude envelope      scanning sweep
+        Chevron         harmonic partials       thinking / analysing
+        Wave            airflow, sustain        repair work flowing
+        Angular stroke  percussive attack       one repair completed
+
+      Every state is entered by SetState() from a REAL pipeline event.
+      Nothing here runs on a timer pretending that work is happening.
+    -->
+
+    <UserControl.Resources>
+
+        <SineEase x:Key="Smooth" EasingMode="EaseInOut"/>
+        <CubicEase x:Key="Settle" EasingMode="EaseOut"/>
+
+        <!-- ambient: the Custodian is present even when idle -->
+        <Storyboard x:Key="SbAmbient" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="DashRotate" Storyboard.TargetProperty="Angle"
+                             From="360" To="0" Duration="0:0:38"/>
+            <DoubleAnimation Storyboard.TargetName="SatelliteRotate" Storyboard.TargetProperty="Angle"
+                             From="0" To="360" Duration="0:0:22"/>
+        </Storyboard>
+
+        <!-- greeting / presenting: a slow, steady breath -->
+        <Storyboard x:Key="SbBreath" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="CoreGlow" Storyboard.TargetProperty="Opacity"
+                             From="0.40" To="0.95" Duration="0:0:2.0" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="HaloScale" Storyboard.TargetProperty="ScaleX"
+                             From="0.92" To="1.06" Duration="0:0:2.0" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="HaloScale" Storyboard.TargetProperty="ScaleY"
+                             From="0.92" To="1.06" Duration="0:0:2.0" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+        </Storyboard>
+
+        <!-- scanning: both crescents sweep, counter to each other -->
+        <Storyboard x:Key="SbScanning" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="CrescentARotate" Storyboard.TargetProperty="Angle"
+                             From="0" To="360" Duration="0:0:2.4"/>
+            <DoubleAnimation Storyboard.TargetName="CrescentBRotate" Storyboard.TargetProperty="Angle"
+                             From="360" To="0" Duration="0:0:3.6"/>
+            <DoubleAnimation Storyboard.TargetName="CrescentA" Storyboard.TargetProperty="Opacity"
+                             From="0.30" To="1.0" Duration="0:0:1.2" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="CrescentB" Storyboard.TargetProperty="Opacity"
+                             From="0.85" To="0.25" Duration="0:0:1.2" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="CoreGlow" Storyboard.TargetProperty="Opacity"
+                             From="0.5" To="0.8" Duration="0:0:1.2" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+        </Storyboard>
+
+        <!-- thinking: chevrons rise into the core, one after another -->
+        <Storyboard x:Key="SbThinking" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="Chev1" Storyboard.TargetProperty="Opacity"
+                             From="0.10" To="1" Duration="0:0:0.55" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="Chev2" Storyboard.TargetProperty="Opacity"
+                             From="0.10" To="0.9" Duration="0:0:0.55" BeginTime="0:0:0.22"
+                             AutoReverse="True" EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="Chev3" Storyboard.TargetProperty="Opacity"
+                             From="0.10" To="0.8" Duration="0:0:0.55" BeginTime="0:0:0.44"
+                             AutoReverse="True" EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="ChevLift" Storyboard.TargetProperty="Y"
+                             From="6" To="-4" Duration="0:0:0.9" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="CoreScale" Storyboard.TargetProperty="ScaleX"
+                             From="1" To="1.14" Duration="0:0:0.9" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="CoreScale" Storyboard.TargetProperty="ScaleY"
+                             From="1" To="1.14" Duration="0:0:0.9" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="CrescentARotate" Storyboard.TargetProperty="Angle"
+                             From="0" To="360" Duration="0:0:6"/>
+        </Storyboard>
+
+        <!-- repairing: the wave travels through; work is flowing -->
+        <Storyboard x:Key="SbRepairing" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="WaveTranslate" Storyboard.TargetProperty="X"
+                             From="-80" To="80" Duration="0:0:2.0"/>
+            <DoubleAnimation Storyboard.TargetName="Wave" Storyboard.TargetProperty="Opacity"
+                             From="0" To="0.95" Duration="0:0:1.0" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="Wave2Translate" Storyboard.TargetProperty="X"
+                             From="-80" To="80" Duration="0:0:2.0" BeginTime="0:0:0.6"/>
+            <DoubleAnimation Storyboard.TargetName="Wave2" Storyboard.TargetProperty="Opacity"
+                             From="0" To="0.5" Duration="0:0:1.0" BeginTime="0:0:0.6"
+                             AutoReverse="True" EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="CrescentARotate" Storyboard.TargetProperty="Angle"
+                             From="0" To="360" Duration="0:0:4"/>
+            <DoubleAnimation Storyboard.TargetName="CoreGlow" Storyboard.TargetProperty="Opacity"
+                             From="0.55" To="1" Duration="0:0:1.0" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+        </Storyboard>
+
+        <!-- complete: everything settles bright and still -->
+        <Storyboard x:Key="SbComplete">
+            <DoubleAnimation Storyboard.TargetName="CoreGlow" Storyboard.TargetProperty="Opacity"
+                             To="1" Duration="0:0:0.6" EasingFunction="{StaticResource Settle}"/>
+            <DoubleAnimation Storyboard.TargetName="HaloScale" Storyboard.TargetProperty="ScaleX"
+                             From="1" To="1.5" Duration="0:0:0.9" EasingFunction="{StaticResource Settle}"/>
+            <DoubleAnimation Storyboard.TargetName="HaloScale" Storyboard.TargetProperty="ScaleY"
+                             From="1" To="1.5" Duration="0:0:0.9" EasingFunction="{StaticResource Settle}"/>
+            <DoubleAnimation Storyboard.TargetName="CoreHalo" Storyboard.TargetProperty="Opacity"
+                             From="0.9" To="0.35" Duration="0:0:0.9" EasingFunction="{StaticResource Settle}"/>
+            <DoubleAnimation Storyboard.TargetName="StateRing" Storyboard.TargetProperty="Opacity"
+                             To="0.85" Duration="0:0:0.6"/>
+        </Storyboard>
+
+        <!-- blocked: dim, slow, waiting on the person -->
+        <Storyboard x:Key="SbBlocked" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="CoreGlow" Storyboard.TargetProperty="Opacity"
+                             From="0.12" To="0.55" Duration="0:0:2.4" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+            <DoubleAnimation Storyboard.TargetName="StateRing" Storyboard.TargetProperty="Opacity"
+                             From="0.15" To="0.6" Duration="0:0:2.4" AutoReverse="True"
+                             EasingFunction="{StaticResource Smooth}"/>
+        </Storyboard>
+
+        <!-- ONE angular stroke per completed repair. A real event, not decoration. -->
+        <Storyboard x:Key="SbStroke">
+            <DoubleAnimation Storyboard.TargetName="Bar1" Storyboard.TargetProperty="Opacity"
+                             From="1" To="0.14" Duration="0:0:0.85"
+                             EasingFunction="{StaticResource Settle}"/>
+            <DoubleAnimation Storyboard.TargetName="Bar2" Storyboard.TargetProperty="Opacity"
+                             From="1" To="0.14" Duration="0:0:0.85" BeginTime="0:0:0.09"
+                             EasingFunction="{StaticResource Settle}"/>
+            <DoubleAnimation Storyboard.TargetName="Bar3" Storyboard.TargetProperty="Opacity"
+                             From="1" To="0.14" Duration="0:0:0.85" BeginTime="0:0:0.18"
+                             EasingFunction="{StaticResource Settle}"/>
+            <DoubleAnimation Storyboard.TargetName="StrokeFlash" Storyboard.TargetProperty="Opacity"
+                             From="0.6" To="0" Duration="0:0:0.6"
+                             EasingFunction="{StaticResource Settle}"/>
+        </Storyboard>
+
+    </UserControl.Resources>
+
+    <Grid Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Viewbox Grid.Row="0" Margin="0,10,0,4">
+            <Canvas Width="260" Height="260">
+
+                <!-- ambient wash: gives the whole form a light source -->
+                <Ellipse Canvas.Left="0" Canvas.Top="0" Width="260" Height="260" IsHitTestVisible="False">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush>
+                            <GradientStop Color="#221E6FB8" Offset="0.0"/>
+                            <GradientStop Color="#00051424" Offset="0.75"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
+
+                <!-- outer HUD ring: dashed, drifting. Instrumentation, not ornament. -->
+                <Ellipse x:Name="DashRing" Canvas.Left="20" Canvas.Top="20" Width="220" Height="220"
+                         Stroke="#3EA8FF" StrokeThickness="1" Opacity="0.30"
+                         StrokeDashArray="1 7" StrokeDashCap="Round"
+                         RenderTransformOrigin="0.5,0.5">
+                    <Ellipse.RenderTransform>
+                        <RotateTransform x:Name="DashRotate" Angle="0"/>
+                    </Ellipse.RenderTransform>
+                </Ellipse>
+
+                <!-- state ring: colour carries the state, so it reads at a glance -->
+                <Ellipse x:Name="StateRing" Canvas.Left="35" Canvas.Top="35" Width="190" Height="190"
+                         StrokeThickness="1.4" Opacity="0.35"/>
+
+                <!-- orbiting satellites: quiet life in the form -->
+                <Canvas x:Name="Satellites" Width="260" Height="260" IsHitTestVisible="False">
+                    <Canvas.RenderTransform>
+                        <RotateTransform x:Name="SatelliteRotate" CenterX="130" CenterY="130" Angle="0"/>
+                    </Canvas.RenderTransform>
+                    <Ellipse Canvas.Left="126.5" Canvas.Top="26.5" Width="7" Height="7"
+                             Fill="#3EA8FF" Opacity="0.85">
+                        <Ellipse.Effect>
+                            <DropShadowEffect Color="#3EA8FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+                    <Ellipse Canvas.Left="213.1" Canvas.Top="176.5" Width="5" Height="5"
+                             Fill="#9385F2" Opacity="0.7">
+                        <Ellipse.Effect>
+                            <DropShadowEffect Color="#9385F2" BlurRadius="9" ShadowDepth="0" Opacity="0.9"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+                    <Ellipse Canvas.Left="39.9" Canvas.Top="167.5" Width="4" Height="4"
+                             Fill="#91DB2A" Opacity="0.6">
+                        <Ellipse.Effect>
+                            <DropShadowEffect Color="#91DB2A" BlurRadius="8" ShadowDepth="0" Opacity="0.9"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+                </Canvas>
+
+                <!-- CRESCENT A — amplitude envelope. The scanning sweep. -->
+                <Path x:Name="CrescentA" Opacity="0.30" StrokeThickness="3.5"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                    <Path.Stroke>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#003EA8FF" Offset="0"/>
+                            <GradientStop Color="#FF3EA8FF" Offset="0.55"/>
+                            <GradientStop Color="#FF9385F2" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Path.Stroke>
+                    <Path.Effect>
+                        <DropShadowEffect Color="#3EA8FF" BlurRadius="14" ShadowDepth="0" Opacity="0.85"/>
+                    </Path.Effect>
+                    <Path.Data>
+                        <PathGeometry>
+                            <PathFigure StartPoint="130,48">
+                                <ArcSegment Point="201,171" Size="82,82" SweepDirection="Clockwise"/>
+                            </PathFigure>
+                        </PathGeometry>
+                    </Path.Data>
+                    <Path.RenderTransform>
+                        <RotateTransform x:Name="CrescentARotate" CenterX="130" CenterY="130" Angle="0"/>
+                    </Path.RenderTransform>
+                </Path>
+
+                <!-- CRESCENT B — the counter-sweep. -->
+                <Path x:Name="CrescentB" Opacity="0.22" StrokeThickness="2"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                    <Path.Stroke>
+                        <LinearGradientBrush StartPoint="1,1" EndPoint="0,0">
+                            <GradientStop Color="#009385F2" Offset="0"/>
+                            <GradientStop Color="#FF9385F2" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Path.Stroke>
+                    <Path.Data>
+                        <PathGeometry>
+                            <PathFigure StartPoint="130,196">
+                                <ArcSegment Point="72.8,97" Size="66,66" SweepDirection="Clockwise"/>
+                            </PathFigure>
+                        </PathGeometry>
+                    </Path.Data>
+                    <Path.RenderTransform>
+                        <RotateTransform x:Name="CrescentBRotate" CenterX="130" CenterY="130" Angle="0"/>
+                    </Path.RenderTransform>
+                </Path>
+
+                <!-- CHEVRONS — harmonic partials. Thinking made visible. -->
+                <Canvas x:Name="ChevronGroup" Width="260" Height="260" IsHitTestVisible="False">
+                    <Canvas.RenderTransform>
+                        <TranslateTransform x:Name="ChevLift" Y="0"/>
+                    </Canvas.RenderTransform>
+                    <Polyline x:Name="Chev1" Points="106,178 130,158 154,178" Opacity="0.07"
+                              Stroke="#91DB2A" StrokeThickness="3"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                        <Polyline.Effect>
+                            <DropShadowEffect Color="#91DB2A" BlurRadius="10" ShadowDepth="0" Opacity="0.8"/>
+                        </Polyline.Effect>
+                    </Polyline>
+                    <Polyline x:Name="Chev2" Points="100,194 130,169 160,194" Opacity="0.07"
+                              Stroke="#91DB2A" StrokeThickness="2.4"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                    <Polyline x:Name="Chev3" Points="94,210 130,180 166,210" Opacity="0.07"
+                              Stroke="#91DB2A" StrokeThickness="1.8"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                </Canvas>
+
+                <!-- WAVE — airflow, sustain. Repair work flowing through. -->
+                <Path x:Name="Wave" Opacity="0" Stroke="#3EA8FF" StrokeThickness="2.6"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                    <Path.Effect>
+                        <DropShadowEffect Color="#3EA8FF" BlurRadius="12" ShadowDepth="0" Opacity="0.8"/>
+                    </Path.Effect>
+                    <Path.Data>
+                        <PathGeometry>
+                            <PathFigure StartPoint="50,130">
+                                <BezierSegment Point1="80,104" Point2="100,156" Point3="130,130"/>
+                                <BezierSegment Point1="160,104" Point2="180,156" Point3="210,130"/>
+                            </PathFigure>
+                        </PathGeometry>
+                    </Path.Data>
+                    <Path.RenderTransform>
+                        <TranslateTransform x:Name="WaveTranslate" X="0"/>
+                    </Path.RenderTransform>
+                </Path>
+                <Path x:Name="Wave2" Opacity="0" Stroke="#9385F2" StrokeThickness="1.6"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                    <Path.Data>
+                        <PathGeometry>
+                            <PathFigure StartPoint="50,130">
+                                <BezierSegment Point1="80,112" Point2="100,148" Point3="130,130"/>
+                                <BezierSegment Point1="160,112" Point2="180,148" Point3="210,130"/>
+                            </PathFigure>
+                        </PathGeometry>
+                    </Path.Data>
+                    <Path.RenderTransform>
+                        <TranslateTransform x:Name="Wave2Translate" X="0"/>
+                    </Path.RenderTransform>
+                </Path>
+
+                <!-- ANGULAR STROKES — percussive attack. One repair completed. -->
+                <Rectangle x:Name="Bar1" Canvas.Left="114" Canvas.Top="76" Width="5" Height="22"
+                           Fill="#FFB95F" Opacity="0.10" RadiusX="2.5" RadiusY="2.5">
+                    <Rectangle.RenderTransform><SkewTransform AngleX="-20"/></Rectangle.RenderTransform>
+                </Rectangle>
+                <Rectangle x:Name="Bar2" Canvas.Left="127" Canvas.Top="68" Width="5" Height="30"
+                           Fill="#FFB95F" Opacity="0.10" RadiusX="2.5" RadiusY="2.5">
+                    <Rectangle.RenderTransform><SkewTransform AngleX="-20"/></Rectangle.RenderTransform>
+                </Rectangle>
+                <Rectangle x:Name="Bar3" Canvas.Left="140" Canvas.Top="60" Width="5" Height="38"
+                           Fill="#FFB95F" Opacity="0.10" RadiusX="2.5" RadiusY="2.5">
+                    <Rectangle.RenderTransform><SkewTransform AngleX="-20"/></Rectangle.RenderTransform>
+                </Rectangle>
+
+                <!-- DOT — the fundamental anchor. The Custodian itself. -->
+                <Ellipse x:Name="CoreHalo" Canvas.Left="60" Canvas.Top="60" Width="140" Height="140"
+                         Opacity="0.9" IsHitTestVisible="False" RenderTransformOrigin="0.5,0.5">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush>
+                            <GradientStop Color="#3AFFB95F" Offset="0.0"/>
+                            <GradientStop Color="#12FFB95F" Offset="0.45"/>
+                            <GradientStop Color="#00FFB95F" Offset="1.0"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.RenderTransform>
+                        <ScaleTransform x:Name="HaloScale" CenterX="70" CenterY="70"/>
+                    </Ellipse.RenderTransform>
+                </Ellipse>
+
+                <Ellipse x:Name="StrokeFlash" Canvas.Left="60" Canvas.Top="60" Width="140" Height="140"
+                         Opacity="0" IsHitTestVisible="False">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush>
+                            <GradientStop Color="#00FFFFFF" Offset="0.35"/>
+                            <GradientStop Color="#55FFD9A0" Offset="0.55"/>
+                            <GradientStop Color="#00FFFFFF" Offset="0.8"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
+
+                <Ellipse x:Name="CoreGlow" Canvas.Left="87" Canvas.Top="87" Width="86" Height="86"
+                         Opacity="0.45" IsHitTestVisible="False">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush>
+                            <GradientStop Color="#00FFB95F" Offset="0.30"/>
+                            <GradientStop Color="#55FFB95F" Offset="0.62"/>
+                            <GradientStop Color="#00FFB95F" Offset="1.0"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                </Ellipse>
+
+                <Ellipse x:Name="Core" Canvas.Left="112" Canvas.Top="112" Width="36" Height="36"
+                         RenderTransformOrigin="0.5,0.5">
+                    <Ellipse.Fill>
+                        <RadialGradientBrush GradientOrigin="0.36,0.32" Center="0.5,0.5"
+                                             RadiusX="0.62" RadiusY="0.62">
+                            <GradientStop Color="#FFFFFFFF" Offset="0.0"/>
+                            <GradientStop Color="#FFFFE2B0" Offset="0.28"/>
+                            <GradientStop Color="#FFFFB95F" Offset="0.68"/>
+                            <GradientStop Color="#FFEE9800" Offset="1.0"/>
+                        </RadialGradientBrush>
+                    </Ellipse.Fill>
+                    <Ellipse.Effect>
+                        <DropShadowEffect Color="#FFB95F" BlurRadius="26" ShadowDepth="0" Opacity="0.95"/>
+                    </Ellipse.Effect>
+                    <Ellipse.RenderTransform>
+                        <ScaleTransform x:Name="CoreScale" CenterX="18" CenterY="18"/>
+                    </Ellipse.RenderTransform>
+                </Ellipse>
+
+            </Canvas>
+        </Viewbox>
+
+        <!-- State name. Set only from a real pipeline event. -->
+        <TextBlock x:Name="StateLabel" Grid.Row="1" Text="CUSTODIAN"
+                   HorizontalAlignment="Center" FontFamily="Consolas" FontSize="11"
+                   Opacity="0.9" Margin="0,4,0,3"/>
+
+        <!-- The ACTUAL thing being done. Never a generic reassurance. -->
+        <TextBlock x:Name="ActivityLabel" Grid.Row="2" Text=""
+                   HorizontalAlignment="Center" TextAlignment="Center"
+                   Foreground="#D6E6FA" FontFamily="Segoe UI" FontSize="13.5"
+                   TextWrapping="Wrap" MaxWidth="380" Margin="14,0,14,14"/>
+    </Grid>
+</UserControl>

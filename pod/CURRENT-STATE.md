@@ -1,18 +1,153 @@
 # ProntoPC Pod — CURRENT STATE  (read fresh every resume, never cache)
 
-This is the head of the Totem trail: what is true about the code **right now** and the
-next gated step. A cold-start instance reads this, then **runs the verifier before trusting it**:
+This is a derived human navigation view of the Totem trail—not the cold-start authority. A new
+instance first follows the root `AGENTS.md` protocol: locate the ledger, then **runs the verifier
+before reading or trusting this synopsis**:
 
 ```bash
 python pod/totems/verify_totems.py
 ```
 
-If every Totem HOLDS, the picture below is still true. If anything is STALE/DRIFT, the code
-moved since it was recorded — re-audit the affected files before acting. Never inherit a stale
-picture; that is the exact drift failure this system exists to prevent.
+If every Totem HOLDS, the picture below is still true. If the verifier reports **BOOTSTRAP
+REQUIRED**, perform a read-only baseline audit and append the first Totem. If it reports
+STALE/DRIFT, treat the stale picture as historical context and re-audit only the affected files
+before relying on it.
 
 ## Head totem
-**TOTEM-0027** (2026-08-29) — **Re-aimed the certification gate at the ON-DEVICE product (Tracey's greenlit path).**
+**TOTEM-0038** (2026-08-30) — **The two lanes are JOINED — `PipelineGovernance` adapter built + wired, gated CLOSED — with
+instructions for Codex.** Built `StoreApp/PipelineGovernance.cs` (`IPeerGovernance` → Codex's `CustodianGovernancePipeline`
++ `CanonBoundarySeed`): SystemPrompt=Canon seed, ScreenInbound=PIM buffer+admit, ApplyBoundary=`FinalizeOutbound`
+(outbound PIM + Integrity + RBC/Prism + one atomic hash-chained ledger record), LogTurn=no-op (the pipeline logs the whole
+turn atomically). **Gated CLOSED by an explicit master switch:** `OfferingAllowed = enabled && Canon Available`, `enabled`
+defaults **false**. Wired into `MainWindow` as `new PipelineGovernance(enabled: false)` — so the bridge is physically live
+but the §8 gate is shut: entry hidden, inbound refused, Canon/pipeline/model never touched (the `enabled` check
+short-circuits before any Canon I/O). `dotnet build` **0/0**. New `tests/PipelineGovernanceEval` **15/15 PASS** proves:
+(a) closed by default **even on this machine where the exact Canon IS present**; (b) double-gate holds (enabled:true + Canon
+absent → still closed); (c) the open path is correct only in a sandbox (admits, applies RBC/Prism, writes exactly one
+verifiable hash-bound ledger record, LogTurn no-ops without double-writing). **Opening the Technician stays Tracey's §8
+greenlight** — one line: `new PipelineGovernance(enabled: true, canon: <shipped ref>)`. **Instructions for Codex are on
+TOTEM-0038 (C1–C6)** — the seam↔pipeline mapping to confirm, the inbound blocking policy, the shipped-Canon provenance
+(the dev path `I:\AEGIS-CORE-ENGINE\…` is absent on a customer PC), the interaction-ledger location/Peer access, the
+single-lever enable rule, and the on-greenlight wiring + verify step.
+
+**Prior head — TOTEM-0037** (2026-08-30) — **Phase-2 conversation wired through the governance seam, gated CLOSED; tree green again.**
+Two parallel lanes had landed since TOTEM-0035 and left the app **non-building**: (Lane A / Claude) an un-Totemed
+`MainWindow.xaml` edit added a full `ChatPanel` + a hidden `TechnicianEntry` link + the `IPeerGovernance` admission seam
+(`StoreApp/Governance.cs`), but the four code-behind handlers it references were never added; (Lane B / Codex) the
+governance **module set** `StoreApp/Governance/` + `tests/CustodianGovernanceEval` landed (now TOTEM-0036). No fault — the
+gap was just identified. **This session:** (1) wired `OpenChat_Click` / `ChatSend_Click` / `ChatInput_KeyDown` /
+`ChatBack_Click` through the single `IPeerGovernance` seam with **`AbsentGovernance` the wired default** — the §8 admission
+gate is **CLOSED**: `TechnicianEntry` stays hidden (`OfferingAllowed`→false), every inbound is refused before it can reach
+the model, the on-device model is never even constructed in a shipped build, and each handler re-checks the gate (defense
+in depth). (2) `dotnet build` **0/0**. (3) Fixed a **pre-existing** PodEval breakage (since TOTEM-0026's `ILocalInference.Chat`
+addition PodEval lacked `CustodianChat.cs` and its `FakeInference` didn't implement `Chat`) → PodEval **ALL PASS**;
+`CustodianGovernanceEval` **13/13 PASS**. **The two lanes are complementary, not colliding:** `Governance.cs` (namespace
+`ProntoPC`) is the UI admission *seam*; `Governance/` (namespace `ProntoPC.Governance`) is the *implementation set*. They
+are physically present but **not joined** — the join is a `PipelineGovernance : IPeerGovernance` adapter wrapping Codex's
+`CustodianGovernancePipeline`, and building/wiring it is exactly what **opens** the peer-facing path. Both lanes
+independently concluded that opening is **Tracey's explicit greenlight** (contract §8), so it is deliberately NOT done.
+The Custodian Actuator stays observation-only and ships safely.
+
+**Prior head — TOTEM-0036** (2026-08-30) — **Custodian governance module set built, integration still gated.** New standalone
+`StoreApp/Governance/` modules provide an exact hash-verified external Canon seed, inbound/outbound PIM observations,
+a seven-virtue screen marked **core-gated** (no invented IRG scoring), expression-only RBC/Prism, and a separate
+timestamped SHA-256-chain interaction ledger. `tests/CustodianGovernanceEval` passes, including the actual locked
+Canon source. The modules are intentionally not wired into `CustodianChat` or any UI path yet, so no peer-facing
+conversation is activated and the integration contract's runtime pre-offering gate remains open.
+
+**Prior head — TOTEM-0035** (2026-08-30) —
+**TOTEM-0035** (2026-08-30) — **Custodian Actuator integrated into the shipping app (Phase 1 of the Interactive AI
+Technician).** The static `auditor.png`/`builder.png` linear flow is replaced by the **Custodian** — a pure-vector,
+zero-asset Actuator (brought in from `CustodianPrototype/` as `StoreApp/Custodian.xaml` + `.cs`, namespace
+`ProntoPC`) that performs the operation *on stage*: it moves through real states (Greeting → Scanning → Thinking →
+Presenting → Repairing → Complete / Blocked), each entered ONLY from a true pipeline event (never a timer), and
+fires ONE angular stroke per repair action actually processed (U1/U2 — assert only real work). `MainWindow` is
+rehosted: the Custodian is the persistent top-of-window Actuator; interactive content panels (gate / findings /
+complete / make-good) sit below it. Removed the old working-spinner + per-panel static images. Pay-per-run gate
+preserved in front. `dotnet build` **0/0**. **Phase 2 — the conversational Interactive AI Technician (`CustodianChat`)
+— is DELIBERATELY NOT wired yet: it is GATED on the AEGIS self-governance modules below.** A peer-facing *generated*
+response may not be offered until they exist (integration contract §8); the Actuator is observation-only (no
+model-generated peer speech), so it ships safely now.
+
+**AEGIS self-governance status (EXTREMELY important — the Ethical/Safe-AI gate; honest per
+`docs/PRONTOPC_AEGIS_INTEGRATION_CONTRACT.md` §5).** NOT yet present as runtime modules — these are the declared
+pre-offering build-gaps: **Canon SEED** (the Custodian system prompt is not yet seeded with AEGIS Canon v1.0);
+**PIM** (Pre-Injection Monitor — inbound+outbound force-artifact screen; only informally seeded by the Conversation
+Contract); **Integrity / IRG** (the 7-virtue resonance screen — per-virtue scoring is undesigned in AEGIS core
+itself, so gated upstream); **RBC / Prism** (outbound Reflective Boundary Conditions — live in the prompt, not
+enforced structurally); **append-only interaction log** (the Totem ledger covers DEV lineage, not the runtime
+customer-interaction log). *(“IDS” in Tracey’s list isn’t a named module in the current contract — likely IDQRA or a
+term to confirm.)* Present today (honest congruence): Action Envelope = Carrier Envelope (enforced); Totem ledger =
+Append-Only dev lineage; §0 + Conversation Contract = non-force posture (informal); `defer_when_uncertain` =
+grounding; consent-gated envelope repairs = executable boundaries; U1–U6 = observation-only (the Actuator embodies
+U1). **Consequence:** until these are built, the Custodian stays `draft` and does not generate peer-facing responses.
+
+**Prior head — TOTEM-0034** (2026-08-30) — **Payment-gate backend DEPLOYED + secured; Store package version-bumped; ledger JSON
+standard set.** Continues TOTEM-0029's Stripe pay-per-run tie-in and makes the backend half of the end-to-end run
+**live**. (1) **Closed a server-side free-path hole:** `handleSubmitDiagnostics` used to create a session for an
+unknown token (`stripeSessionId:null`) and author a plan — a bypass wider than the UI gate; now an unknown/expired
+token ⇒ **402 "unpaid", no session, no plan** (a plan is authored only for a token naming a live PAID session).
+Proven on a clean local server (forged token → 402, sessions stay 0). (2) **DEPLOYED** the backend to Cloud Run
+(`pronto-pc`, revision **`pronto-pc-00076-hf5`**, 100% traffic); production-verified: `/api/verify-token` +
+`/api/await-payment` now **200** (were 404), `submit-diagnostics` unknown → **402**. (3) **Bumped the Store package
+version 1.1.0.0 → 1.2.0.0** (`Package.appxmanifest`) / 1.2.0 (`ProntoPC.csproj`); Release build **0/0**; the 694 MB
+`model.onnx.data` + both license notices confirmed in the build output (a VS package bundles them). (4) **Set the
+ledger JSON standard** (`pod/totems/LEDGER_STANDARD.md`): `totems.jsonl` is JSON Lines — read by parsing each line
+(never text-matching), written one compact object per line, append-only. **Remaining for the live run is Tracey's:**
+build the signed `.msixupload` in VS, confirm `MSCERT2026` + the Payment-Link redirect in Stripe, run on a controlled
+admin test machine. Ledger now 34 Totems.
+
+**Prior head — TOTEM-0033** (2026-08-30) —
+**TOTEM-0033** (2026-08-30) — **Non-force language refinement.** Active Totem guidance now describes stale
+state as historical context, calls for fresh audits before reliance, and describes the Action Envelope as
+**BUILT + HONORED**. Historical Totem evidence remains unchanged.
+
+**Prior head — TOTEM-0032** (2026-08-30) —
+**TOTEM-0032** (2026-08-30) — **Totem-first cold start.** Root `AGENTS.md` now directs every new coding instance
+to locate and verify `pod/totems/totems.jsonl` before trusting this synopsis or acting on code. If no ledger exists,
+the instance performs a read-only baseline repository audit, then appends the first hash-bound Totem; the verifier
+now reports `BOOTSTRAP REQUIRED` (exit 2) instead of falsely reporting an empty ledger as verified. The New-Append
+Satellite remains notification-only.
+
+**Prior head — TOTEM-0031** (2026-08-30) —
+**TOTEM-0031** (2026-08-30) — **Totem New-Append Satellite.** The marker is now a self-contained, read-only
+module at `pod/totems/satellites/new-append/`: `--watch` takes a baseline and prints `NEW APPEND | TOTEM-…` only
+when an appended JSONL entry arrives; `--once` displays the newest existing append. It writes no state, imports no
+project code, and detects a truncated/replaced ledger as `LEDGER RESET` rather than treating old content as new.
+`entry_marker: "NEW"` remains only as a legacy-compatible field for TOTEM-0030; all future new-entry indication is
+the Satellite's observed output.
+
+**Prior head — TOTEM-0030** (2026-08-30) —
+**NEW — TOTEM-0030** (2026-08-30) — **Responsive desktop hero framing.** The 1792×1024 desktop composition now
+reacts to both viewport width and height (`min(100dvw, 100dvh × 1.75)`), stays centered, and uses `contain` rather
+than `cover`. Its percentage-based hotspots remain aligned while the full top navigation and bottom “Fix It Now”
+surface stay visible. The Totem contract now carries an optional `entry_marker: "NEW"` for all newly appended entries;
+historical records remain valid and unchanged. **Verification:** static viewport math covers every desktop aspect ratio;
+run `python pod/totems/verify_totems.py` after reviewing the working tree. All prior Totems remain historical evidence.
+
+**Prior head — TOTEM-0029** (2026-08-30) —
+**TOTEM-0029** (2026-08-30) — **Reversed TOTEM-0028 at Tracey's direction: back to the existing STRIPE pay-per-run
+flow, now WIRED into the on-device app.** The prior "paid Store app" idea was dropped — Stripe is already built and
+was used across all 4 cert attempts. The real problem it exposed: the on-device re-aim had left the Store app with
+**no payment gate at all** (`MainWindow` invented a random token and ran the paid service free; on-device authoring
+meant the backend was never called, so nothing gated paid access). **Fix — pay-per-run, no free path:** (1) **App** —
+new **GATE panel** ("Ready to service your PC → Start your $29 diagnostic"); on launch the app re-verifies a
+`prontopc://run?token=` token via `GET /api/verify-token`, else opens the Stripe Payment Link tagged with a
+per-launch nonce (`?client_reference_id=`) and **polls `GET /api/await-payment?ref=`** until the paid checkout
+lands, then continues in the same window (no deep-link ⇒ no 2nd instance / 2nd UAC). Invent-a-token fallback
+removed. `dotnet build` **0/0**. (2) **Backend** — `createSession` stores the nonce; added `await-payment` +
+`verify-token` (a session exists only after Stripe confirms a fulfilled/comped checkout, so a poll hit = proof of
+payment). `node --check` clean; ran locally on :8099 and **proved fail-closed** (unknown token→`paid:false`, unknown
+ref→`pending`, missing ref→400). Web fossil `success.html` **untouched** (already creates the session; nonce captured
+server-side). (3) Cert notes rewritten **back to the Stripe reviewer flow** (free download → `MSCERT2026` 100%-off →
+$0 checkout → app auto-continues; on-device AI retained as the 4th-rejection fix). **Not deployed; msix not rebuilt
+(Tracey's steps).** All 39 prior Totems HOLD.
+
+**Superseded:** TOTEM-0028 (2026-08-30) — proposed a paid Store app; **reversed by TOTEM-0029**. *(History note that
+still stands — the product was ALWAYS a one-time paid service; it was never free. The only real fork was WHERE the
+charge is collected: Stripe web checkout (chosen) vs. the Store's built-in price.)*
+
+**Prior:** TOTEM-0027 (2026-08-29) — **Re-aimed the certification gate at the ON-DEVICE product (Tracey's greenlit path).**
 The Store submission is the self-contained WPF app: self-elevates once (single UAC), scans read-only, and authors
 the repair plan **on-device** with the bundled int4 `gemma-3-1b-it` (Orchestrator order = local-model first, cloud
 fallback only). This **durably kills the 10.1.2.10 dual-provider outage** that caused the 4th rejection: verified
@@ -233,7 +368,7 @@ spec; -0001 opened the Pod.)
   on-device, client-side; cloud (Azure→Gemini) demoted to fallback. `Microsoft.ML.OnnxRuntimeGenAI`
   0.15.2 + the model are bundled in `ProntoPC.csproj`; proven both by `tests/ModelSmoke` and a full
   WPF end-to-end run (see Latest verification). Pro tier = Gemma 4 E2B/E4B multimodal (deferred).
-- **Action Envelope: BUILT + ENFORCED.** `action-envelope.json` (26 guards) + schema; the
+- **Action Envelope: BUILT + HONORED.** `action-envelope.json` (26 guards) + schema; the
   repair-plan Umbilical is **keyed** to it and the Orchestrator **holds** it. Now **consumed** by
   `StoreApp/Envelope.cs` at runtime (embedded via csproj Link — single source of truth). Runtime-
   proven.
@@ -266,7 +401,7 @@ spec; -0001 opened the Pod.)
 
 ## Open review items (carried, not blessed)
 - **Session gate:** `handleSubmitDiagnostics` now **auto-creates** a session instead of 404 on an
-  unknown token — confirm the payment gate is still enforced at repair-*execution*.
+  unknown token — confirm the payment gate is still functioning at repair-*execution*.
 - **Uncommitted:** the repair-plan Orb impl + AEGIS rebrand are still in the working tree
   (12 modified files) — nothing committed since `b6272f8`.
 - **Envelope precision:** `smart_health[]` leaf schema unconfirmed, so `chkdsk_scan`/`hardware_report`
@@ -274,18 +409,29 @@ spec; -0001 opened the Pod.)
   (subsumed by `clear_all_browser_caches`).
 
 ## Next gated step
-**Product decided (TOTEM-0027): the Store submission is the ON-DEVICE self-contained WPF app.** The cert gate is
-green — `certification_preflight.py` reports **18/19, SAFE TO SUBMIT** against the live system, with on-device
-authoring proven this session. The remaining steps are Tracey's:
-1. **Build the `.msixupload` in VS** — identity `9P1K9QJXKND8` already set. **CRITICAL:** confirm the package
-   BUNDLES the on-device model (`StoreApp/Assets/models/gemma-3-1b-it/`, ~700 MB, gitignored artifact — present in
-   the working tree now). Without it the app falls to the dead cloud = the exact 4th-rejection failure.
-2. **Submit in Partner Center** with the rewritten `docs/MICROSOFT_STORE_CERT_NOTES.md` in "Notes for certification."
-3. *(Optional belt+suspenders)* restore a cloud provider (valid Azure key/endpoint, or Gemini prepay credits) so the
-   fallback + make-good path is green too — not a cert blocker, since on-device authors the reviewer's plan.
-4. *(Open, Tracey's call)* Store-listing monetization: the WPF app has no in-app payment — free vs paid-in-Store is a
-   Partner Center pricing decision, independent of cert. The web surface (`prontopc.online` + Stripe) still exists.
+**Product: ON-DEVICE WPF app, free download, charged per run via the existing STRIPE flow wired into the app
+(TOTEM-0029) — backend now LIVE + secured (TOTEM-0034).** The payment gate is built, proven fail-closed, and
+deployed; the app builds 0/0 at version 1.2.0.0. **Done this session:** backend deployed (rev `pronto-pc-00076-hf5`);
+server-side free-path hole closed (`submit-diagnostics` unknown token → 402); package version bumped. The remaining
+steps are Tracey's, on a Windows/Stripe machine — and together they ARE the live end-to-end run (= the reviewer's
+cert path):
+1. **Build the signed `.msixupload` in VS** — identity `9P1K9QJXKND8`, version `1.2.0.0` (already set). **CRITICAL:**
+   confirm the package BUNDLES the on-device model (`StoreApp/Assets/models/gemma-3-1b-it/`, `model.onnx.data` =
+   694 MB — confirmed present + landing in the Release build output).
+2. **Confirm the Stripe wiring (LIVE mode):** `MSCERT2026` still exists at 100% off, and the $29 Payment Link
+   (`buy.stripe.com/28E4gA9bBfuY62ibfk9Ve02`) redirects after payment to `success.html?session={CHECKOUT_SESSION_ID}`.
+3. **Run the end-to-end on a controlled admin test machine** (no irreplaceable data — the repair stage changes system
+   state): install → launch → single UAC → "Start your $29 diagnostic" → checkout with `MSCERT2026` → app auto-
+   continues (polling) → read-only scan → on-device plan → selectable repairs → completion; confirm the in-app "AI
+   model & licenses" link opens. Capture evidence (package hash + inventory, installed version, revision/logs,
+   checkout/session result, per-phase screenshots), then run WACK.
+4. **Submit in Partner Center** with `docs/MICROSOFT_STORE_CERT_NOTES.md` (the Stripe reviewer flow) in "Notes for
+   certification."
+5. *(Optional belt+suspenders)* restore a cloud provider so the fallback + make-good path is green too — not a cert
+   blocker, since on-device authors the reviewer's plan.
 On cert pass, promote repair-plan **provisional → verified**. After: `prontopc-custodian-stage` (Phase-2 echo fix).
+**Consistency note (not a cert blocker):** the live web surface (`prontopc.online`) is a stale Vercel deploy — the
+Store app is now the primary product; realign/redeploy the web copy whenever the listing goes live.
 
 Watch item (not blocking): the 1B model's summary specificity was low on the WPF run (generic wording,
 1 action, ~0 MB) — consider prompt/decoding tuning if it recurs on a machine with real clutter.

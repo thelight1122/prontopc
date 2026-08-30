@@ -85,11 +85,12 @@ const VALID_TRANSITIONS = {
   repair_served: ["completed"],
 };
 
-function createSession(stripeSessionId, email) {
+function createSession(stripeSessionId, email, clientRef = null) {
   const token = crypto.randomBytes(32).toString("hex");
   sessionStore.set(token, {
     token,
     stripeSessionId,
+    clientRef,
     email,
     state: "created",
     hostname: null,
@@ -564,6 +565,18 @@ function findSessionByStripeId(stripeSessionId) {
   return null;
 }
 
+// The native Store app tags its Stripe Payment Link with a per-launch nonce
+// (client_reference_id) and polls until the paid checkout lands. A session exists
+// in the store ONLY after verifyStripeSession confirmed a fulfilled checkout, so a
+// match here IS proof of a paid (or 100%-off comped) run.
+function findSessionByClientRef(clientRef) {
+  if (!clientRef) return null;
+  for (const [token, data] of sessionStore.entries()) {
+    if (data.clientRef && data.clientRef === clientRef) return { token, data };
+  }
+  return null;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function readBody(req) {
@@ -625,13 +638,35 @@ async function handleVerifyPayment(req, res) {
 
   try {
     const session = await verifyStripeSession(sessionId);
-    const token = createSession(sessionId, session.customer_details?.email || "");
+    const token = createSession(sessionId, session.customer_details?.email || "", session.client_reference_id || null);
     console.log(`[verify-payment] Session created for Stripe ${sessionId.substring(0, 12)}…`);
     return json(res, req, 200, { ok: true, token });
   } catch (e) {
     console.error("[verify-payment] Error:", e.message);
     return json(res, req, 402, { ok: false, error: e.message });
   }
+}
+
+// ─── Native Store-app payment gate (pay-per-run) ─────────────────────────────
+// The app is free to download from the Microsoft Store; each run is unlocked by a
+// one-time Stripe checkout. Two entry paths, both fail-closed (no session ⇒ no run):
+//
+//   await-payment?ref=<nonce>  The app opened buy.stripe.com/…?client_reference_id=<nonce>
+//     and polls here. Once the customer's browser hits success.html → /api/verify-payment,
+//     a session is created carrying that nonce; the app then reads its token and proceeds.
+//     No deep-link, so a Start-menu launch never spawns a second instance or a second UAC.
+//   verify-token?token=<token>  The app arrived via prontopc://run?token=… (pure-web entry);
+//     it re-confirms the token still names a live, fulfilled session before scanning.
+function handleAwaitPayment(req, res, ref) {
+  if (!ref) return json(res, req, 400, { ok: false, paid: false, error: "ref required" });
+  const found = findSessionByClientRef(ref);
+  if (found) return json(res, req, 200, { ok: true, paid: true, token: found.token });
+  return json(res, req, 200, { ok: false, paid: false, pending: true });
+}
+
+function handleVerifyToken(req, res, token) {
+  const s = token ? getSession(token) : null;
+  return json(res, req, 200, { ok: !!s, paid: !!s });
 }
 
 async function handleCreateSession(req, res) {
@@ -746,22 +781,13 @@ async function handleSubmitDiagnostics(req, res) {
   const { token, diagnostics } = body;
   if (!token || !diagnostics) return json(res, req, 400, { ok: false, error: "token and diagnostics required" });
 
-  let session = getSession(token);
-  if (!session) {
-    sessionStore.set(token, {
-      token,
-      stripeSessionId: null,
-      email: "",
-      state: "created",
-      hostname: null,
-      diagnostics: null,
-      repairPlan: null,
-      repairResults: null,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-    session = sessionStore.get(token);
-  }
+  // Authorization: author a plan ONLY for a token that names a live, PAID session
+  // (minted by /api/verify-payment after Stripe confirms a fulfilled checkout). Never
+  // create a session here — doing so was a server-side free path: a forged/unknown
+  // token got a full AI plan without paying, wider than the client gate. Unknown or
+  // expired token ⇒ no run. This is the backend half of "no free path."
+  const session = getSession(token);
+  if (!session) return json(res, req, 402, { ok: false, status: "unpaid", error: "No paid session for this token. Complete checkout first." });
 
   console.log(`[submit-diagnostics] Token ${token.substring(0, 8)}…`);
 
@@ -2613,6 +2639,10 @@ const server = http.createServer(async (req, res) => {
 
     // Stripe verification
     if (method === "POST" && pathname === "/api/verify-payment") return await handleVerifyPayment(req, res);
+
+    // Native Store-app pay-per-run gate (poll after checkout, or re-verify a deep-link token)
+    if (method === "GET" && pathname === "/api/await-payment") return handleAwaitPayment(req, res, url.searchParams.get("ref"));
+    if (method === "GET" && pathname === "/api/verify-token") return handleVerifyToken(req, res, url.searchParams.get("token"));
 
     // Session management
     if (method === "POST" && pathname === "/api/create-session") return await handleCreateSession(req, res);

@@ -8,6 +8,7 @@
   "properties": {
     "schema_version": { "type": "string" },
     "totem_id": { "type": "string", "pattern": "^TOTEM-[0-9]{4}$" },
+    "entry_marker": { "type": "string", "enum": ["NEW"], "description": "Legacy inline marker retained for historical append-only records. New-append detection and display are owned by the Totem New-Append Satellite." },
     "utc": { "type": "string" },
     "session_ref": { "type": "string", "description": "The session/transcript this Totem was written from, for tracing back to the reasoning." },
     "summary": { "type": "string", "description": "What was done code-wise at this point, in one or two sentences." },

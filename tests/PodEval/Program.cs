@@ -90,4 +90,8 @@ sealed class FakeInference : ILocalInference
         "Sure!\n{\"summary\":\"500 MB temp, 8 GB Windows.old.\",\"actions\":[" +
         "{\"id\":\"clear_temp_files\",\"friendly_name\":\"Temp\",\"category\":\"cleanup\",\"estimated_mb_recovered\":500}," +
         "{\"id\":\"reset_network_stack\",\"friendly_name\":\"Net\",\"category\":\"network\",\"estimated_mb_recovered\":0}]}";
+    // Multi-turn surface (TOTEM-0026): the plan-authoring eval never calls it, but the
+    // fake must satisfy the interface. Echo the last user turn so it stays deterministic.
+    public string? Chat(System.Collections.Generic.IReadOnlyList<ChatTurn> history, CancellationToken ct) =>
+        history.Count == 0 ? null : history[history.Count - 1].Text;
 }

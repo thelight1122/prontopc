@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,10 +17,25 @@ namespace ProntoPC;
 public partial class MainWindow : Window
 {
     const string CloudRun = "https://pronto-pc-108655745293.us-central1.run.app";
+    // The $29 one-time diagnostic + repair (same Stripe Payment Link the web funnel uses).
+    const string CheckoutLink = "https://buy.stripe.com/28E4gA9bBfuY62ibfk9Ve02";
     string _token;
+    string _payNonce = "";
+    CancellationTokenSource? _pollCts;
     readonly List<(Dictionary<string, object?> action, CheckBox box)> _rows = new();
     readonly Orchestrator _orch;
     readonly bool _modelPresent;
+
+    // ── Conversational Technician (Phase 2) — GATED CLOSED ────────────────────
+    // The peer-facing conversation runs through ONE governance seam (Governance.cs).
+    // The wired seam is PipelineGovernance — the bridge to the AEGIS module set
+    // (ProntoPC.Governance.*) — constructed with enabled:false, so the §8 admission gate
+    // is CLOSED: the entry stays hidden, every inbound is refused, the Canon/pipeline are
+    // never touched, and the on-device model is never reached. Opening the Technician is a
+    // deliberate, separate act — construct PipelineGovernance(enabled:true) with the exact
+    // authorized Canon present (Tracey's §8 greenlight) — nothing else in this window changes.
+    readonly IPeerGovernance _gov = new PipelineGovernance(enabled: false);
+    CustodianChat? _chat;
 
     public MainWindow(string token)
     {
@@ -42,18 +59,98 @@ public partial class MainWindow : Window
         Loaded += async (_, __) => await Start();
     }
 
-    async Task Start() => await RunScan();
+    // Entry: the pay-per-run gate stands in front of the scan. A run is unlocked only
+    // by a fulfilled Stripe checkout — there is no free path.
+    //  • Arrived via prontopc://run?token=… → re-verify the token names a live paid
+    //    session, then scan.
+    //  • No/expired/invalid token (e.g. a Start-menu launch) → present the checkout gate.
+    async Task Start()
+    {
+        if (!string.IsNullOrWhiteSpace(_token) && await TokenIsPaid(_token)) { await RunScan(); return; }
+        ShowGate();
+    }
+
+    // ── Pay-per-run gate ──────────────────────────────────────────────────────
+    void ShowGate()
+    {
+        Cust.SetState(CustodianState.Greeting);
+        GateStart.Visibility = Visibility.Visible;
+        GateWaiting.Visibility = Visibility.Collapsed;
+        ShowPanel(GatePanel);
+    }
+
+    // Open the Stripe Payment Link tagged with a per-launch nonce, then poll the backend
+    // until that checkout is fulfilled. The customer pays in the browser and this window
+    // continues on its own — no deep-link, so no second instance and no second UAC.
+    void GateBuy_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_payNonce))
+            _payNonce = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N"); // 64 hex
+
+        try { Process.Start(new ProcessStartInfo($"{CheckoutLink}?client_reference_id={_payNonce}") { UseShellExecute = true }); }
+        catch { /* no browser — the customer can still retry; polling continues */ }
+
+        GateStart.Visibility = Visibility.Collapsed;
+        GateWaiting.Visibility = Visibility.Visible;
+        ShowPanel(GatePanel);
+
+        _pollCts?.Cancel();
+        _pollCts = new CancellationTokenSource();
+        _ = PollForPayment(_payNonce, _pollCts.Token);
+    }
+
+    void GateCancel_Click(object sender, RoutedEventArgs e)
+    {
+        _pollCts?.Cancel();
+        ShowGate();
+    }
+
+    async Task PollForPayment(string nonce, CancellationToken ct)
+    {
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                var resp = await http.GetAsync($"{CloudRun}/api/await-payment?ref={nonce}", ct);
+                using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
+                if (doc.RootElement.TryGetProperty("paid", out var p) && p.ValueKind == JsonValueKind.True
+                    && doc.RootElement.TryGetProperty("token", out var t) && t.ValueKind == JsonValueKind.String)
+                {
+                    _token = t.GetString()!;
+                    _payNonce = "";
+                    await RunScan();
+                    return;
+                }
+            }
+            catch (OperationCanceledException) { return; }
+            catch { /* transient — keep polling */ }
+            try { await Task.Delay(3000, ct); } catch { return; }
+        }
+    }
+
+    // A live, unexpired session for this token means it came from a fulfilled checkout.
+    // Fail-closed: any error (offline, unknown token) is treated as unpaid → the gate.
+    async Task<bool> TokenIsPaid(string token)
+    {
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+            var resp = await http.GetAsync($"{CloudRun}/api/verify-token?token={Uri.EscapeDataString(token)}");
+            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            return doc.RootElement.TryGetProperty("paid", out var p) && p.ValueKind == JsonValueKind.True;
+        }
+        catch { return false; }
+    }
 
     // ── Scan ─────────────────────────────────────────────────────────────────
     async Task RunScan()
     {
-        ShowWorking("Reading your system…", "This takes about a minute. Nothing is changed.");
+        Cust.SetState(CustodianState.Scanning, "Reading your system… nothing on your PC is changed.");
+        CollapseAllPanels();
         var diag = await Task.Run(() => Diagnostics.Collect());
 
-        SetStatus("Analyzing…", "Building your personalized repair plan.");
-
-        if (string.IsNullOrWhiteSpace(_token))
-            _token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+        Cust.SetState(CustodianState.Thinking, "Building your personalized repair plan…");
 
         // Plan phase: the Orchestrator authors a plan (local Satellite -> cloud broker)
         // and validates it against the keyed Action Envelope before it reaches consent.
@@ -96,6 +193,7 @@ public partial class MainWindow : Window
 
     void ShowMakeGood(string? coupon)
     {
+        Cust.SetState(CustodianState.Blocked, "Your AI plan didn't run this time.");
         if (!string.IsNullOrWhiteSpace(coupon))
         {
             MakeGoodText.Text = "Your repair is AI-powered, and this time our AI couldn't build your plan. "
@@ -136,6 +234,7 @@ public partial class MainWindow : Window
     // ── Findings ─────────────────────────────────────────────────────────────
     void ShowFindings(JsonElement plan)
     {
+        Cust.SetState(CustodianState.Presenting);
         string summary = plan.TryGetProperty("summary", out var s) ? (s.GetString() ?? "") : "";
         FindingsSummary.Text = summary;
         ActionList.Children.Clear();
@@ -168,6 +267,9 @@ public partial class MainWindow : Window
             }
         }
         UpdateTotal();
+        // The Technician entry is shown ONLY when governance admits a peer-facing offering.
+        // AbsentGovernance (the wired default) never admits, so the entry stays hidden.
+        TechnicianEntry.Visibility = _gov.OfferingAllowed(out _) ? Visibility.Visible : Visibility.Collapsed;
         ShowPanel(FindingsPanel);
     }
 
@@ -189,15 +291,18 @@ public partial class MainWindow : Window
     // ── Repair ───────────────────────────────────────────────────────────────
     async Task RunRepair(List<Dictionary<string, object?>> approved)
     {
-        ShowWorking("Repairing your PC…", "Please wait — this can take a few minutes.", repairing: true);
+        Cust.SetState(CustodianState.Repairing, "Starting repairs…");
+        CollapseAllPanels();
 
         // Repair + verify phases: the Orchestrator invokes the engine and summarizes.
+        // Each real progress tick fires ONE angular stroke on the Custodian — the visual
+        // record of a unit of work actually being done, never decoration on a timer.
         var progress = new Progress<RepairProgress>(p =>
-            SetStatus("Repairing your PC…", p.Total > 0 ? $"[{p.Index}/{p.Total}] {p.Name}" : p.Name));
+            Cust.ReportRepairComplete(p.Total > 0 ? $"[{p.Index}/{p.Total}] {p.Name}" : p.Name));
         var outcome = await _orch.RunRepairAsync(approved, progress);
 
         // Complete phase: persist results to the broker (best-effort), then show the report.
-        SetStatus("Finishing up…", "Saving your report.");
+        Cust.SetActivity("Saving your report…");
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
@@ -206,30 +311,27 @@ public partial class MainWindow : Window
         }
         catch { }
 
+        Cust.SetState(CustodianState.Complete, "Your PC has been serviced.");
         CompleteText.Text = outcome.Message;
         ShowPanel(CompletePanel);
     }
 
     // ── UI helpers ───────────────────────────────────────────────────────────
-    void ShowWorking(string title, string sub, bool repairing = false)
-    {
-        WorkingTitle.Text = title; WorkingSub.Text = sub;
-        WorkingAuditor.Visibility = repairing ? Visibility.Collapsed : Visibility.Visible;
-        WorkingBuilder.Visibility = repairing ? Visibility.Visible : Visibility.Collapsed;
-        ShowPanel(WorkingPanel);
-    }
-    void SetStatus(string title, string sub) { WorkingTitle.Text = title; WorkingSub.Text = sub; }
-    void ShowError(string msg) { ErrorText.Text = msg; ShowPanel(ErrorPanel); }
+    // The Custodian (the Actuator) is the persistent visual across every phase; the
+    // content panels below it carry the interactive controls for the current phase.
+    void ShowError(string msg) { Cust.SetState(CustodianState.Blocked, msg); ErrorText.Text = msg; ShowPanel(ErrorPanel); }
 
-    void ShowPanel(UIElement panel)
+    void CollapseAllPanels()
     {
-        WorkingPanel.Visibility = Visibility.Collapsed;
+        GatePanel.Visibility = Visibility.Collapsed;
         FindingsPanel.Visibility = Visibility.Collapsed;
         CompletePanel.Visibility = Visibility.Collapsed;
         ErrorPanel.Visibility = Visibility.Collapsed;
         MakeGoodPanel.Visibility = Visibility.Collapsed;
-        panel.Visibility = Visibility.Visible;
+        ChatPanel.Visibility = Visibility.Collapsed;
     }
+
+    void ShowPanel(UIElement panel) { CollapseAllPanels(); panel.Visibility = Visibility.Visible; }
 
     void Close_Click(object sender, RoutedEventArgs e) => Close();
 
@@ -243,6 +345,74 @@ public partial class MainWindow : Window
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
         }
         catch { /* viewer unavailable — the file still ships in the install folder */ }
+    }
+
+    // ── Technician conversation (Phase 2) — every path runs through _gov ───────
+    // While _gov is AbsentGovernance the entry is hidden, so none of these run in a
+    // shipped build. They exist so the whole conversation drops in the moment an OPEN
+    // IPeerGovernance is wired — and, as defense in depth, each re-checks the gate so a
+    // closed governance can never reach the model.
+    void OpenChat_Click(object sender, RoutedEventArgs e)
+    {
+        // Never open the conversation unless governance admits the offering.
+        if (!_gov.OfferingAllowed(out _)) return;
+        string modelDir = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "models", "gemma-3-1b-it");
+        // The Custodian is seeded with the governance-supplied system prompt (Canon + RBC framing).
+        _chat ??= new CustodianChat(OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it"), _gov.SystemPrompt);
+        ShowPanel(ChatPanel);
+        ChatInput.Focus();
+    }
+
+    void ChatInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter) { e.Handled = true; ChatSend_Click(sender, e); }
+    }
+
+    async void ChatSend_Click(object sender, RoutedEventArgs e)
+    {
+        string text = ChatInput.Text?.Trim() ?? "";
+        if (text.Length == 0) return;
+        AppendChat("You", text);
+        ChatInput.Clear();
+
+        // PIM inbound: screen the customer's text BEFORE it can reach the model. A non-null
+        // return blocks it — AbsentGovernance refuses everything, so nothing is sent while gated.
+        string? refusal = _gov.ScreenInbound(text);
+        if (refusal != null) { AppendChat("Technician", refusal); return; }
+        if (_chat is null || !_chat.Available) { AppendChat("Technician", "The Technician isn't available right now."); return; }
+
+        _gov.LogTurn("user", text);
+        ChatSendButton.IsEnabled = false;
+        try
+        {
+            string? reply = await _chat.ReplyAsync(text, CancellationToken.None);
+            if (string.IsNullOrWhiteSpace(reply))
+            {
+                AppendChat("Technician", "I couldn't put that into words just now — could you ask again?");
+                return;
+            }
+            // RBC / Prism outbound: apply Reflective Boundary Conditions before the reply is shown.
+            reply = _gov.ApplyBoundary(reply);
+            _gov.LogTurn("model", reply);
+            AppendChat("Technician", reply);
+        }
+        finally { ChatSendButton.IsEnabled = true; }
+    }
+
+    void ChatBack_Click(object sender, RoutedEventArgs e) => ShowPanel(FindingsPanel);
+
+    void AppendChat(string who, string text)
+    {
+        var block = new TextBlock
+        {
+            Foreground = new SolidColorBrush(who == "You"
+                ? Color.FromRgb(0xee, 0xf1, 0xff) : Color.FromRgb(0xa7, 0x8b, 0xfa)),
+            TextWrapping = TextWrapping.Wrap, FontSize = 13.5, Margin = new Thickness(0, 0, 0, 10)
+        };
+        block.Inlines.Add(new System.Windows.Documents.Run(who + ": ") { FontWeight = FontWeights.Bold });
+        block.Inlines.Add(new System.Windows.Documents.Run(text));
+        ChatLog.Children.Add(block);
+        ChatScroll.ScrollToEnd();
     }
 
     static int Mb(object? v) { int m = 0; int.TryParse(v?.ToString(), out m); return m; }
