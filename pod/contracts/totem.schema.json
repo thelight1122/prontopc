@@ -7,7 +7,8 @@
   "required": ["schema_version", "totem_id", "utc", "summary", "files", "advances", "next_gated_step", "trust_state"],
   "properties": {
     "schema_version": { "type": "string" },
-    "totem_id": { "type": "string", "pattern": "^TOTEM-[0-9]{4}$" },
+    "totem_id": { "type": "string", "pattern": "^TOTEM-(?:[A-Za-z]+-)?[0-9]{4}$", "description": "Trunk form TOTEM-0001 (legacy shared file), or lane form TOTEM-<LANE>-0040 (a per-writer shard, e.g. TOTEM-C-0040). Lane numbers are local to the lane; never compare numbers across lanes — order the ledger by utc." },
+    "lane": { "type": "string", "description": "The writer's lane for shard entries (e.g. 'claude', 'codex'), matching the shard file totems.<lane>.jsonl. Absent on legacy trunk entries." },
     "entry_marker": { "type": "string", "enum": ["NEW"], "description": "Legacy inline marker retained for historical append-only records. New-append detection and display are owned by the Totem New-Append Satellite." },
     "utc": { "type": "string" },
     "session_ref": { "type": "string", "description": "The session/transcript this Totem was written from, for tracing back to the reasoning." },

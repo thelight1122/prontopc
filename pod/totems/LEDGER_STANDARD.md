@@ -41,6 +41,27 @@ Never edit or reformat an existing line. Historical entries written before this
 standard keep their original spacing and remain valid — Rule 1 guarantees they still
 read correctly. New knowledge is a new line, never a rewrite of an old one.
 
+## Rule 4 — Lanes: one append-only file per writer (the shard model)
+
+A single shared `totems.jsonl` is a **single-writer** format. Under parallel work
+(two SI agents at once) it has two race points: the monotonic id (both reach for the
+same "next number") and the file itself (two appends interleave mid-line and corrupt
+it). The fix is **lanes**: each writer appends only to its own file under
+`pod/totems/shards/`, named `totems.<lane>.jsonl`.
+
+- **IDs are lane-local:** `TOTEM-<LANE>-<NNNN>` (e.g. `TOTEM-C-0040`). Optionally carry a
+  `lane` field. Never compare numbers across lanes — two lanes may both sit at `0040`.
+- **One writer per file:** you only read your own lane's last line to get your next
+  number; you never read or write another agent's lane. No id reservation, no lock.
+- **The canonical ledger is a merge, not a file:** `verify_totems.py` reads the legacy
+  trunk (`totems.jsonl`) plus every lane and orders the union by `utc` (trunk wins ties).
+  The "head" is the latest entry by `utc` across all lanes. Order the world by time, not
+  by number.
+- **The trunk is frozen legacy:** `totems.jsonl` (TOTEM-0001 … the shared history) stays
+  valid and is still read + verified; new knowledge goes to a lane. Rules 1–3 apply to
+  each lane file exactly as to the trunk. With no lanes present, everything behaves as
+  the single-file ledger did. See `pod/totems/shards/README.md`.
+
 ---
 
 *Governs the ledger only. Standalone contract files (`*.schema.json`) and the state
