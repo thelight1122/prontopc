@@ -50,6 +50,10 @@ NOTES:
   need to return a code to the app or paste anything.
 - The AI repair plan is generated on-device by a bundled model, so the plan step
   works even with no network connection.
+- On-screen figure: the app shows an animated "Custodian" character at the top of the
+  window that reflects the current step (reading, planning, repairing, done). It is a
+  visual status indicator only - it performs no action on its own and does not generate
+  any text or conversation.
 - Support: support@prontopc.online
 ------------------------------------------------------------------
 
@@ -70,6 +74,21 @@ Root cause fixed - durably:
   substitutes a non-AI (rule-based) plan under the AI claim. It shows honest
   recourse instead (a make-good). There is no code path that presents a heuristic
   plan as the AI plan.
+
+## UI & AI-governance posture in this build (for our records)
+- The findings/repair flow is fronted by the Custodian actuator described above: an
+  on-stage vector figure that moves through the real pipeline states (greeting, scanning,
+  thinking, presenting, repairing, complete) driven only by true events - never a timer -
+  and marks each real repair action as it completes. It is observation-only: it shows the
+  work, it does not generate any user-facing language.
+- The build also contains a conversational AI "Technician," but it is DELIBERATELY GATED
+  CLOSED in this certified build (its governance seam is wired to PipelineGovernance with
+  enabled:false), pending an internal AEGIS self-governance review. With the gate closed
+  the chat entry point stays hidden, no message can reach the model, and no AI-generated
+  conversation is reachable by the user. The certified build therefore exposes NO
+  ungoverned peer-facing AI generation; the only on-device AI the reviewer exercises is
+  the repair-plan author (above). This feature will not be opened to users until that
+  review is complete and is not part of what is exercised during certification.
 
 ## Payment wiring (pay-per-run, for our records)
 - Gate: the app runs nothing until a fulfilled checkout exists. On launch it either
