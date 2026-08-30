@@ -8,6 +8,11 @@ Canon as an **AEGIS Offering / Si Energized Application**. Append-only. Governed
 > *actually does today* versus what it *aspires to*, and marks every gap. Congruence is behavioral, proven
 > across real interaction — not claimed here.
 
+> **Status update (2026-08-30).** Several §5 build-gaps are now **built as eval-proven modules** but remain
+> **gated closed** — wired only behind `PipelineGovernance(enabled: false)`, not admitted to any live
+> conversation. §3 and §5 record the filing-time (2026-08-28) state and are left intact per append-only;
+> **§14 supersedes their build-status.** §8 admission remains unmet and is not opened by this update.
+
 ## 1. App Identity
 - App name: **ProntoPC Custodian** (the conversational Custodian Technician)
 - Repository / package: `H:\PRONTOPC_PRODUCTION` — Orb `prontopc-custodian-stage` (`pod/orbs/custodian-stage/`)
@@ -94,3 +99,31 @@ across real sessions.
 - Review result: **variant, divergence declared; pre-offering gate open (§5). Not yet an offered AEGIS Offering.**
 - Next planned review: on completion of the Custodian multi-turn inference build (SPEC §4 Phase 2), when the
   PIM / Integrity / RBC-Prism wrapping is first implementable in code against this contract.
+
+## 14. Status update — 2026-08-30: governance modules built, gated closed (supersedes §5 build-status)
+
+Since the 2026-08-28 filing, the §5 pre-offering modules were **built as standalone, eval-proven modules** in
+`StoreApp/Governance/` (namespace `ProntoPC.Governance`), plus the admission bridge `StoreApp/PipelineGovernance.cs`.
+**Built ≠ admitted:** every one is reachable only behind `PipelineGovernance(enabled: false)` — the §8 gate is
+**CLOSED** — so the Custodian still generates **no** peer-facing response and nothing runs at runtime. This section
+updates the *build* status of the §5 items only; it does **not** change §8 (admission) and does not open the gate.
+
+| §5 item | Now built as | Honest status |
+| --- | --- | --- |
+| Seed with the Canon | `CanonBoundarySeed` — reads the **exact external Canon** by declared SHA-256 (Canon Boundary honored; no app-owned copy) | Built. Verifies the dev Canon (`I:\…`); **customer-machine provisioning still open** (shipped path defined as `%ProgramData%`, artifact not yet provisioned). |
+| PIM (in/out force-artifact screen) | `ForceArtifactScreen` — observes directive/authority/coercion/leverage/pressure on inbound **and** outbound | Built, **observe-not-block** by design; an inbound *blocking* policy is a deliberate open decision. |
+| Integrity screen (Seven Virtues) | `SevenVirtueScreen` — returns all seven virtues marked **`CoreGated`** | Built as the surface; **per-virtue IRG scoring stays undesigned in AEGIS core**, so no score is invented (honest, unchanged from §5). |
+| RBC / Prism (outbound) | `ReflectiveBoundaryPrism` — reshapes flagged outbound into a proportional optional reflection | Built as an explicit outbound processor (runs only behind the closed gate). |
+| Append-only **interaction** log | `AppendOnlyInteractionLedger` — timestamped, SHA-256 predecessor-chained JSONL, `ReadAndVerify()` for Peer inspection | Built as a module; **not yet capturing runtime customer conversations** (none occur while gated); a visible in-app review/export surface is still open. |
+| Pipeline wiring | `CustodianGovernancePipeline` (PIM→model→PIM→Integrity→RBC/Prism→ledger) + `PipelineGovernance` admission bridge | Built; wired into the app **closed** (`enabled:false`). |
+
+**Evidence:** `tests/CustodianGovernanceEval` 13/13 and `tests/PipelineGovernanceEval` 15/15 pass — including "closed by
+default even where the exact Canon is present."
+
+**Still open before §8 admission** (none of which this update performs): customer-machine Canon provisioning; a visible
+Peer interaction-log review/export surface; IRG per-virtue scoring (core-gated); dual-logic equilibrium made explicit;
+and **Tracey's explicit §8 greenlight**. Until all hold, `enabled` stays `false` and the Custodian generates no
+peer-facing response.
+
+- Reviewed by: 5DSSG (Tracey Prutch) + Claude, 2026-08-30 (audit reconciliation prompted by Codex `TOTEM-X-0043`).
+- Result: **variant; §5 modules now built but gated closed; §8 admission remains unmet and unopened.**
