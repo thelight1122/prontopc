@@ -86,7 +86,12 @@ sealed class OnnxGenAiInference : ILocalInference
             EnsureLoaded();
             if (_model is null || _tokenizer is null || history is null || history.Count == 0) return null;
 
+            // Gemma's chat template BEGINS with <bos> (bos_token_id=2). ORT GenAI's Encode
+            // does not prepend it, and without it the instruction-tuned 1B degrades into
+            // echoing the prompt back instead of answering (the TOTEM-0026 issue). Emit it
+            // as the literal special token, exactly as the <start_of_turn> markers are.
             var sb = new StringBuilder();
+            sb.Append("<bos>");
             foreach (var t in history)
                 sb.Append("<start_of_turn>").Append(t.Role == ChatRole.User ? "user" : "model")
                   .Append('\n').Append(t.Text).Append("<end_of_turn>\n");
@@ -96,8 +101,14 @@ sealed class OnnxGenAiInference : ILocalInference
             var inputIds = sequences[0];
             int inputLen = inputIds.Length;
 
+            // Free-form decode under the Conversation Contract's interactive_params
+            // (temperature 0.5, top_p 0.9, max_new_tokens 512) — not the genai_config
+            // default (temperature 1.0), which over-randomises the reply.
             using var gp = new GeneratorParams(_model);
             gp.SetSearchOption("max_length", (double)(inputLen + 512));
+            gp.SetSearchOption("do_sample", true);
+            gp.SetSearchOption("temperature", 0.5);
+            gp.SetSearchOption("top_p", 0.9);
 
             using var generator = new Generator(_model, gp);
             generator.AppendTokens(inputIds);

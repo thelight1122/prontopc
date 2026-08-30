@@ -60,14 +60,24 @@ var chat = new CustodianChat(inf,
     "worried customer. Answer their question directly in one or two short sentences. Never repeat " +
     "their question back. Never invent specifics you were not given.");
 var chatCt = new CancellationTokenSource(TimeSpan.FromSeconds(240)).Token;
-string? a1 = await chat.ReplyAsync(
-    "Hi — in one sentence, what will your diagnostic scan check on my PC?", chatCt);
+
+// An "echo" reply is the bug: the model parrots the question back instead of answering.
+// A genuine reply is non-empty AND does not contain the question verbatim.
+bool NotEcho(string? reply, string question) =>
+    !string.IsNullOrWhiteSpace(reply) &&
+    reply.IndexOf(question.Trim(), StringComparison.OrdinalIgnoreCase) < 0;
+
+string q1 = "Hi — in one sentence, what will your diagnostic scan check on my PC?";
+string? a1 = await chat.ReplyAsync(q1, chatCt);
 Check(!string.IsNullOrWhiteSpace(a1), "chat turn 1: Custodian replied");
 if (a1 != null) Console.WriteLine("    turn1> " + Trunc(a1));
-string? a2 = await chat.ReplyAsync(
-    "Thanks. Will that scan change anything on my computer?", chatCt);
+Check(NotEcho(a1, q1), "chat turn 1: reply is an ANSWER, not an echo of the question");
+
+string q2 = "Thanks. Will that scan change anything on my computer?";
+string? a2 = await chat.ReplyAsync(q2, chatCt);
 Check(!string.IsNullOrWhiteSpace(a2), "chat turn 2: Custodian replied (history carried forward)");
 if (a2 != null) Console.WriteLine("    turn2> " + Trunc(a2));
+Check(NotEcho(a2, q2), "chat turn 2: reply is an ANSWER, not an echo of the question");
 Check(chat.History.Count == 4, "history holds 4 turns (2 user, 2 model)");
 
 Console.WriteLine(fail == 0 ? "\nMODEL SMOKE PASS" : $"\n{fail} FAILURE(S)");
