@@ -78,6 +78,13 @@ string? a2 = await chat.ReplyAsync(q2, chatCt);
 Check(!string.IsNullOrWhiteSpace(a2), "chat turn 2: Custodian replied (history carried forward)");
 if (a2 != null) Console.WriteLine("    turn2> " + Trunc(a2));
 Check(NotEcho(a2, q2), "chat turn 2: reply is an ANSWER, not an echo of the question");
+Check(a2 != null && a2.IndexOf("read-only", StringComparison.OrdinalIgnoreCase) >= 0
+    && a2.IndexOf("changes nothing", StringComparison.OrdinalIgnoreCase) >= 0,
+    "chat turn 2: read-only scan is grounded as changing nothing");
+Check(a2 != null && a2.IndexOf("reboot", StringComparison.OrdinalIgnoreCase) < 0
+    && a2.IndexOf("restart", StringComparison.OrdinalIgnoreCase) < 0
+    && a2.IndexOf("performance", StringComparison.OrdinalIgnoreCase) < 0,
+    "chat turn 2: does not invent scan effects");
 Check(chat.History.Count == 4, "history holds 4 turns (2 user, 2 model)");
 
 Console.WriteLine(fail == 0 ? "\nMODEL SMOKE PASS" : $"\n{fail} FAILURE(S)");

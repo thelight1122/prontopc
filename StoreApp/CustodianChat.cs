@@ -23,6 +23,38 @@ enum ChatRole { User, Model }
 
 readonly record struct ChatTurn(ChatRole Role, string Text);
 
+// The free-form model is not authoritative for the effect of the App's own diagnostic.
+// Keep the invariant at the conversation boundary so a stochastic completion cannot turn a
+// read-only scan into an invented change, reboot, or performance claim.
+static class CustodianConversationGrounding
+{
+    const string ReadOnlyScanAnswer =
+        "The diagnostic scan is read-only: it changes nothing on your PC. I’ll show you the findings before any repair can be considered.";
+
+    const string GroundingInstruction =
+        "Grounding: the diagnostic scan is read-only and changes nothing on the PC. Do not claim it changes settings, affects performance, or causes a restart. " +
+        "Only state facts supplied in diagnostics or curated repair knowledge; when that information is absent, say you are not certain rather than inventing a detail.";
+
+    public static string AddToSystemPrompt(string systemPrompt)
+        => string.IsNullOrWhiteSpace(systemPrompt) ? GroundingInstruction : systemPrompt + "\n\n" + GroundingInstruction;
+
+    public static bool TryAnswer(string userText, out string answer)
+    {
+        string text = userText ?? string.Empty;
+        bool asksAboutScan = text.IndexOf("scan", StringComparison.OrdinalIgnoreCase) >= 0;
+        bool asksAboutEffects = text.IndexOf("change", StringComparison.OrdinalIgnoreCase) >= 0
+            || text.IndexOf("modify", StringComparison.OrdinalIgnoreCase) >= 0
+            || text.IndexOf("alter", StringComparison.OrdinalIgnoreCase) >= 0
+            || text.IndexOf("affect", StringComparison.OrdinalIgnoreCase) >= 0
+            || text.IndexOf("impact", StringComparison.OrdinalIgnoreCase) >= 0
+            || text.IndexOf("reboot", StringComparison.OrdinalIgnoreCase) >= 0
+            || text.IndexOf("restart", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        answer = asksAboutScan && asksAboutEffects ? ReadOnlyScanAnswer : string.Empty;
+        return answer.Length > 0;
+    }
+}
+
 sealed class CustodianChat
 {
     readonly ILocalInference _model;
@@ -47,12 +79,16 @@ sealed class CustodianChat
         if (!_model.Available || string.IsNullOrWhiteSpace(userText)) return null;
 
         // Gemma has no separate system role; the system prompt rides on the first user turn.
-        string text = (_history.Count == 0 && _systemPrompt.Length > 0)
-            ? _systemPrompt + "\n\n" + userText
+        // Keep the grounding instruction adjacent to that prompt, rather than relying on the
+        // model to infer this product invariant from an ordinary customer question.
+        string text = _history.Count == 0
+            ? CustodianConversationGrounding.AddToSystemPrompt(_systemPrompt) + "\n\n" + userText
             : userText;
 
         _history.Add(new ChatTurn(ChatRole.User, text));
-        string? reply = await Task.Run(() => _model.Chat(_history, ct), ct);
+        string? reply = CustodianConversationGrounding.TryAnswer(userText, out string grounded)
+            ? grounded
+            : await Task.Run(() => _model.Chat(_history, ct), ct);
         if (string.IsNullOrWhiteSpace(reply))
         {
             _history.RemoveAt(_history.Count - 1);
