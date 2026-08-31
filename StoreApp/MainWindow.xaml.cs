@@ -155,7 +155,13 @@ public partial class MainWindow : Window
         // Plan phase: the Orchestrator authors a plan (local Satellite -> cloud broker)
         // and validates it against the keyed Action Envelope before it reaches consent.
         var outcome = await _orch.AuthorPlanAsync(diag);
-        if (outcome.IsOk) { ShowFindings(ToElement(outcome.Plan!)); return; }
+        if (outcome.IsOk)
+        {
+            var plan = ToElement(outcome.Plan!);
+            if (await RecordNativePlanAsync(diag, plan, outcome)) { ShowFindings(plan); return; }
+            ShowError("We couldn't securely record this repair plan. No repairs have been run — please try again.");
+            return;
+        }
 
         // Both AI authors declined (on-device Gemma AND cloud broker). We never present
         // a rule-based plan under the AI claim — instead we report the miss so the
@@ -164,6 +170,30 @@ public partial class MainWindow : Window
     }
 
     static JsonElement ToElement(JsonNode node) => JsonSerializer.SerializeToElement(node);
+
+    // A local model may author the plan, but the paid session is the source of truth
+    // for consent, completion, browser confirmation, and the report.  Do not offer
+    // repair checkboxes until the backend has recorded the validated native plan.
+    async Task<bool> RecordNativePlanAsync(Dictionary<string, object?> diagnostics, JsonElement plan, PlanOutcome outcome)
+    {
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(45) };
+            string payload = JsonSerializer.Serialize(new
+            {
+                token = _token,
+                diagnostics,
+                plan,
+                provenance = new { provider = outcome.Provider, model = outcome.Model, dropped = outcome.Dropped }
+            });
+            var resp = await http.PostAsync($"{CloudRun}/api/native-plan",
+                new StringContent(payload, Encoding.UTF8, "application/json"));
+            if (!resp.IsSuccessStatusCode) return false;
+            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            return doc.RootElement.TryGetProperty("ok", out var ok) && ok.ValueKind == JsonValueKind.True;
+        }
+        catch { return false; }
+    }
 
     // ── AI unavailable → honest recourse (never a rule-based plan) ────────────
     // Both AI authors declined. Report the miss to the backend, which issues a
@@ -285,7 +315,45 @@ public partial class MainWindow : Window
     async void Proceed_Click(object sender, RoutedEventArgs e)
     {
         var approved = _rows.Where(r => r.box.IsChecked == true).Select(r => r.action).ToList();
-        await RunRepair(approved);
+        ProceedButton.IsEnabled = false;
+        var authoritative = await RecordConsentAndStartAsync(approved);
+        if (authoritative is null)
+        {
+            ProceedButton.IsEnabled = true;
+            ShowError("We couldn't record your approval. No repairs have been run — please try again.");
+            return;
+        }
+        await RunRepair(authoritative);
+    }
+
+    // Persist explicit per-action approval, then request the exact server-authorized
+    // action list.  The desktop engine never runs a locally selected action that the
+    // paid session did not acknowledge.
+    async Task<List<Dictionary<string, object?>>?> RecordConsentAndStartAsync(List<Dictionary<string, object?>> approved)
+    {
+        try
+        {
+            var selectedIds = approved.Select(a => a.GetValueOrDefault("id")?.ToString() ?? "").ToArray();
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(45) };
+            var consent = await http.PostAsync($"{CloudRun}/api/session/{Uri.EscapeDataString(_token)}/consent",
+                new StringContent(JsonSerializer.Serialize(new { selectedIds }), Encoding.UTF8, "application/json"));
+            if (!consent.IsSuccessStatusCode) return null;
+            using var consentDoc = JsonDocument.Parse(await consent.Content.ReadAsStringAsync());
+            if (!consentDoc.RootElement.TryGetProperty("ok", out var consentOk) || consentOk.ValueKind != JsonValueKind.True) return null;
+
+            var start = await http.PostAsync($"{CloudRun}/api/session/{Uri.EscapeDataString(_token)}/repair-start",
+                new StringContent("{}", Encoding.UTF8, "application/json"));
+            if (!start.IsSuccessStatusCode) return null;
+            using var startDoc = JsonDocument.Parse(await start.Content.ReadAsStringAsync());
+            if (!startDoc.RootElement.TryGetProperty("ok", out var startOk) || startOk.ValueKind != JsonValueKind.True
+                || !startDoc.RootElement.TryGetProperty("actions", out var actions) || actions.ValueKind != JsonValueKind.Array) return null;
+
+            var authoritative = actions.EnumerateArray().Select(JsonToDict).ToList();
+            var authoritativeIds = authoritative.Select(a => a.GetValueOrDefault("id")?.ToString() ?? "").OrderBy(id => id);
+            if (!authoritativeIds.SequenceEqual(selectedIds.OrderBy(id => id))) return null;
+            return authoritative;
+        }
+        catch { return null; }
     }
 
     // ── Repair ───────────────────────────────────────────────────────────────
@@ -301,19 +369,49 @@ public partial class MainWindow : Window
             Cust.ReportRepairComplete(p.Total > 0 ? $"[{p.Index}/{p.Total}] {p.Name}" : p.Name));
         var outcome = await _orch.RunRepairAsync(approved, progress);
 
-        // Complete phase: persist results to the broker (best-effort), then show the report.
+        // Complete only after the same paid session accepts the result set and its
+        // server-rendered report has been atomically saved to the customer's Desktop.
         Cust.SetActivity("Saving your report…");
+        string? reportPath = await SubmitResultsAndSaveReportAsync(outcome.Results);
+        if (reportPath is null)
+        {
+            ShowError("Your repair results could not be confirmed and saved. The actions already run are shown only after the connection is restored and the report is saved.");
+            return;
+        }
+
+        Cust.SetState(CustodianState.Complete, "Your PC has been serviced.");
+        CompleteText.Text = $"{outcome.Message}\n\nConfirmed repair report saved to:\n{reportPath}";
+        ShowPanel(CompletePanel);
+    }
+
+    async Task<string?> SubmitResultsAndSaveReportAsync(List<Dictionary<string, object?>> results)
+    {
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-            string payload = JsonSerializer.Serialize(new { token = _token, results = outcome.Results });
-            await http.PostAsync($"{CloudRun}/api/submit-repair-results", new StringContent(payload, Encoding.UTF8, "application/json"));
-        }
-        catch { }
+            string payload = JsonSerializer.Serialize(new { token = _token, results });
+            var submitted = await http.PostAsync($"{CloudRun}/api/submit-repair-results",
+                new StringContent(payload, Encoding.UTF8, "application/json"));
+            if (!submitted.IsSuccessStatusCode) return null;
+            using var resultDoc = JsonDocument.Parse(await submitted.Content.ReadAsStringAsync());
+            if (!resultDoc.RootElement.TryGetProperty("ok", out var ok) || ok.ValueKind != JsonValueKind.True) return null;
 
-        Cust.SetState(CustodianState.Complete, "Your PC has been serviced.");
-        CompleteText.Text = outcome.Message;
-        ShowPanel(CompletePanel);
+            var reportResponse = await http.GetAsync($"{CloudRun}/api/session/{Uri.EscapeDataString(_token)}/report");
+            if (!reportResponse.IsSuccessStatusCode) return null;
+            string reportHtml = await reportResponse.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(reportHtml)) return null;
+
+            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+            if (string.IsNullOrWhiteSpace(desktop)) return null;
+            System.IO.Directory.CreateDirectory(desktop);
+            string name = $"ProntoPC_Report_{DateTime.UtcNow:yyyyMMdd_HHmmss}.html";
+            string path = System.IO.Path.Combine(desktop, name);
+            string temporary = path + ".tmp";
+            await System.IO.File.WriteAllTextAsync(temporary, reportHtml, Encoding.UTF8);
+            System.IO.File.Move(temporary, path, overwrite: false);
+            return path;
+        }
+        catch { return null; }
     }
 
     // ── UI helpers ───────────────────────────────────────────────────────────
