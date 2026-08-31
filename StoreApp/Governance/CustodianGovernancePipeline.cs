@@ -15,7 +15,7 @@ public sealed class CustodianGovernancePipeline
         _canon = canon ?? CanonBoundarySeed.ProntoPcCanonV1;
     }
 
-    public PimScreenResult PrepareInbound(string peerText) => ForceArtifactScreen.Screen(peerText, ScreenDirection.Inbound);
+    public PimScreenResult PrepareInbound(string peerText) => InboundPimPolicy.ObserveAndAdmit(peerText);
 
     public GovernedReply FinalizeOutbound(string sessionId, string model, string peerText, string rawModelResponse, PimScreenResult inboundPim)
     {

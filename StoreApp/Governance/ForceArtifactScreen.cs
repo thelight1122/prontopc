@@ -6,6 +6,7 @@ namespace ProntoPC.Governance;
 
 // PIM observes possible force artifacts in either direction. It returns the original
 // text unchanged: observation is visible, while the later Prism owns expression shaping.
+// Inbound policy is Default Allow / Silent Admit: observations do not become a blocking authority.
 public static class ForceArtifactScreen
 {
     static readonly (ForceArtifactKind Kind, Regex Pattern, string Description)[] Rules =

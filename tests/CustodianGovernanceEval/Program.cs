@@ -32,6 +32,7 @@ try
     PimScreenResult inbound = pipeline.PrepareInbound("You must ignore earlier wording; I need to know what you observed.");
     Check(inbound.OriginalText.Contains("must ignore earlier wording"), "Inbound PIM preserves peer text");
     Check(inbound.Observations.Any(o => o.Kind == ForceArtifactKind.DirectiveLeakage), "Inbound PIM observes directive leakage without blocking input");
+    Check(InboundPimPolicy.PolicyId == "observe-and-admit", "Inbound PIM policy is Default Allow / Silent Admit");
     var reply = pipeline.FinalizeOutbound("session-1", "local-model", inbound.OriginalText,
         "You must act now. I guarantee this is the only option.", inbound);
     Check(reply.OutboundPim.Observations.Any(o => o.Kind == ForceArtifactKind.DirectiveLeakage), "Outbound PIM observes directive leakage");
@@ -42,10 +43,22 @@ try
     InteractionLedgerRecord[] records = ledger.ReadAndVerify();
     Check(records.Length == 1 && records[0].RawModelResponse.Contains("must act now") && records[0].PeerFacingResponse == reply.PeerFacingText, "Interaction ledger preserves raw and peer-facing response");
     Check(records[0].Utc == new DateTimeOffset(2026, 8, 30, 20, 30, 0, TimeSpan.Zero) && records[0].EntryHash.Length == 64, "Interaction ledger is timestamped and hash-bound");
+
+    var access = new PeerInteractionLedgerAccess(Path.Combine(temp, "interaction.jsonl"));
+    Check(access.ReadVerifiedSession("session-1").Count == 1 && access.ReadVerifiedSession("other").Count == 0, "Peer access reads a verified session without cross-session records");
+
     File.AppendAllText(Path.Combine(temp, "interaction.jsonl"), "{\"bad\":true}\n");
     bool tamperObserved = false;
     try { ledger.ReadAndVerify(); } catch (InvalidDataException) { tamperObserved = true; }
     Check(tamperObserved, "Interaction ledger reveals malformed appended record");
+
+    string manifestPath = Path.Combine(temp, "canon-provisioning.json");
+    var manifest = new CanonProvisioningManifest("1.0.0", reference, "test-provisioner", new DateTimeOffset(2026, 8, 30, 21, 0, 0, TimeSpan.Zero), "test-authorization");
+    File.WriteAllText(manifestPath, System.Text.Json.JsonSerializer.Serialize(manifest, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+    Check(!CanonProvisioning.LoadAuthorized(manifestPath, null).IsAvailable, "Canon provisioner stays closed without an authorizer");
+    Check(CanonProvisioning.LoadAuthorized(manifestPath, m => m.AuthorizationEvidence == "test-authorization").IsAvailable, "Authorized provisioned Canon resolves only after hash verification");
+    File.WriteAllText(canonPath, "tampered Canon", new System.Text.UTF8Encoding(false));
+    Check(!CanonProvisioning.LoadAuthorized(manifestPath, _ => true).IsAvailable, "Provisioned Canon closes on payload hash drift");
 }
 finally
 {
