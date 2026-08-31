@@ -200,9 +200,10 @@ tailwind.config = {
 <script>
 const CLOUD_RUN = "https://pronto-pc-108655745293.us-central1.run.app";
 // Replace with the actual Store product ID after submission is approved
-const STORE_PRODUCT_ID = "REPLACE_AFTER_STORE_APPROVAL";
+const STORE_PRODUCT_ID = "9P1K9QJXKND8";
 
 let scanToken = "";
+let pollTimer = null;
 
 async function init() {
   const params = new URLSearchParams(window.location.search);
@@ -238,8 +239,9 @@ async function init() {
 function launchScan() {
   if (!scanToken) return;
   window.location.href = `prontopc://run?token=${encodeURIComponent(scanToken)}`;
-  // The desktop app now runs the ENTIRE flow — scan, review, and repair — in its
-  // own window. The browser's only job is this one hand-off.
+  // The desktop app owns scan, approval, and repair.  The page is an observer
+  // for that same paid session; it never creates a parallel approval or repair.
+  startPolling();
   document.getElementById("post-launch").classList.remove("hidden");
   document.getElementById("scan-btn").textContent = "Reopen ProntoPC";
   setTimeout(() => {
@@ -252,8 +254,15 @@ function startPolling() { if (!pollTimer) pollTimer = setInterval(poll, 5000); }
 async function poll() {
   try {
     const s = await fetch(`${CLOUD_RUN}/api/session/${scanToken}/status`).then(r => r.json());
-    if (s.state === "diagnosed") { clearInterval(pollTimer); pollTimer = null; loadFindings(); }
-    else if (s.state === "completed") { clearInterval(pollTimer); pollTimer = null; showPhase("state-complete"); }
+    if (!s.ok) return;
+    if (s.state === "diagnosed") {
+      document.getElementById("session-badge").textContent = "Review repairs in ProntoPC";
+    } else if (s.state === "consented" || s.state === "repair_served") {
+      document.getElementById("session-badge").textContent = "ProntoPC is performing your approved repairs";
+    } else if (s.state === "completed") {
+      clearInterval(pollTimer); pollTimer = null;
+      showPhase("state-complete");
+    }
   } catch {}
 }
 
@@ -309,22 +318,14 @@ function toggleSelectAll() {
 }
 
 async function approveRepairs() {
-  const btn = document.getElementById("approve-btn");
-  btn.disabled = true; btn.textContent = "Approving…";
-  const selectedIds = [...document.querySelectorAll(".action-check")].filter(c => c.checked).map(c => c.dataset.id);
-  try {
-    const data = await fetch(`${CLOUD_RUN}/api/session/${scanToken}/consent`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ selectedIds })
-    }).then(r => r.json());
-    if (!data.ok) throw new Error(data.error);
-    launchRepair();
-  } catch (e) { btn.disabled = false; updateSelectionSummary(); alert("Could not start repairs: " + e.message); }
+  // This legacy browser control is deliberately non-authoritative.  Consent is
+  // displayed, chosen, and recorded in the full-trust desktop app immediately
+  // before any repair action; the receipt page can only reopen that app.
+  launchScan();
 }
 
 function launchRepair() {
-  window.location.href = `prontopc://repair?token=${encodeURIComponent(scanToken)}`;
-  showPhase("state-repair");
-  startPolling();
+  launchScan();
 }
 
 function showActiveApp() {

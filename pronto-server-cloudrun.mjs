@@ -7,6 +7,7 @@
 
 import http from "node:http";
 import crypto from "node:crypto";
+import { Firestore } from "@google-cloud/firestore";
 
 const PORT = process.env.PORT || 8080;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
@@ -69,10 +70,18 @@ function corsOrigin(req) {
   return isAllowedOrigin(origin) ? origin : ALLOWED_ORIGINS[0];
 }
 
-// ─── Session Store ──────────────────────────────────────────────────────────
-// In-memory for beta; migrate to Firestore for production (min-instances=1 on Cloud Run).
-
-const sessionStore = new Map();
+// ─── Paid-session repository ────────────────────────────────────────────────
+// Production sessions must survive Cloud Run restarts and instance changes.  The
+// only local fallback is an explicit SESSION_STORE=memory opt-in; production
+// refuses that mode so a configuration mistake cannot silently lose paid runs.
+const USE_MEMORY_SESSION_STORE = process.env.SESSION_STORE === "memory";
+if (process.env.NODE_ENV === "production" && USE_MEMORY_SESSION_STORE) {
+  throw new Error("SESSION_STORE=memory is not permitted in production");
+}
+const firestore = USE_MEMORY_SESSION_STORE ? null : new Firestore({ projectId: process.env.GOOGLE_CLOUD_PROJECT || "pronto-pc" });
+const sessionStore = new Map(); // Explicit local-only development/test fallback.
+const paidSessions = firestore?.collection("paidSessions");
+const paymentRefs = firestore?.collection("paidSessionPaymentRefs");
 
 // States: created → scan_served → diagnosed → consented → repair_served → completed
 // The native Store app POSTs diagnostics directly (it never fetches the /scan
@@ -85,52 +94,80 @@ const VALID_TRANSITIONS = {
   repair_served: ["completed"],
 };
 
-function createSession(stripeSessionId, email, clientRef = null) {
-  const token = crypto.randomBytes(32).toString("hex");
-  sessionStore.set(token, {
-    token,
-    stripeSessionId,
-    clientRef,
-    email,
-    state: "created",
-    hostname: null,
-    diagnostics: null,
-    repairPlan: null,
-    repairResults: null,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  });
-  return token;
+function newSession(token, stripeSessionId, email, clientRef = null) {
+  return {
+    token, stripeSessionId, clientRef, email, state: "created", hostname: null,
+    diagnostics: null, repairPlan: null, repairResults: null,
+    createdAt: Date.now(), updatedAt: Date.now(),
+  };
 }
 
-function getSession(token) {
-  const s = sessionStore.get(token);
+function paymentRefId(stripeSessionId) {
+  return crypto.createHash("sha256").update(stripeSessionId).digest("hex");
+}
+
+async function createSession(stripeSessionId, email, clientRef = null) {
+  const token = crypto.randomBytes(32).toString("hex");
+  if (USE_MEMORY_SESSION_STORE) {
+    sessionStore.set(token, newSession(token, stripeSessionId, email, clientRef));
+    return token;
+  }
+  const ref = paymentRefs.doc(paymentRefId(stripeSessionId));
+  return firestore.runTransaction(async transaction => {
+    const existing = await transaction.get(ref);
+    if (existing.exists) return existing.data().token;
+    const session = newSession(token, stripeSessionId, email, clientRef);
+    transaction.create(paidSessions.doc(token), session);
+    transaction.create(ref, { token, createdAt: session.createdAt, expiresAt: session.createdAt + SESSION_TTL_MS });
+    return token;
+  });
+}
+
+async function getSession(token) {
+  const s = USE_MEMORY_SESSION_STORE
+    ? sessionStore.get(token)
+    : (await paidSessions.doc(token).get()).data();
   if (!s) return null;
   if (Date.now() - s.createdAt > SESSION_TTL_MS) {
-    sessionStore.delete(token);
+    if (USE_MEMORY_SESSION_STORE) sessionStore.delete(token);
+    else await paidSessions.doc(token).delete();
     return null;
   }
   return s;
 }
 
-function transitionState(token, newState) {
-  const s = getSession(token);
-  if (!s) return null;
-  const allowed = VALID_TRANSITIONS[s.state];
-  if (!allowed || !allowed.includes(newState)) return null;
-  s.state = newState;
-  s.updatedAt = Date.now();
-  sessionStore.set(token, s);
-  return s;
+async function saveSession(session) {
+  session.updatedAt = Date.now();
+  if (USE_MEMORY_SESSION_STORE) sessionStore.set(session.token, session);
+  else await paidSessions.doc(session.token).set(session);
+  return session;
 }
 
-// Cleanup expired sessions every 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [k, v] of sessionStore.entries()) {
-    if (now - v.createdAt > SESSION_TTL_MS) sessionStore.delete(k);
+async function transitionState(token, newState) {
+  if (USE_MEMORY_SESSION_STORE) {
+    const session = await getSession(token);
+    const allowed = session && VALID_TRANSITIONS[session.state];
+    if (!allowed || !allowed.includes(newState)) return null;
+    session.state = newState;
+    return saveSession(session);
   }
-}, 10 * 60 * 1000);
+  const doc = paidSessions.doc(token);
+  return firestore.runTransaction(async transaction => {
+    const snapshot = await transaction.get(doc);
+    if (!snapshot.exists) return null;
+    const session = snapshot.data();
+    if (Date.now() - session.createdAt > SESSION_TTL_MS) {
+      transaction.delete(doc);
+      return null;
+    }
+    const allowed = VALID_TRANSITIONS[session.state];
+    if (!allowed || !allowed.includes(newState)) return null;
+    session.state = newState;
+    session.updatedAt = Date.now();
+    transaction.set(doc, session);
+    return session;
+  });
+}
 
 // ─── Guardian Store ─────────────────────────────────────────────────────────
 // In-memory for beta; migrate to Firestore for production.
@@ -558,23 +595,32 @@ async function verifyStripeSession(sessionId) {
   return session;
 }
 
-function findSessionByStripeId(stripeSessionId) {
-  for (const [token, data] of sessionStore.entries()) {
-    if (data.stripeSessionId === stripeSessionId) return { token, data };
+async function findSessionByStripeId(stripeSessionId) {
+  if (USE_MEMORY_SESSION_STORE) {
+    for (const [token, data] of sessionStore.entries()) if (data.stripeSessionId === stripeSessionId) return { token, data };
+    return null;
   }
-  return null;
+  const ref = await paymentRefs.doc(paymentRefId(stripeSessionId)).get();
+  if (!ref.exists) return null;
+  const token = ref.data().token;
+  const data = await getSession(token);
+  return data ? { token, data } : null;
 }
 
 // The native Store app tags its Stripe Payment Link with a per-launch nonce
 // (client_reference_id) and polls until the paid checkout lands. A session exists
 // in the store ONLY after verifyStripeSession confirmed a fulfilled checkout, so a
 // match here IS proof of a paid (or 100%-off comped) run.
-function findSessionByClientRef(clientRef) {
+async function findSessionByClientRef(clientRef) {
   if (!clientRef) return null;
-  for (const [token, data] of sessionStore.entries()) {
-    if (data.clientRef && data.clientRef === clientRef) return { token, data };
+  if (USE_MEMORY_SESSION_STORE) {
+    for (const [token, data] of sessionStore.entries()) if (data.clientRef === clientRef) return { token, data };
+    return null;
   }
-  return null;
+  const result = await paidSessions.where("clientRef", "==", clientRef).limit(1).get();
+  if (result.empty) return null;
+  const data = result.docs[0].data();
+  return (await getSession(data.token)) ? { token: data.token, data } : null;
 }
 
 // Stateless payment confirmation. Cloud Run runs multiple instances and cold-starts
@@ -668,12 +714,12 @@ async function handleVerifyPayment(req, res) {
   const { sessionId } = body;
   if (!sessionId) return json(res, req, 400, { ok: false, error: "sessionId required" });
 
-  const existing = findSessionByStripeId(sessionId);
+  const existing = await findSessionByStripeId(sessionId);
   if (existing) return json(res, req, 200, { ok: true, token: existing.token });
 
   try {
     const session = await verifyStripeSession(sessionId);
-    const token = createSession(sessionId, session.customer_details?.email || "", session.client_reference_id || null);
+    const token = await createSession(sessionId, session.customer_details?.email || "", session.client_reference_id || null);
     console.log(`[verify-payment] Session created for Stripe ${sessionId.substring(0, 12)}…`);
     return json(res, req, 200, { ok: true, token });
   } catch (e) {
@@ -695,24 +741,24 @@ async function handleVerifyPayment(req, res) {
 async function handleAwaitPayment(req, res, ref) {
   if (!ref) return json(res, req, 400, { ok: false, paid: false, error: "ref required" });
   // Fast path: the session was created on THIS instance — no Stripe call needed.
-  const found = findSessionByClientRef(ref);
+  const found = await findSessionByClientRef(ref);
   if (found) return json(res, req, 200, { ok: true, paid: true, token: found.token });
   // Cross-instance / cold-start path: confirm the paid checkout straight from Stripe,
   // then materialize the local session here so the run can proceed and carry state.
   const stripeSession = await findFulfilledStripeSessionByClientRef(ref);
   if (stripeSession) {
-    const existing = findSessionByStripeId(stripeSession.id);
+    const existing = await findSessionByStripeId(stripeSession.id);
     const token = existing
       ? existing.token
-      : createSession(stripeSession.id, stripeSession.customer_details?.email || "", ref);
+      : await createSession(stripeSession.id, stripeSession.customer_details?.email || "", ref);
     console.log(`[await-payment] Confirmed via Stripe for nonce ${ref.substring(0, 8)}…`);
     return json(res, req, 200, { ok: true, paid: true, token });
   }
   return json(res, req, 200, { ok: false, paid: false, pending: true });
 }
 
-function handleVerifyToken(req, res, token) {
-  const s = token ? getSession(token) : null;
+async function handleVerifyToken(req, res, token) {
+  const s = token ? await getSession(token) : null;
   return json(res, req, 200, { ok: !!s, paid: !!s });
 }
 
@@ -722,7 +768,7 @@ async function handleCreateSession(req, res) {
   const { token } = body;
   if (!token) return json(res, req, 400, { ok: false, error: "token required" });
 
-  const session = getSession(token);
+  const session = await getSession(token);
   if (!session) return json(res, req, 404, { ok: false, error: "Invalid or expired session" });
 
   const scanUrl = `${CLOUD_RUN_URL}/scan?token=${token}`;
@@ -730,22 +776,22 @@ async function handleCreateSession(req, res) {
   return json(res, req, 200, { ok: true, sessionToken: token, scanUrl, scanCommand });
 }
 
-function handleScanScript(req, res, token) {
-  const session = getSession(token);
+async function handleScanScript(req, res, token) {
+  const session = await getSession(token);
   if (!session) return text(res, req, 200, `Write-Host ""
 Write-Host "  Session expired or invalid." -ForegroundColor Red
 Write-Host "  Please visit prontopc.online to start a new session." -ForegroundColor Red
 Write-Host ""
 Read-Host "  Press Enter to close"`);
 
-  if (session.state === "created") transitionState(token, "scan_served");
+  if (session.state === "created") await transitionState(token, "scan_served");
 
   const script = generateDiagnosticScript(token);
   return text(res, req, 200, script, "text/plain; charset=utf-8");
 }
 
-function handleScanBat(req, res, token) {
-  const session = getSession(token);
+async function handleScanBat(req, res, token) {
+  const session = await getSession(token);
   if (!session) {
     const origin = corsOrigin(req);
     res.writeHead(404, {
@@ -755,7 +801,7 @@ function handleScanBat(req, res, token) {
     return res.end("Session not found. Please visit prontopc.online.");
   }
 
-  if (session.state === "created") transitionState(token, "scan_served");
+  if (session.state === "created") await transitionState(token, "scan_served");
 
   const scanUrl = `${CLOUD_RUN_URL}/scan?token=${token}`;
   // Windows batch file that self-elevates via UAC, then runs the in-memory PowerShell scan.
@@ -798,8 +844,8 @@ powershell -ExecutionPolicy Bypass -Command "irm '${scanUrl}' | iex"
   res.end(bat);
 }
 
-function handleRepairScript(req, res, token) {
-  const session = getSession(token);
+async function handleRepairScript(req, res, token) {
+  const session = await getSession(token);
   if (!session) return text(res, req, 200, `Write-Host ""
 Write-Host "  Session expired or invalid." -ForegroundColor Red
 Write-Host "  Please visit prontopc.online to start a new session." -ForegroundColor Red
@@ -808,7 +854,7 @@ Read-Host "  Press Enter to close"`);
   if (session.state !== "consented" && session.state !== "repair_served")
     return text(res, req, 403, "Write-Host 'Repairs have not been approved for this session.' -ForegroundColor Red");
 
-  if (session.state === "consented") transitionState(token, "repair_served");
+  if (session.state === "consented") await transitionState(token, "repair_served");
 
   // Serve only the repairs the client approved (per-item consent). If no selection
   // was recorded (older sessions), fall back to the full plan.
@@ -833,7 +879,7 @@ async function handleSubmitDiagnostics(req, res) {
   // create a session here — doing so was a server-side free path: a forged/unknown
   // token got a full AI plan without paying, wider than the client gate. Unknown or
   // expired token ⇒ no run. This is the backend half of "no free path."
-  const session = getSession(token);
+  const session = await getSession(token);
   if (!session) return json(res, req, 402, { ok: false, status: "unpaid", error: "No paid session for this token. Complete checkout first." });
 
   console.log(`[submit-diagnostics] Token ${token.substring(0, 8)}…`);
@@ -844,7 +890,8 @@ async function handleSubmitDiagnostics(req, res) {
     const { plan, provenance } = await authorRepairPlan(diagnostics);
     session.repairPlan = plan;
     session.planProvenance = provenance;
-    transitionState(token, "diagnosed");
+    await saveSession(session);
+    await transitionState(token, "diagnosed");
     console.log(`[submit-diagnostics] Done — ${plan.actions?.length || 0} actions via ${provenance.provider}`);
     return json(res, req, 200, { ok: true, status: "ok", plan, provenance });
   } catch (e) {
@@ -855,8 +902,47 @@ async function handleSubmitDiagnostics(req, res) {
   }
 }
 
-function handleSessionStatus(req, res, token) {
-  const session = getSession(token);
+// The native app may author its plan with the bundled on-device model.  That plan
+// still needs an authoritative server session before the customer can consent or
+// repair: otherwise the browser, receipt, and report describe a different run.
+async function handleNativePlan(req, res) {
+  let body;
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { token, diagnostics, plan, provenance } = body || {};
+  if (!token || !diagnostics || !plan || !Array.isArray(plan.actions))
+    return json(res, req, 400, { ok: false, error: "token, diagnostics, and plan.actions required" });
+
+  const session = await getSession(token);
+  if (!session) return json(res, req, 402, { ok: false, error: "No paid session for this token. Complete checkout first." });
+  if (session.state !== "created" && session.state !== "diagnosed")
+    return json(res, req, 409, { ok: false, error: `Cannot record a plan in state: ${session.state}` });
+
+  // Preserve customer-visible text but accept only catalogue action IDs.  The
+  // native client validates against its envelope too; this is the independent
+  // server boundary that keeps a forged browser payload from becoming a repair.
+  const seen = new Set();
+  const actions = plan.actions.filter(action => {
+    const id = action && typeof action.id === "string" ? action.id : "";
+    if (!REPAIR_ACTION_CATALOGUE.has(id) || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+  if (actions.length === 0)
+    return json(res, req, 400, { ok: false, error: "No admissible repair actions in native plan" });
+
+  session.diagnostics = diagnostics;
+  session.hostname = diagnostics.os?.hostname || session.hostname || "Unknown PC";
+  session.repairPlan = { ...plan, actions };
+  session.planProvenance = typeof provenance === "object" && provenance ? provenance : { provider: "native" };
+  await saveSession(session);
+  if (session.state === "created" && !await transitionState(token, "diagnosed"))
+    return json(res, req, 409, { ok: false, error: "Could not advance session to diagnosed" });
+
+  return json(res, req, 200, { ok: true, actionIds: actions.map(a => a.id), state: (await getSession(token))?.state });
+}
+
+async function handleSessionStatus(req, res, token) {
+  const session = await getSession(token);
   if (!session) return json(res, req, 404, { ok: false, state: "expired" });
   return json(res, req, 200, {
     ok: true,
@@ -870,8 +956,8 @@ function handleSessionStatus(req, res, token) {
   });
 }
 
-function handleSessionFindings(req, res, token) {
-  const session = getSession(token);
+async function handleSessionFindings(req, res, token) {
+  const session = await getSession(token);
   if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
   if (!session.repairPlan) return json(res, req, 404, { ok: false, error: "Diagnostics not yet complete" });
 
@@ -888,7 +974,7 @@ function handleSessionFindings(req, res, token) {
 }
 
 async function handleSessionConsent(req, res, token) {
-  const session = getSession(token);
+  const session = await getSession(token);
   if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
   if (session.state !== "diagnosed") return json(res, req, 400, { ok: false, error: `Cannot consent in state: ${session.state}` });
 
@@ -902,20 +988,38 @@ async function handleSessionConsent(req, res, token) {
   const allIds = (session.repairPlan?.actions || []).map(a => a.id);
   session.selectedActionIds = selectedIds === null ? allIds : selectedIds.filter(id => allIds.includes(id));
 
-  transitionState(token, "consented");
+  await saveSession(session);
+  await transitionState(token, "consented");
   const repairUrl = `${CLOUD_RUN_URL}/repair?token=${token}`;
   const repairCommand = `powershell -ExecutionPolicy Bypass -Command "irm '${repairUrl}' | iex"`;
   return json(res, req, 200, { ok: true, repairUrl, repairCommand, approvedCount: session.selectedActionIds.length });
 }
 
+// Native repair execution is a distinct acknowledgement point.  It advances the
+// session only after per-item consent is recorded and returns the authoritative
+// action list that the desktop process may execute.
+async function handleNativeRepairStart(req, res, token) {
+  const session = await getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
+  if (session.state !== "consented")
+    return json(res, req, 409, { ok: false, error: `Cannot start native repairs in state: ${session.state}` });
+
+  if (!await transitionState(token, "repair_served"))
+    return json(res, req, 409, { ok: false, error: "Could not start native repairs" });
+
+  const selected = new Set(session.selectedActionIds || []);
+  const actions = (session.repairPlan?.actions || []).filter(action => selected.has(action.id));
+  return json(res, req, 200, { ok: true, actions });
+}
+
 // Approved repair actions as JSON — consumed by the native Store app to run
 // repairs itself (mirrors the filtering the /repair PowerShell script applies).
-function handleRepairActions(req, res, token) {
-  const session = getSession(token);
+async function handleRepairActions(req, res, token) {
+  const session = await getSession(token);
   if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
   if (session.state !== "consented" && session.state !== "repair_served")
     return json(res, req, 403, { ok: false, error: "Repairs not approved for this session" });
-  if (session.state === "consented") transitionState(token, "repair_served");
+  if (session.state === "consented") await transitionState(token, "repair_served");
 
   const plan = session.repairPlan || {};
   const selected = session.selectedActionIds;
@@ -1267,13 +1371,14 @@ async function handleReportAiUnavailable(req, res) {
   const { token, machineId, machineName, reason } = body || {};
   if (!token) return json(res, req, 400, { ok: false, error: "token required" });
 
-  const session = getSession(token);
+  const session = await getSession(token);
 
   // Record the incident on the session for support/audit (best-effort).
   if (session) {
     session.hostname = machineName || session.hostname;
     session.aiUnavailableAt = Date.now();
     session.aiUnavailableReason = reason || "";
+    await saveSession(session);
   }
 
   // Issue the 100% make-good once per session, tied to the customer's email.
@@ -1286,6 +1391,7 @@ async function handleReportAiUnavailable(req, res) {
     if (coupon) {
       session.makeGoodCouponCode = couponCode = coupon.code;
       session.makeGoodCouponExpiresAt = couponExpiresAt = coupon.expiresAt;
+      await saveSession(session);
       await sendMakeGoodEmail(session);
     }
   }
@@ -1302,11 +1408,24 @@ async function handleSubmitRepairResults(req, res) {
   const { token, results } = body;
   if (!token) return json(res, req, 400, { ok: false, error: "token required" });
 
-  const session = getSession(token);
+  const session = await getSession(token);
   if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
+  if (session.state !== "repair_served")
+    return json(res, req, 409, { ok: false, error: `Cannot submit results in state: ${session.state}` });
+  if (!Array.isArray(results)) return json(res, req, 400, { ok: false, error: "results must be an array" });
+
+  const approved = new Set(session.selectedActionIds || []);
+  const reported = results.map(r => r && typeof r.action === "string" ? r.action : "");
+  const reportedSet = new Set(reported);
+  if (reported.length !== approved.size || reportedSet.size !== reported.length || reported.some(id => !approved.has(id)))
+    return json(res, req, 400, { ok: false, error: "Repair results do not match the approved actions" });
 
   session.repairResults = results;
-  transitionState(token, "completed");
+  await saveSession(session);
+  const completedSession = await transitionState(token, "completed");
+  if (!completedSession)
+    return json(res, req, 409, { ok: false, error: "Could not complete repair session" });
+  Object.assign(session, completedSession);
 
   // Mint a 50%-off "next repair" coupon (once per session), store it, and email it.
   if (!session.couponCode) {
@@ -1314,6 +1433,7 @@ async function handleSubmitRepairResults(req, res) {
     if (coupon) {
       session.couponCode = coupon.code;
       session.couponExpiresAt = coupon.expiresAt;
+      await saveSession(session);
       await sendCouponEmail(session);
     }
   }
@@ -1322,8 +1442,8 @@ async function handleSubmitRepairResults(req, res) {
   return json(res, req, 200, { ok: true, couponCode: session.couponCode || null, couponExpiresAt: session.couponExpiresAt || null });
 }
 
-function handleSessionReport(req, res, token) {
-  const session = getSession(token);
+async function handleSessionReport(req, res, token) {
+  const session = await getSession(token);
   if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
   if (!session.diagnostics) return json(res, req, 404, { ok: false, error: "No diagnostics available" });
 
@@ -2117,8 +2237,8 @@ if ($needsRestart) {
 
 // ─── Post-Restart Verification ───────────────────────────────────────────────
 
-function handleVerifyScript(req, res, token) {
-  const session = getSession(token);
+async function handleVerifyScript(req, res, token) {
+  const session = await getSession(token);
   if (!session) return text(res, req, 200, `Write-Host "  Session expired." -ForegroundColor Red
 Read-Host "  Press Enter to close"`);
   return text(res, req, 200, generateVerifyScript(token), "text/plain; charset=utf-8");
@@ -2129,9 +2249,10 @@ async function handleVerifyResults(req, res) {
   try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
   const { token, verification } = body;
   if (!token) return json(res, req, 400, { ok: false, error: "token required" });
-  const session = getSession(token);
+  const session = await getSession(token);
   if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
   session.verification = verification;
+  await saveSession(session);
   console.log(`[verify-results] Session ${token.substring(0, 8)}… verified (healthy=${verification?.healthy})`);
   return json(res, req, 200, { ok: true });
 }
@@ -2372,7 +2493,7 @@ async function handleGuardianSubscribe(req, res) {
 
   let customerEmail = "";
   if (token) {
-    const session = getSession(token);
+    const session = await getSession(token);
     if (session) customerEmail = session.email || "";
   }
 
@@ -2682,45 +2803,47 @@ const server = http.createServer(async (req, res) => {
   try {
     // Health
     if (method === "GET" && pathname === "/health")
-      return json(res, req, 200, { ok: true, service: "pronto-pc", version: "2.0.0", model: LLM_MODEL, sessions: sessionStore.size, timestamp: new Date().toISOString() });
+      return json(res, req, 200, { ok: true, service: "pronto-pc", version: "2.0.0", model: LLM_MODEL, sessionStore: USE_MEMORY_SESSION_STORE ? "memory-local-only" : "firestore", timestamp: new Date().toISOString() });
 
     // Stripe verification
     if (method === "POST" && pathname === "/api/verify-payment") return await handleVerifyPayment(req, res);
 
     // Native Store-app pay-per-run gate (poll after checkout, or re-verify a deep-link token)
     if (method === "GET" && pathname === "/api/await-payment") return await handleAwaitPayment(req, res, url.searchParams.get("ref"));
-    if (method === "GET" && pathname === "/api/verify-token") return handleVerifyToken(req, res, url.searchParams.get("token"));
+    if (method === "GET" && pathname === "/api/verify-token") return await handleVerifyToken(req, res, url.searchParams.get("token"));
 
     // Session management
     if (method === "POST" && pathname === "/api/create-session") return await handleCreateSession(req, res);
     if (method === "POST" && pathname === "/api/submit-diagnostics") return await handleSubmitDiagnostics(req, res);
+    if (method === "POST" && pathname === "/api/native-plan") return await handleNativePlan(req, res);
     if (method === "POST" && pathname === "/api/submit-repair-results") return await handleSubmitRepairResults(req, res);
     if (method === "POST" && pathname === "/api/report-ai-unavailable") return await handleReportAiUnavailable(req, res);
     if (method === "POST" && pathname === "/api/verify-results") return await handleVerifyResults(req, res);
 
     // Session status/findings/consent/report
-    const sessionMatch = pathname.match(/^\/api\/session\/([a-f0-9]{64})\/(status|findings|consent|report|repair-actions)$/);
+    const sessionMatch = pathname.match(/^\/api\/session\/([a-f0-9]{64})\/(status|findings|consent|repair-start|report|repair-actions)$/);
     if (sessionMatch) {
       const [, token, action] = sessionMatch;
-      if (method === "GET" && action === "status") return handleSessionStatus(req, res, token);
-      if (method === "GET" && action === "findings") return handleSessionFindings(req, res, token);
+      if (method === "GET" && action === "status") return await handleSessionStatus(req, res, token);
+      if (method === "GET" && action === "findings") return await handleSessionFindings(req, res, token);
       if (method === "POST" && action === "consent") return await handleSessionConsent(req, res, token);
-      if (method === "GET" && action === "report") return handleSessionReport(req, res, token);
-      if (method === "GET" && action === "repair-actions") return handleRepairActions(req, res, token);
+      if (method === "POST" && action === "repair-start") return await handleNativeRepairStart(req, res, token);
+      if (method === "GET" && action === "report") return await handleSessionReport(req, res, token);
+      if (method === "GET" && action === "repair-actions") return await handleRepairActions(req, res, token);
     }
 
     // Dynamic PowerShell scripts and launcher files
     const scanToken = method === "GET" && pathname === "/scan" && url.searchParams.get("token");
-    if (scanToken) return handleScanScript(req, res, scanToken);
+    if (scanToken) return await handleScanScript(req, res, scanToken);
 
     const batToken = method === "GET" && pathname === "/scan.bat" && url.searchParams.get("token");
-    if (batToken) return handleScanBat(req, res, batToken);
+    if (batToken) return await handleScanBat(req, res, batToken);
 
     const repairToken = method === "GET" && pathname === "/repair" && url.searchParams.get("token");
-    if (repairToken) return handleRepairScript(req, res, repairToken);
+    if (repairToken) return await handleRepairScript(req, res, repairToken);
 
     const verifyToken = method === "GET" && pathname === "/verify" && url.searchParams.get("token");
-    if (verifyToken) return handleVerifyScript(req, res, verifyToken);
+    if (verifyToken) return await handleVerifyScript(req, res, verifyToken);
 
     if (method === "GET" && pathname === "/admin/loyalty") return await handleLoyaltyLedger(req, res, url);
 
