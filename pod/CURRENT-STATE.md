@@ -19,10 +19,49 @@ before relying on it.
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-08-31, post-power-outage resume): **80 totems, ALL HOLD** (18 Claude-lane + 23 Codex-lane
+> Latest verifier run (2026-08-31): **87 totems, ALL HOLD** (24 Claude-lane + 24 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
+> This nav view is re-bound by the head-refresh totem **TOTEM-C-0063**; the substantive current head is **TOTEM-C-0062**.
 
-**Current head — TOTEM-X-0061** (2026-08-31, Codex) — **Local repair-plan reliability fix (greedy decoding).** The
+**Current head — TOTEM-C-0062** (2026-08-31, Claude) — **Part B: scripted Technician findings presentation + X-0057
+question gate (generative gate stays CLOSED).** Built the findings-stage pause Tracey directed in TOTEM-X-0057 into the
+native app's Findings screen. **(1) Grounded narration:** `ShowFindings` no longer displays the model's free-form
+`summary` (which can be garbled); `FindingsSummary` is now deterministic templated text built from the **validated**
+plan — count of repairs + total measured reclaim + the read-only/nothing-changed-yet fact (or a clean-PC line at zero).
+With the action list — which already carries the completeness additions from **C-0060** — that is the whole, honest
+picture. **(2) X-0057 question gate:** after findings the Technician asks *"Do you have any questions about what was
+found before I begin the repair?"* with a scripted, **service-only** Q&A and a **separate** repair-consent continuation
+(the existing "Perform Repairs" explicit consent stays hidden until the customer chooses to continue). The gate is fully
+scripted — `ToggleQa_Click`/`GateContinue_Click` only flip visibility + set the Custodian caption; they **never** invoke
+`CustodianChat` or the on-device model, so the **AEGIS §8 peer-facing generative gate stays CLOSED** (`TechnicianEntry`
+still governance-gated + hidden; no repair runs in the gate; consent + repair-start unchanged). Mirrors X-0058's local
+service-only surface. **Proof:** Release build **0/0** (XAML + code-behind wiring). Visual/E2E is Tracey's controlled-run
+step (no WPF UI harness). **Caveat:** `MainWindow.xaml.cs` was frozen by X-0055 — this edit (like X-0061) lands after
+the freeze, so the acceptance package must be re-frozen/rebuilt to include Part B **and** X-0061 before it reaches a
+customer.
+
+**Prior head — TOTEM-C-0060** (2026-08-31, Claude) — **Completeness backstop landed (Part A).** Finished the in-flight
+`Envelope.cs` backstop (the `SpaceActions` label map + `Label()` helper were already on disk from the Codex lane; the
+Part-A injection was not yet written — surfaced on resume as a single verifier DRIFT on `Envelope.cs`, no-fault, just
+identified). `Envelope.Validate` now, **after** validating the model's authored actions, injects any of the six
+**measured-space** cleanups (`mb.source==field`: temp, browser caches, recycle bin, WU cache, delivery optimization,
+windows.old) that are **admissible on this machine + omitted by the model + carry a positive measured reclaim
+(`ClampMb>0`)** — stamped with the plain-English `friendly_name`+`category`, envelope `risk`/`requires_restart` (never
+the author's), and the envelope's **measured** MB. Same class as ClampMb/**TOTEM-0011** — the envelope owns the MB, and
+now also owns whether a measured cleanup appears at all. Injected **before** the existing subsumption + max_actions
+passes, so an added umbrella (`clear_all_browser_caches`) subsumes any model-authored bare per-browser member — **never
+double-counted**. Survivors are recorded as `completeness_added` metadata on the plan (auditable; flows to the backend
+via `{...plan}`; consent + repair-start already operate on the recorded action list, so an added action is consented
+and run like any other). Validate signature stays `(plan, dropped)` — **zero call-site ripple** (single caller
+`Orchestrator.cs:74`). Stays inside **I2**: runs only because a provider actually authored a plan; adds only admissible,
+measured, catalogue actions. **Proof:** Release build **0/0**; `tests/PodEval` extended with a **6-check backstop
+fixture — ALL PASS** (recycle bin added @ 1024 MB with correct label+risk; browser-cache umbrella added @ 300 MB;
+`completeness_added` lists both; the added umbrella subsumes the model's bare `clear_chrome_cache` = no double-count;
+a model-authored measured action is not re-added). **Part B** (scripted Custodian presentation of the complete grounded
+findings + the X-0057 findings-stage question gate) is **not** done here; peer-facing Technician gate stays **CLOSED**.
+No backend/deploy/signing/packaging touched.
+
+**Prior head — TOTEM-X-0061** (2026-08-31, Codex) — **Local repair-plan reliability fix (greedy decoding).** The
 installed package's Gemma model/config/tokenizer/ONNX runtime were all present and a real local smoke run authored a
 valid plan; the intermittent failure was **sampled** structured generation occasionally emitting non-parseable JSON,
 making `GemmaLocalPlanner` decline and (with cloud on the known 429) sending a *paid* customer to the make-good screen.

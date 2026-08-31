@@ -51,6 +51,13 @@ sealed class OnnxGenAiInference : ILocalInference
             int inputLen = inputIds.Length;
 
             using var gp = new GeneratorParams(_model);
+            // A repair plan is structured output, not a creative response.  The bundled
+            // GenAI configuration defaults to sampling; if guidance is unavailable on a
+            // particular runtime, sampling can occasionally produce prose or malformed
+            // JSON.  That makes the planner decline and, when the optional cloud fallback
+            // is also unavailable, sends a paid customer to make-good.  Greedy decoding
+            // keeps the local plan repeatable and parseable on every supported device.
+            gp.SetSearchOption("do_sample", false);
             gp.SetSearchOption("max_length", (double)(inputLen + 1024));
             if (!string.IsNullOrEmpty(jsonSchema))
             {

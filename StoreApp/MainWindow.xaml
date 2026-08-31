@@ -89,25 +89,61 @@
           </ScrollViewer>
           <StackPanel Grid.Row="2" Margin="0,12,0,0">
             <TextBlock x:Name="FindingsTotal" Foreground="#5be3a0" FontWeight="Bold" FontSize="13" Margin="0,0,0,10"/>
-            <Button x:Name="ProceedButton" Content="Perform Repairs" Click="Proceed_Click"
-                    Height="50" FontSize="17" FontWeight="Bold" Foreground="#ffffff" Cursor="Hand">
-              <Button.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                  <GradientStop Color="#7c5cff" Offset="0"/>
-                  <GradientStop Color="#4f7dff" Offset="1"/>
-                </LinearGradientBrush>
-              </Button.Background>
-            </Button>
-            <TextBlock Text="Permission is already granted — repairs run immediately."
-                       Foreground="#c3c8e6" FontSize="11" TextAlignment="Center" Margin="0,8,0,0"/>
-            <TextBlock TextAlignment="Center" Margin="0,4,0,0" FontSize="11">
-              <Hyperlink Click="OpenLicenses_Click" Foreground="#8b8fb0" TextDecorations="Underline">AI model &amp; licenses</Hyperlink>
-            </TextBlock>
-            <!-- Entry to the conversational Technician (Phase 2). Hidden until a real
-                 IPeerGovernance opens the AEGIS §8 gate, so no ungoverned chat is reachable. -->
-            <TextBlock x:Name="TechnicianEntry" TextAlignment="Center" Margin="0,6,0,0" FontSize="12" Visibility="Collapsed">
-              <Hyperlink Click="OpenChat_Click" Foreground="#a78bfa" TextDecorations="Underline">Ask the Technician about this plan</Hyperlink>
-            </TextBlock>
+
+            <!-- X-0057 findings-stage question gate: the Technician offers a pause for
+                 questions about what was found BEFORE the separate repair-consent step.
+                 Fully SCRIPTED + service-only — it never invokes the on-device model, so the
+                 AEGIS §8 peer-facing generative Technician gate stays CLOSED here. -->
+            <StackPanel x:Name="FindingsGate">
+              <TextBlock Text="Do you have any questions about what was found before I begin the repair?"
+                         Foreground="#eef1ff" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,10"/>
+              <Border x:Name="FindingsQa" Visibility="Collapsed" Background="#12142c" CornerRadius="10" Padding="14,12" Margin="0,0,0,12">
+                <StackPanel>
+                  <TextBlock Text="Will this change or delete my personal files?" Foreground="#a78bfa" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap"/>
+                  <TextBlock Text="No. The scan is read-only, and the repairs only clear caches, temporary files, and leftover system files — never your documents, photos, or personal data." Foreground="#c3c8e6" FontSize="12.5" TextWrapping="Wrap" Margin="0,2,0,10"/>
+                  <TextBlock Text="What does “space to reclaim” mean?" Foreground="#a78bfa" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap"/>
+                  <TextBlock Text="Each amount shown is what our read-only scan actually measured on this PC — space currently held by temporary or leftover files that are safe to clear." Foreground="#c3c8e6" FontSize="12.5" TextWrapping="Wrap" Margin="0,2,0,10"/>
+                  <TextBlock Text="Can I skip something?" Foreground="#a78bfa" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap"/>
+                  <TextBlock Text="Yes. Uncheck any item in the list above you'd rather not run. Nothing happens until you choose “Perform Repairs.”" Foreground="#c3c8e6" FontSize="12.5" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                </StackPanel>
+              </Border>
+              <Button x:Name="AskQuestionButton" Content="I have a question" Click="ToggleQa_Click"
+                      Height="42" FontSize="14" Foreground="#eef1ff" Background="#20233f" BorderBrush="#3a3f66"
+                      BorderThickness="1" Cursor="Hand" Margin="0,0,0,8"/>
+              <Button x:Name="BeginRepairButton" Content="No — continue to repairs" Click="GateContinue_Click"
+                      Height="50" FontSize="17" FontWeight="Bold" Foreground="#ffffff" Cursor="Hand">
+                <Button.Background>
+                  <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#7c5cff" Offset="0"/>
+                    <GradientStop Color="#4f7dff" Offset="1"/>
+                  </LinearGradientBrush>
+                </Button.Background>
+              </Button>
+            </StackPanel>
+
+            <!-- Separate repair-consent continuation (X-0057): reached only after the
+                 findings-stage question gate above. -->
+            <StackPanel x:Name="FindingsConsent" Visibility="Collapsed">
+              <Button x:Name="ProceedButton" Content="Perform Repairs" Click="Proceed_Click"
+                      Height="50" FontSize="17" FontWeight="Bold" Foreground="#ffffff" Cursor="Hand">
+                <Button.Background>
+                  <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#7c5cff" Offset="0"/>
+                    <GradientStop Color="#4f7dff" Offset="1"/>
+                  </LinearGradientBrush>
+                </Button.Background>
+              </Button>
+              <TextBlock Text="Permission is already granted — repairs run immediately."
+                         Foreground="#c3c8e6" FontSize="11" TextAlignment="Center" Margin="0,8,0,0"/>
+              <TextBlock TextAlignment="Center" Margin="0,4,0,0" FontSize="11">
+                <Hyperlink Click="OpenLicenses_Click" Foreground="#8b8fb0" TextDecorations="Underline">AI model &amp; licenses</Hyperlink>
+              </TextBlock>
+              <!-- Entry to the conversational Technician (Phase 2). Hidden until a real
+                   IPeerGovernance opens the AEGIS §8 gate, so no ungoverned chat is reachable. -->
+              <TextBlock x:Name="TechnicianEntry" TextAlignment="Center" Margin="0,6,0,0" FontSize="12" Visibility="Collapsed">
+                <Hyperlink Click="OpenChat_Click" Foreground="#a78bfa" TextDecorations="Underline">Ask the Technician about this plan</Hyperlink>
+              </TextBlock>
+            </StackPanel>
           </StackPanel>
         </Grid>
 

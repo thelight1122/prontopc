@@ -28,6 +28,26 @@ sealed class Envelope
     readonly int _maxActions;
     readonly List<(string umbrella, string[] members)> _subsumption;
 
+    // Plain-English labels for the measured-space cleanups, in customer-facing display
+    // order. Used to (a) name any action the model left unlabeled or echoed as a raw id,
+    // and (b) label completeness-backstop additions (see Validate). These are the six
+    // catalogue actions whose reclaimable space is MEASURED from the read-only scan
+    // (mb.source == "field"); every other action's space is zero/none.
+    static readonly (string id, string name, string category)[] SpaceActions =
+    {
+        ("clear_temp_files",            "Clear temporary files",                 "Cleanup"),
+        ("clear_all_browser_caches",    "Clear browser caches",                  "Cleanup"),
+        ("empty_recycle_bin",           "Empty the Recycle Bin",                 "Cleanup"),
+        ("clean_windows_update_cache",  "Clear Windows Update cache",            "Cleanup"),
+        ("clean_delivery_optimization", "Clear Windows Update delivery files",   "Cleanup"),
+        ("remove_windows_old",          "Remove previous Windows installation",  "Cleanup"),
+    };
+    static (string name, string category)? Label(string id)
+    {
+        foreach (var a in SpaceActions) if (a.id == id) return (a.name, a.category);
+        return null;
+    }
+
     Envelope(string json)
     {
         _sha256Upper = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(json)));
@@ -115,6 +135,37 @@ sealed class Envelope
             }
         }
 
+        // ── completeness backstop ──────────────────────────────────────────────
+        // The model authors the plan, but it sometimes OMITS a cleanup whose space the
+        // read-only scan actually MEASURED (> 0 MB). Those are grounded, admissible facts
+        // the customer paid to have found, so we surface every measured reclaim the model
+        // left out. This is the same class of post-processing as ClampMb — the envelope,
+        // not the model, owns the measured MB (TOTEM-0011); here it also owns whether a
+        // measured cleanup appears at all. Stays inside I2: it runs only because a provider
+        // actually authored a plan, and adds ONLY catalogue actions that are admissible on
+        // THIS machine with a positive measured reclaim. The subsumption + max_actions
+        // passes below apply to these additions too, so an added umbrella (browser caches)
+        // is never double-counted with a per-browser member the model may have authored.
+        var addedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (id, _, _) in SpaceActions)
+        {
+            if (seenIds.Contains(id)) continue;              // model already included it
+            if (!admissible.Contains(id)) continue;          // precondition false on this machine
+            var def = ActionDef(id);
+            var candidate = new JsonObject { ["id"] = id };
+            int mb = ClampMb(def, diag, candidate);          // envelope's measured reclaim
+            if (mb <= 0) continue;                            // nothing measured to reclaim
+            var lbl = Label(id)!.Value;
+            candidate["category"] = lbl.category;
+            candidate["friendly_name"] = lbl.name;
+            candidate["risk"] = def.GetProperty("risk").GetString();
+            candidate["requires_restart"] = def.TryGetProperty("requires_restart", out var rr) && rr.GetBoolean();
+            candidate["estimated_mb_recovered"] = mb;
+            kept.Add(candidate);
+            seenIds.Add(id);
+            addedIds.Add(id);
+        }
+
         // subsumption: drop members whose umbrella is present
         foreach (var (umbrella, members) in _subsumption)
             if (seenIds.Contains(umbrella))
@@ -131,6 +182,19 @@ sealed class Envelope
             int last = kept.Count - 1;
             dropped.Add($"{(kept[last] as JsonObject)?["id"]?.GetValue<string>()}: over max_actions ({_maxActions})");
             kept.RemoveAt(last);
+        }
+
+        // Record which completeness additions actually survived (subsumption / max_actions
+        // may have dropped one, logged in `dropped`) as auditable metadata on the plan. It
+        // flows to the backend via {...plan}; consent + repair-start already operate on the
+        // recorded action list, so an added action is consented and run like any other.
+        if (addedIds.Count > 0)
+        {
+            var survivors = new JsonArray();
+            foreach (var node in kept)
+                if (node is JsonObject ko && ko["id"]?.GetValue<string>() is string kid && addedIds.Contains(kid))
+                    survivors.Add(kid);
+            if (survivors.Count > 0) outPlan["completeness_added"] = survivors;
         }
 
         outPlan["actions"] = kept;

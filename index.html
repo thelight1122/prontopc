@@ -35,8 +35,8 @@
     html{scroll-behavior:smooth}
     body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
     a{color:inherit}
-    /* Fit the complete 1792×1024 desktop composition on every resize; crop neither its header nor its CTA. */
-    .desktop-art{position:relative;inline-size:min(100dvw,calc(100dvh * var(--desktop-art-ratio)));aspect-ratio:var(--desktop-art-ratio);margin-inline:auto;overflow:hidden;background:#030817}
+    /* Match the browser width so a short full-screen viewport never leaves side gutters. The composition keeps its aspect ratio and remains vertically scrollable when needed. */
+    .desktop-art{position:relative;inline-size:100%;aspect-ratio:var(--desktop-art-ratio);margin-inline:auto;overflow:hidden;background:#030817}
     .desktop-art>img{inline-size:100%;block-size:100%;object-fit:contain;display:block}
     .hotspot{position:absolute;display:block;border-radius:14px;text-indent:-9999px;overflow:hidden}
     .hotspot:focus-visible{outline:4px solid #fff;outline-offset:4px;box-shadow:0 0 0 8px #168cff}

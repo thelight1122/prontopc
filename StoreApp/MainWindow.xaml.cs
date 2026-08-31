@@ -265,8 +265,6 @@ public partial class MainWindow : Window
     void ShowFindings(JsonElement plan)
     {
         Cust.SetState(CustodianState.Presenting);
-        string summary = plan.TryGetProperty("summary", out var s) ? (s.GetString() ?? "") : "";
-        FindingsSummary.Text = summary;
         ActionList.Children.Clear();
         _rows.Clear();
 
@@ -297,10 +295,65 @@ public partial class MainWindow : Window
             }
         }
         UpdateTotal();
+
+        // Grounded, templated narration of the COMPLETE findings — deterministic text
+        // built from the validated plan (not the model's free-form summary, which can be
+        // garbled or drift from what was actually measured). The action list below carries
+        // the completeness-backstop additions (Envelope, TOTEM-C-0060), so this line and the
+        // list together are the whole, honest picture.
+        int foundCount = _rows.Count;
+        int foundMb = _rows.Sum(r => Mb(r.action.GetValueOrDefault("estimated_mb_recovered")));
+        // How many findings were surfaced by the completeness backstop (TOTEM-C-0060):
+        // measured, admissible cleanups our scan added because the AI plan left them out.
+        // Calling these out is an honest trust signal — the customer sees the list is complete.
+        int addedCount = plan.TryGetProperty("completeness_added", out var added) && added.ValueKind == JsonValueKind.Array
+            ? added.GetArrayLength() : 0;
+        string addedNote = addedCount == 0 ? ""
+            : addedCount == foundCount
+                ? (addedCount == 1
+                    ? " Our scan measured this one directly, to be sure nothing was missed."
+                    : $" Our scan measured all {addedCount} directly, to be sure nothing was missed.")
+                : $" {addedCount} of {(addedCount == 1 ? "them was" : "them were")} measured directly by our scan and added so nothing was missed.";
+        FindingsSummary.Text = foundCount == 0
+            ? "Good news — our read-only scan didn't find anything on this PC that needs repair. Nothing has been changed."
+            : $"Our read-only scan is complete. We found {foundCount} item{(foundCount == 1 ? "" : "s")} worth repairing, listed below."
+              + (foundMb > 0 ? $" We can safely reclaim about {FormatMb(foundMb)} of space." : "")
+              + addedNote
+              + " Nothing has been changed on this PC yet.";
+
+        // Enter the X-0057 findings-stage question gate: present findings + the pause for
+        // questions, with the separate repair-consent step hidden until the customer
+        // continues. Reset each time findings are shown.
+        FindingsQa.Visibility = Visibility.Collapsed;
+        AskQuestionButton.Content = "I have a question";
+        FindingsGate.Visibility = Visibility.Visible;
+        FindingsConsent.Visibility = Visibility.Collapsed;
+
         // The Technician entry is shown ONLY when governance admits a peer-facing offering.
         // AbsentGovernance (the wired default) never admits, so the entry stays hidden.
         TechnicianEntry.Visibility = _gov.OfferingAllowed(out _) ? Visibility.Visible : Visibility.Collapsed;
         ShowPanel(FindingsPanel);
+    }
+
+    // ── X-0057 findings-stage question gate (scripted; no generative model) ─────
+    // Toggle the service-only Q&A grounded in the presented findings. This is static
+    // templated content — it does NOT invoke CustodianChat / the on-device model, so
+    // the AEGIS §8 peer-facing gate stays closed.
+    void ToggleQa_Click(object sender, RoutedEventArgs e)
+    {
+        bool show = FindingsQa.Visibility != Visibility.Visible;
+        FindingsQa.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        AskQuestionButton.Content = show ? "Hide questions" : "I have a question";
+    }
+
+    // The customer has no (further) questions: advance from the question gate to the
+    // separate repair-consent continuation. No repair runs here — the explicit consent
+    // is still the "Perform Repairs" button in FindingsConsent.
+    void GateContinue_Click(object sender, RoutedEventArgs e)
+    {
+        FindingsGate.Visibility = Visibility.Collapsed;
+        FindingsConsent.Visibility = Visibility.Visible;
+        Cust.SetState(CustodianState.Presenting, "Review the repairs below, then choose Perform Repairs when you're ready.");
     }
 
     void UpdateTotal()

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ProntoPC;
 
 // Pod eval harness: runs the shipping Envelope + GemmaLocalPlanner logic against
@@ -64,6 +65,30 @@ Check(kept.ContainsKey("remove_windows_old") && kept["remove_windows_old"]!["est
 Check(!kept.ContainsKey("reset_network_stack") && dropped.Any(d => d.StartsWith("reset_network_stack")), "reset_network_stack dropped (false precondition)");
 Check(!kept.ContainsKey("frobnicate") && dropped.Any(d => d.StartsWith("frobnicate")), "frobnicate dropped (not in catalogue)");
 Check(!kept.ContainsKey("clear_chrome_cache") && dropped.Any(d => d.Contains("subsumed")), "clear_chrome_cache dropped (subsumed by umbrella)");
+
+// ── 2b. Completeness backstop: surface measured reclaims the model omitted ──
+Console.WriteLine("\n== Validate: completeness backstop ==");
+// recycle bin (1024 MB) and browser caches (300 MB) are measured + admissible, but the
+// model authors neither umbrella — it only names temp files and a bare per-browser member.
+var bDiag = JsonDocument.Parse(@"{
+  ""temp_files"":[{""size_mb"":200}], ""recycle_bin"":{""size_mb"":1024},
+  ""browser_caches"":[{""browser"":""Chrome"",""size_mb"":300}],
+  ""update_leftovers"":{""windows_old_present"":false,""windows_old_gb"":0,""windows_update_cache_mb"":0,""delivery_optimization_mb"":0},
+  ""memory"":{""percent_used"":50}, ""network"":{""connectivity"":{""internet_reachable"":true}}, ""dns_cache"":{""entries"":0}
+}").RootElement;
+var bAuthored = JsonDocument.Parse(@"{""summary"":""s"",""actions"":[
+  {""id"":""clear_temp_files"",""friendly_name"":""Temp"",""risk"":""low"",""estimated_mb_recovered"":200},
+  {""id"":""clear_chrome_cache"",""friendly_name"":""Chrome"",""risk"":""low"",""estimated_mb_recovered"":0}
+]}").RootElement;
+var (bPlan, bDropped) = env.Validate(bAuthored, bDiag);
+var bKept = bPlan["actions"]!.AsArray().ToDictionary(a => a!["id"]!.GetValue<string>(), a => a!);
+var bAdded = (bPlan["completeness_added"] as JsonArray)?.Select(x => x!.GetValue<string>()).ToHashSet() ?? new HashSet<string>();
+Check(bKept.ContainsKey("empty_recycle_bin") && bKept["empty_recycle_bin"]!["estimated_mb_recovered"]!.GetValue<int>() == 1024, "empty_recycle_bin ADDED with measured 1024 MB (model omitted it)");
+Check(bKept.ContainsKey("empty_recycle_bin") && bKept["empty_recycle_bin"]!["friendly_name"]!.GetValue<string>() == "Empty the Recycle Bin" && bKept["empty_recycle_bin"]!["risk"]!.GetValue<string>() == "low", "added action carries plain-English label + envelope risk");
+Check(bAdded.Contains("empty_recycle_bin") && bAdded.Contains("clear_all_browser_caches"), "completeness_added lists both measured omissions");
+Check(bKept.ContainsKey("clear_all_browser_caches") && bKept["clear_all_browser_caches"]!["estimated_mb_recovered"]!.GetValue<int>() == 300, "added umbrella carries measured 300 MB");
+Check(!bKept.ContainsKey("clear_chrome_cache") && bDropped.Any(d => d.Contains("subsumed")), "added umbrella subsumes the model's bare member (no double-count)");
+Check(!bAdded.Contains("clear_temp_files"), "model-authored measured action is NOT re-added");
 
 // ── 3. GemmaLocalPlanner author path (fake inference) ──────────────────────
 Console.WriteLine("\n== GemmaLocalPlanner (fake inference) ==");
