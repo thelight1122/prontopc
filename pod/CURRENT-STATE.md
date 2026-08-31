@@ -20,8 +20,18 @@ before relying on it.
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
 > Latest verifier run (2026-08-31): **68 totems, ALL HOLD** (12 Claude-lane + 17 Codex-lane + 39 trunk).
-> *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line; and
-> the trunk head below is ~16 totems behind the lane heads until this refresh.)*
+> *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
+
+**Durability + history (2026-08-31 — TOTEM-C-0052 + follow-on commits).** All lane work is now **committed and
+pushed to origin** (`main` @ `699b973`, in sync): the CURRENT-STATE refresh + re-bind (`4e532ea` / TOTEM-C-0052),
+Codex's **TOTEM-0039 governance module set** (`5dbabe2` — `CanonProvisioning`/`InboundPimPolicy`/
+`PeerInteractionLedgerAccess` + the provisioning/peer-access contract + bound siblings, previously local-only), and
+Codex's **TOTEM-X-0049 conversation-grounding fix** (`699b973` — `CustodianChat.cs` + `ModelSmoke`). A fresh clone is
+now **content-complete**. The one residual is a *cosmetic* line-ending difference on ~10 pre-`eol=lf` files (byte-
+identical to origin once EOL is normalized) — **left as-is by decision: we do not erase history.** Those CRLF-era
+Totem hashes fingerprint when each file was written and are part of the historical record of the code's evolution;
+any correction is **append-only** (supersede with a new Totem, never rewrite or delete an old one). The 694 MB
+on-device model (`model.onnx.data`) stays **gitignored** (a build/package artifact, not a git object).
 
 **TOTEM-X-0055** (2026-08-31, Codex) — **Local native release FREEZE (self-signed acceptance candidate).**
 Freezes only the 1.2 **native paid-session lifecycle** source and its **WAP packaging project** for a local,
