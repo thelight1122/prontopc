@@ -28,7 +28,17 @@ Get-ChildItem $layout -Filter *.pdb -Recurse | Remove-Item -Force
 
 # 3 — manifest + assets (Package.appxmanifest is the single source of truth)
 Step 'Staging AppxManifest.xml and Assets'
-Copy-Item (Join-Path $dir 'Package.appxmanifest') (Join-Path $layout 'AppxManifest.xml') -Force
+$stagedManifest = Join-Path $layout 'AppxManifest.xml'
+Copy-Item (Join-Path $dir 'Package.appxmanifest') $stagedManifest -Force
+# The shared manifest carries the .wapproj build-time tokens ($targetnametoken$ /
+# $targetentrypoint$) that Visual Studio substitutes when packaging via the WAP
+# project. makeappx does NOT substitute them, so resolve them here in the STAGED
+# copy only (the source Package.appxmanifest is left untouched, so both the
+# makeappx path and the .wapproj path keep working from one manifest).
+(Get-Content $stagedManifest -Raw).
+    Replace('$targetnametoken$.exe', 'ProntoPC.exe').
+    Replace('$targetentrypoint$', 'Windows.FullTrustApplication') |
+    Set-Content $stagedManifest -Encoding UTF8
 Copy-Item (Join-Path $dir 'Assets') $layout -Recurse -Force
 
 # 4 — pack
