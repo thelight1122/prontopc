@@ -19,8 +19,42 @@ before relying on it.
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-08-31): **68 totems, ALL HOLD** (12 Claude-lane + 17 Codex-lane + 39 trunk).
-> *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
+> Latest verifier run (2026-08-31, post-power-outage resume): **80 totems, ALL HOLD** (18 Claude-lane + 23 Codex-lane
+> + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
+
+**Current head — TOTEM-X-0061** (2026-08-31, Codex) — **Local repair-plan reliability fix (greedy decoding).** The
+installed package's Gemma model/config/tokenizer/ONNX runtime were all present and a real local smoke run authored a
+valid plan; the intermittent failure was **sampled** structured generation occasionally emitting non-parseable JSON,
+making `GemmaLocalPlanner` decline and (with cloud on the known 429) sending a *paid* customer to the make-good screen.
+`OnnxGenAiInference.cs` now sets `do_sample:false` on the **repair-plan** path so the customer-critical JSON is greedy
++ repeatable; conversational chat stays sampled. Release build **0/0**; on-device ModelSmoke PASS (local-model
+provenance, envelope-valid plan, 2 grounded chat turns). **Caveat carried by the Totem:** the fix is **source-only** —
+the previously *installed* package predates it, so **a freshly packaged + installed artifact is required before the
+make-good failure can be considered repaired.** This resolves the DRIFT that TOTEM-C-0057 flagged.
+
+**This session's Claude lane (TOTEM-C-0054 → -0057) — landing shipped live + a live make-good finding.**
+(1) **Landing deployed to Vercel production.** Verified Codex's responsive landing fix locally (C-0054), then under
+Tracey's explicit authorization deployed the static site to `prontopc.online` (C-0055; deployment
+`dpl_2XNW3Jspy4LqKa7YwQxRbC2qfgw1`, READY). Guardrail fix: extended `.vercelignore` to exclude `release-candidates/`
+(2.6 GB), `.playwright-cli/`, `StoreApp/AppPackages/`, and scratch PNGs, dropping the upload 2.6 GB → ~11 MB (static
+site only). **Correction (C-0056, append-only supersede of C-0055):** the bytes that actually shipped are Codex's
+**TOTEM-X-0060** full-screen landing (sha `5373…B054C74`), *not* X-0056 — X-0060 landed on disk mid-deploy; live verify
+at 1440×900 and 900×900 shows **zero horizontal overflow**, hero unclipped, and passes. The Cloud Run paid-session
+backend was **not** touched. (2) **OPEN JOINT FINDING (no-fault).** On a real paid native run (Tracey), the AI
+Custodian never engaged and the run went to **ShowMakeGood** ("Your AI plan didn't run this time"), issuing single-use
+100%-off coupon **AIFREEXKC9TR**; both plan authors declined while the coupon backend was reachable. Codex's **X-0061
+greedy-decoding fix targets exactly this** (`local_and_cloud_unavailable` branch — model present but sampled JSON
+declined). Decisive confirmation datum = the backend `reason` string stored with coupon `AIFREEXKC9TR`, plus which
+artifact Tracey launched (installed MSIX vs a `bin` Release). **The fix must be re-run on a freshly packaged build** to
+confirm the Custodian authors a plan locally instead of falling to make-good.
+
+**Also landed (Codex — design record + web surface, gate still CLOSED).** TOTEM-X-0057 recorded Tracey's
+**findings-stage Technician pause** direction (after findings: *"Do you have any questions about what was found before I
+begin the repair?"* — bounded to the presented findings/service, before the separate repair-consent step; design record
+only). TOTEM-X-0058 bound a **post-payment service-question surface** in `success-store.html` (Technician artwork + a
+local, service-only pre-scan question guide before the explicit continuation to the paid desktop scan; no PC/scan/repair
+authority granted to the web page). The peer-facing Technician model gate remains **CLOSED** pending Tracey's §8
+greenlight throughout.
 
 **Durability + history (2026-08-31 — TOTEM-C-0052 + follow-on commits).** All lane work is now **committed and
 pushed to origin** (`main` @ `699b973`, in sync): the CURRENT-STATE refresh + re-bind (`4e532ea` / TOTEM-C-0052),
@@ -512,8 +546,13 @@ acceptance candidate (TOTEM-X-0055). The app builds **0/0** at version **1.2.0.0
 v1.2.0.0** builds (TOTEM-X-0049). Cert-readiness is independently verified from both lanes (TOTEM-C-0048/-0049) — the
 app is **cert-SUBMITTABLE**. The remaining steps are all Tracey's external authority, on a Windows/Stripe machine, and
 together they ARE the live end-to-end run (= the reviewer's cert path):
-0. **Build from the frozen source in an isolated clean worktree, inspect + self-sign the exact local MSIX** (the
-   TOTEM-X-0055 next-step), then authorize the controlled Stripe→native E2E below.
+0. **Immediate prerequisite (TOTEM-X-0061, supersedes the X-0055 freeze for this file):** the greedy-decoding
+   repair-plan fix landed in `StoreApp/OnnxGenAiInference.cs` *after* the X-0055 native freeze, so any acceptance
+   package must be **re-frozen/rebuilt to include it**. Build + install a **fresh** controlled-test package, then do a
+   paid or comped scan **through findings** and confirm the on-device Custodian authors a plan locally (no make-good).
+   Only once that passes does the frozen-source signing path below apply.
+0b. **Build from the frozen source in an isolated clean worktree, inspect + self-sign the exact local MSIX** (the
+   TOTEM-X-0055 next-step, now inclusive of the X-0061 binary), then authorize the controlled Stripe→native E2E below.
 1. **Build the signed `.msixupload` in VS** — identity `9P1K9QJXKND8`, version `1.2.0.0` (already set). **CRITICAL:**
    confirm the package BUNDLES the on-device model (`StoreApp/Assets/models/gemma-3-1b-it/`, `model.onnx.data` =
    694 MB — confirmed present + landing in the Release build output).
