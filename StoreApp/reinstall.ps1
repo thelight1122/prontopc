@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Continue'
-$dir = 'C:\ProntoPC\StoreApp'
+$dir = $PSScriptRoot   # the StoreApp folder this script lives in (was hardcoded C:\ProntoPC\StoreApp)
 $log = Join-Path $dir 'reinstall-log.txt'
 "=== ProntoPC reinstall $(Get-Date) ===" | Set-Content $log
 function Log($m) { $m | Tee-Object -FilePath $log -Append }
