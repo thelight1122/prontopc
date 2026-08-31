@@ -17,15 +17,19 @@ docs/
 logs/
 archive/
 
-# Large local caches & tooling (1.9 GB HF cache must never upload)
+# Large local caches, build outputs & tooling (never upload)
 .hf-cache/
 .claude/
 .vercel/
 node_modules/
 __pycache__/
+release-candidates/
+.playwright-cli/
+StoreApp/AppPackages/
 
 # Scratch / proof / prototype files — never publish
 scratch_*.html
+landing-*.png
 *.py
 *.ps1
 *.bat
