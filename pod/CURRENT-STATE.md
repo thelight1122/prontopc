@@ -14,6 +14,71 @@ STALE/DRIFT, treat the stale picture as historical context and re-audit only the
 before relying on it.
 
 ## Head totem
+
+> **Ledger is sharded into lanes** (since TOTEM-C-0040). The canonical ledger is the verifier's
+> UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
+> the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
+> (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
+> Latest verifier run (2026-08-31): **68 totems, ALL HOLD** (12 Claude-lane + 17 Codex-lane + 39 trunk).
+> *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line; and
+> the trunk head below is ~16 totems behind the lane heads until this refresh.)*
+
+**TOTEM-X-0055** (2026-08-31, Codex) — **Local native release FREEZE (self-signed acceptance candidate).**
+Freezes only the 1.2 **native paid-session lifecycle** source and its **WAP packaging project** for a local,
+self-signed acceptance candidate. The native flow records the server-validated plan *before* findings, records
+explicit consent, uses **only server-authorized actions**, and shows completion only after the service accepts the
+results and its report is atomically saved to Desktop. The WAP project packages the established Partner Center
+identity/version + required branding assets. **Does NOT publish, deploy, submit to Partner Center, or run a Stripe
+transaction.** **Next:** build in an isolated clean worktree from this frozen source, inspect + self-sign the exact
+local MSIX, then run the separately-authorized controlled Stripe→native E2E.
+
+**Prior head — TOTEM-X-0054** (2026-08-31, Codex) — **Durable Firestore paid-session backend DEPLOYED.** The
+Firestore-backed session candidate deployed **code-only** to Cloud Run `pronto-pc` (rev **`pronto-pc-00078-kbt`**,
+100% traffic) in `pronto-pc/us-central1`; runtime identity granted `roles/datastore.user`. Live `/health` **200**
+with `sessionStore:firestore`; a nonexistent-token status request → expected **404**. No Stripe purchase / session
+creation / signing / Store publication / website deploy. Builds on **X-0051/-0052**: paid sessions now default to
+Firestore with payment-id idempotency, server-side TTL, and transactional state transitions; `SESSION_STORE=memory`
+is a local-only opt-in that **throws under `NODE_ENV=production`**. *(This closes the old TOTEM-0034 "process-local
+session Map" cross-instance gap that the Open-items list below still flags.)*
+
+**Prior head — TOTEM-X-0050** (2026-08-30, Codex) — **Paid repair lifecycle — local vertical slice.** One
+server-recognized lifecycle: a locally-authored validated plan is recorded against the paid token *before* findings;
+selected action IDs are recorded as consent; the native app calls `repair-start` and runs **only** server-returned
+matching actions; results are accepted only from `repair_served` and only when they exactly match approved IDs; the
+app fetches the server report, atomically saves it to Desktop, then shows completion. The web receipt page is
+observer-only after `prontopc://run`.
+
+**Prior head — TOTEM-X-0049 + TOTEM-C-0051** (2026-08-30) — **Model-grounding fix + reproducible unsigned package.**
+Codex implemented the C-0051 conversation-layer correction: scan-effect questions now get a fact-only reply that the
+diagnostic scan is **read-only and changes nothing** — killing the turn-2 fabrications ("may reboot", "may impact
+performance") flagged after the C-0044 echo fix. The system prompt carries the same grounding constraint;
+`Complete()` plan authoring and `PipelineGovernance(enabled:false)` are untouched; ModelSmoke passes on the real
+local model with assertions for the new response. Added a WAP project (installed SDK 10.0.26100, min 10.0.19041); a
+local **unsigned x64 MSIX v1.2.0.0 builds successfully**.
+
+**Prior head — TOTEM-C-0048 / -0049** (2026-08-30, Claude) — **Cert-readiness VERIFIED + evidence sheet written; SI
+side complete.** Full pre-submission verification on the live tree: preflight **18/19 SAFE TO SUBMIT** (sole warning
+= cloud Gemini 429, non-blocking because on-device authors the reviewer's plan; `MSCERT2026` live with 14 redemptions
+left), Release build **0/0**, `model.onnx.data` **693,829,632 bytes** + both license notices confirmed in the Release
+output, PodEval/CustodianGovernanceEval **18/0**, PipelineGovernanceEval **15/15**, on-device ModelSmoke PASS
+(`provenance=local-model` plan + 2-turn no-echo chat). Evidence hash-bound in `docs/CERT_SUBMISSION_EVIDENCE.md`.
+Governance gate stays CLOSED (`PipelineGovernance enabled:false`). **Both lanes independently concluded: the app is
+cert-SUBMITTABLE; every remaining step is Tracey's external authority.**
+
+**Prior head — TOTEM-C-0040** (2026-08-30, Claude) — **Shard/lane Totem model added** (see box above): one
+append-only file per writer, ids `TOTEM-<LANE>-NNNN`, canonical ledger = UTC-ordered merge of trunk + all lanes
+computed at read time (removes the single-writer race under parallel SI work). `verify_totems.py` is shard-aware and
+backward-compatible.
+
+**Prior head — TOTEM-0039** (2026-08-30) — **Governance guidance completed; Technician remains closed.** The `PipelineGovernance`
+mapping was confirmed correct: inbound PIM buffers and admits observations, `FinalizeOutbound` owns the one atomic
+interaction-ledger append, and `LogTurn` remains a deliberate no-op. Inbound policy is now explicitly
+**observe-and-admit** under Default Allow / Silent Admit. Installed-app Canon provenance is defined as an authorised,
+hash-verified `%ProgramData%` provisioned artifact; missing, unauthorised, or drifted material leaves the gate closed.
+Per-user interaction records have verified session-scoped access at the module layer, while a visible in-app review or
+export surface remains a separate UI-owned step. Both focused evaluators pass; `enabled:false` is unchanged.
+
+**Prior head — TOTEM-0038** (2026-08-30) —
 **TOTEM-0038** (2026-08-30) — **The two lanes are JOINED — `PipelineGovernance` adapter built + wired, gated CLOSED — with
 instructions for Codex.** Built `StoreApp/PipelineGovernance.cs` (`IPeerGovernance` → Codex's `CustodianGovernancePipeline`
 + `CanonBoundarySeed`): SystemPrompt=Canon seed, ScreenInbound=PIM buffer+admit, ApplyBoundary=`FinalizeOutbound`
@@ -398,23 +463,47 @@ spec; -0001 opened the Pod.)
   `pronto-server-cloudrun.mjs` mints a single-use **100% coupon** (email+machine tagged, `source=ai_unavailable`),
   emails the customer + Support@ProntoPC.online; the WPF client reports the miss and shows a make-good
   screen. Reuses the proven Resend + Stripe promo-code path. No live email/coupon sent from dev.
+- **Paid-session backend: DURABLE + DEPLOYED (Firestore).** Paid repair sessions default to Firestore Native
+  (`pronto-pc/us-central1`) with payment-id idempotency, server-side TTL, and transactional state transitions;
+  `SESSION_STORE=memory` throws under `NODE_ENV=production`. Deployed code-only to Cloud Run rev
+  **`pronto-pc-00078-kbt`** (100% traffic, `sessionStore:firestore`, `/health` 200). Supersedes the old
+  process-local in-memory session Map (TOTEM-X-0051/-0054).
+- **Native paid-repair lifecycle: PROVEN local vertical slice + release-frozen.** Server-validated plan recorded
+  before findings → explicit consent (selected action IDs) → only server-authorized actions run → results accepted
+  only from `repair_served` matching approved IDs → server report saved atomically to Desktop → completion. Source +
+  WAP packaging frozen for a self-signed acceptance candidate; local unsigned x64 MSIX v1.2.0.0 builds
+  (TOTEM-X-0049/-0050/-0055).
+- **On-device conversation grounding: FIXED.** Scan-effect questions answer fact-only ("the scan is read-only and
+  changes nothing"); no more turn-2 fabrications. Conversation-layer only; `PipelineGovernance enabled:false`
+  unchanged — the Technician is still gated CLOSED and not reviewer-reachable (TOTEM-X-0049 / C-0051).
 
 ## Open review items (carried, not blessed)
-- **Session gate:** `handleSubmitDiagnostics` now **auto-creates** a session instead of 404 on an
-  unknown token — confirm the payment gate is still functioning at repair-*execution*.
-- **Uncommitted:** the repair-plan Orb impl + AEGIS rebrand are still in the working tree
-  (12 modified files) — nothing committed since `b6272f8`.
+- **Session gate — RESOLVED (verify on next E2E):** the server-side free-path hole was closed at TOTEM-0034
+  (`submit-diagnostics` unknown/expired token → **402**, no session, no plan), and the cross-instance
+  process-local session Map is now durable (Firestore, TOTEM-X-0051/-0054). Still to confirm on a live
+  Stripe→native run: the payment gate holds all the way through repair-*execution* with durable state.
+- **Git durability:** `main` is **3 commits ahead of origin** (Firestore deploy + native freeze) and the working
+  tree is **not release-frozen** — Codex-lane governance modules are still **untracked** (`StoreApp/Governance/
+  CanonProvisioning.cs`, `InboundPimPolicy.cs`, `PeerInteractionLedgerAccess.cs`, `pod/orbs/custodian-stage/
+  governance/`) plus several tracked-but-modified lane files. The shard model's "durable + auditable" benefit only
+  holds on origin once each lane is committed there (peer note TOTEM-C-0047). Committing/pushing is **Tracey's
+  release-freeze sequencing**, not done here.
 - **Envelope precision:** `smart_health[]` leaf schema unconfirmed, so `chkdsk_scan`/`hardware_report`
   are gated on crash/device-error proxies; tighten once confirmed. Per-browser cache MB unbounded
   (subsumed by `clear_all_browser_caches`).
 
 ## Next gated step
 **Product: ON-DEVICE WPF app, free download, charged per run via the existing STRIPE flow wired into the app
-(TOTEM-0029) — backend now LIVE + secured (TOTEM-0034).** The payment gate is built, proven fail-closed, and
-deployed; the app builds 0/0 at version 1.2.0.0. **Done this session:** backend deployed (rev `pronto-pc-00076-hf5`);
-server-side free-path hole closed (`submit-diagnostics` unknown token → 402); package version bumped. The remaining
-steps are Tracey's, on a Windows/Stripe machine — and together they ARE the live end-to-end run (= the reviewer's
-cert path):
+(TOTEM-0029).** As of the lane heads above, the backend is **durable + deployed** (Firestore-backed sessions, Cloud
+Run rev **`pronto-pc-00078-kbt`**, `sessionStore:firestore`, `/health` 200 — TOTEM-X-0054), the **native paid-repair
+lifecycle is a proven local vertical slice** (server-validated plan → consent → server-authorized actions → Desktop
+report → completion — TOTEM-X-0050) and its source + WAP packaging are **release-frozen** for a self-signed
+acceptance candidate (TOTEM-X-0055). The app builds **0/0** at version **1.2.0.0**; a local **unsigned x64 MSIX
+v1.2.0.0** builds (TOTEM-X-0049). Cert-readiness is independently verified from both lanes (TOTEM-C-0048/-0049) — the
+app is **cert-SUBMITTABLE**. The remaining steps are all Tracey's external authority, on a Windows/Stripe machine, and
+together they ARE the live end-to-end run (= the reviewer's cert path):
+0. **Build from the frozen source in an isolated clean worktree, inspect + self-sign the exact local MSIX** (the
+   TOTEM-X-0055 next-step), then authorize the controlled Stripe→native E2E below.
 1. **Build the signed `.msixupload` in VS** — identity `9P1K9QJXKND8`, version `1.2.0.0` (already set). **CRITICAL:**
    confirm the package BUNDLES the on-device model (`StoreApp/Assets/models/gemma-3-1b-it/`, `model.onnx.data` =
    694 MB — confirmed present + landing in the Release build output).
