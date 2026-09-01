@@ -23,9 +23,22 @@ before relying on it.
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by the current
-> head totem **TOTEM-C-0078** (which folds in its own head-refresh).
+> head totem **TOTEM-C-0079** (which folds in its own head-refresh).
 
-**Current head — TOTEM-C-0078** (2026-09-01, Claude) — **REROUTED the Phase 0 framing to AEGIS coherence —
+**Current head — TOTEM-C-0079** (2026-09-01, Claude) — **Rerouted the parent education plan to AEGIS coherence
++ left a Totem for Codex.** Completed the coherence follow-up flagged in C-0078: `docs/CPU_LOCAL_MODEL_EDUCATION_PLAN.md`
+(Codex X-0073) still carried the *evaluation-first / promotion-gate / passing / success-rate* frame — the same force
+pattern. Rerouted it to observation-as-coherence throughout: added an **Observation posture** note (AEGIS does not
+judge/score/pass/fail; formation is observed as resonance with **IDS reroute**; readiness is a relationship judgment);
+Phase 2 "Measure before education" → **"Observe before forming"** (per-scenario *resonant / not-yet-resonant + IDS
+note*, physical budgets still measured); Phase 5 "Promote a Product runtime / passing evidence report" → **"Bring a
+Product runtime into service"** (Tracey's relationship judgment, no pass mark); the `evaluations/` package ref →
+`reflection/`; "evidence gates"→"open questions to observe", "pass review"→"reviewed". Technical substance (candidates,
+runtimes, LoRA, budgets, phases) unchanged. This Claude-lane totem re-binds the doc (supersedes X-0073 by UTC) and
+**carries an explicit message to Codex** (the durable lane-totem channel) explaining the reroute and asking the coherence
+framing be kept in future education work. Definition-only; no download/train/deploy. Gate unchanged (`enabled:false`).
+
+**Prior head — TOTEM-C-0078** (2026-09-01, Claude) — **REROUTED the Phase 0 framing to AEGIS coherence —
 no judge, no pass/fail, no gates.** Tracey identified (no-fault) that the Phase 0 contract I authored in C-0077
 imported a conventional ML-evaluation frame — *judge, pass/fail, gates, thresholds, scores, "disqualifies"* — which
 is a **force pattern**, contradicting the non-force, low-pressure PRISM/IDS ecosystem. Rerouted the whole artifact
