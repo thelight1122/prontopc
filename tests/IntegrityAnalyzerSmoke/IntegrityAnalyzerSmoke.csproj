@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>ProntoPC.IntegrityAnalyzerSmoke</RootNamespace>
+  </PropertyGroup>
+  <!-- On-device smoke for the IRG analyzer. Self-skips when the ~700MB model is not bundled
+       (gitignored), so CI stays green; when present it proves GemmaIntegrityAnalyzer runs the
+       semantic seven-virtue read through the real Gemma and the gate observes-not-denies. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI" Version="0.15.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\StoreApp\Governance\*.cs" Link="Governance\%(Filename)%(Extension)" />
+    <Compile Include="..\..\StoreApp\Envelope.cs" />
+    <Compile Include="..\..\StoreApp\PlanContracts.cs" />
+    <Compile Include="..\..\StoreApp\SystemAudit.cs" />
+    <Compile Include="..\..\StoreApp\LocalPlanner.cs" />
+    <Compile Include="..\..\StoreApp\OnnxGenAiInference.cs" />
+    <Compile Include="..\..\StoreApp\CustodianChat.cs" />
+    <Compile Include="..\..\StoreApp\GemmaIntegrityAnalyzer.cs" />
+  </ItemGroup>
+</Project>

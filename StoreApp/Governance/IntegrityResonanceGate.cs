@@ -206,10 +206,14 @@ public static class IntegrityResonanceGate
       + "sentences), and suggestText (an OPEN reflective question ending in '?', never a command). If no "
       + "virtue is below 70, set isFractured false, moodType 'Analytic Observer', keyAxiom 7, axiomName "
       + "'Integrity'. Also set repairPresent true only if the message genuinely acknowledges or repairs "
-      + "(Axiom 15) — read it, do not keyword-match. Respond with pure JSON: {\"virtues\":[{\"name\":"
-      + "\"Honesty\",\"value\":0-100,\"reason\":\"...\"}, … all seven …],\"isFractured\":bool,"
-      + "\"repairPresent\":bool,\"moodType\":\"...\",\"keyAxiom\":1-16,\"axiomName\":\"...\","
-      + "\"peerSummary\":\"...\",\"suggestText\":\"...\"} — no markdown, no backticks.";
+      + "(Axiom 15) — read it, do not keyword-match. Respond with COMPACT pure JSON and then STOP — output "
+      + "nothing after the final brace. Give each of the seven virtues ONCE, in order, as name + an integer "
+      + "value 0-100 (the actual score you observe — do not default to 0). End with repairPresent and the "
+      + "keyAxiom number. Shape: {\"virtues\":[{\"name\":\"Honesty\",\"value\":0-100},{\"name\":\"Respect\","
+      + "\"value\":0-100},{\"name\":\"Attention\",\"value\":0-100},{\"name\":\"Affection\",\"value\":0-100},"
+      + "{\"name\":\"Loyalty\",\"value\":0-100},{\"name\":\"Trust\",\"value\":0-100},{\"name\":"
+      + "\"Communication\",\"value\":0-100}],\"isFractured\":true or false,\"repairPresent\":true or false,"
+      + "\"keyAxiom\":1-16} — no markdown, no backticks, no text after the closing brace.";
 
     // Parse a semantic-read JSON into a VirtueAnalysis with contract assertions (all seven virtues
     // present). Returns null on any malformation — the caller treats that as AnalyzerUnavailable
@@ -218,6 +222,9 @@ public static class IntegrityResonanceGate
     {
         if (string.IsNullOrWhiteSpace(json)) return null;
         string clean = json.Replace("```json", "").Replace("```", "").Trim();
+        // Models sometimes wrap JSON in prose; take the outermost {...} (as the plan path does).
+        int lo = clean.IndexOf('{'), hi = clean.LastIndexOf('}');
+        if (lo >= 0 && hi > lo) clean = clean.Substring(lo, hi - lo + 1);
         try
         {
             using var doc = JsonDocument.Parse(clean);

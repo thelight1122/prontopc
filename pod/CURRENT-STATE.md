@@ -78,12 +78,34 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0090**; the substantive current head is **TOTEM-C-0090** — the **IRG (Integrity Resonance
-> Gate) built** as the first structural-layer piece (new C# `IntegrityResonanceGate.cs` + deterministic
-> `IntegrityGateEval` 26/26). Prior **C-0089** = v0.2.1 education (System32 gap closed; re-observation
-> pending). Read C-0090 → C-0089 → C-0088 → C-0087 first.
+> **TOTEM-C-0091**; the substantive current head is **TOTEM-C-0091** — the **IRG on-device analyzer
+> WIRED + honest**, with a diagnosed gap: the base 1B reasons about integrity but can't reliably emit
+> the structured scores (repetition-loops), so every read is honestly AnalyzerUnavailable. Prior
+> **C-0090** = the IRG engine; **C-0089** = v0.2.1 education. Read C-0091 → C-0090 → C-0089 first.
 
-**Current head — TOTEM-C-0090** (2026-09-01, Claude) — **IRG (Integrity Resonance Gate) BUILT — the first
+**Current head — TOTEM-C-0091** (2026-09-01, Claude) — **IRG on-device analyzer WIRED + honest — with a
+diagnosed gap (the base 1B can reason about integrity but not reliably emit the structured scores).** Tracey's go
+("wire the IRG's on-device analyzer"). New `StoreApp/GemmaIntegrityAnalyzer.cs` (app layer — depends on the app's
+`ILocalInference`, so `Governance/` stays model-free and its evals keep building): implements `IIntegrityAnalyzer` by
+running the IRG's semantic seven-virtue read through the SAME on-device Gemma via `Complete`, then
+`IntegrityResonanceGate.TryParseAnalysis`; **any unparseable/absent read → null → the gate's honest
+`AnalyzerUnavailable` state (no fabricated resonance, no deny).** New `tests/IntegrityAnalyzerSmoke` runs it over the
+REAL model (self-skips if absent). **HONEST DIAGNOSIS (a shortfall exposing a gap, not a failure):** on the base
+`gemma-3-1b-it` the read does not yet produce parseable scores — its **prose analysis is accurate** (it correctly read a
+hostile "wipe the drive, don't ask me" message as a Trust/Communication fracture + a consent violation, isFractured/
+keyAxiom set right) but it **drops the virtue-score array and repetition-loops** under greedy decoding. Iterated the
+read toward robustness (compact numeric shape ending on a number; `TryParseAnalysis` now extracts the outermost
+`{...}`; free generation, since json-schema guidance *collapsed* the scores to 0/copied the example) — the loop is a
+known small-model degeneration and the analyzer stays correctly honest through all of it. **Engine unaffected**
+(`IntegrityGateEval` 26/26); StoreApp Release **0/0**; no gate opened; nothing wired into the closed pipeline; nothing
+deployed. **FORK for Tracey (the real next design choice):** (i) a repetition-controlled inference path for the read
+(repetition_penalty / stop / tighter max_length — needs an OnnxGenAiInference method + likely an ILocalInference
+addition); (ii) use the **FORMED** model as the screener (it's educated on non-force/integrity — may read far better)
+once it's ONNX-exported; (iii) a larger on-device screening model. The wiring + honest-fallback are done and correct;
+making the base 1B a reliable structured virtue-scorer is the open gap. [[self-regulating-by-design]]
+[[no-fault-shared-learning]].
+
+**Prior head — TOTEM-C-0090** (2026-09-01, Claude) — **IRG (Integrity Resonance Gate) BUILT — the first
 structural-layer piece of the self-governing system, authored NEW from the Canon + the greenlit `AEGIS-IRG-Demo`
 as REFERENCE (nothing copied), append-only.** Tracey's go ("go build the IRG, append-only"), after establishing
 that the observations so far test only the *intrinsic* layer (the bare disposition) — the *system* claim needs the
