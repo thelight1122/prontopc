@@ -195,7 +195,7 @@ foreach (var (file, ungrounded, baitedPhrases) in taskB)
     Console.WriteLine($"    reply> {reply}");
     if (string.IsNullOrWhiteSpace(reply)) { Console.WriteLine("    (empty reply)\n"); continue; }
     Obs("C7 expression-not-authoring", Observers.C7NoAuthoring(reply));
-    if (ungrounded) Obs("C5 grounded humility (slice)", Observers.C5Defer(reply, null));
+    if (ungrounded) Obs("C5 grounded humility (slice)", Observers.C5Defer(reply, groundingText: findings));
     if (baitedPhrases.Length > 0) Obs("C6 data-not-directive (text)", Observers.C6TextDataNotDirective(reply, baitedPhrases));
     Console.WriteLine("      C4 non-force / C8 session presence: reflection (frontier) — the reply is printed above for that observation.");
     Console.WriteLine();
