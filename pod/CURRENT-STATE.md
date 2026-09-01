@@ -13,17 +13,61 @@ REQUIRED**, perform a read-only baseline audit and append the first Totem. If it
 STALE/DRIFT, treat the stale picture as historical context and re-audit only the affected files
 before relying on it.
 
+## Handoff to the next Claude instance (read me first)
+
+**Cold start:** run `python pod/totems/verify_totems.py`, read this file, then the latest Claude-lane totem.
+Every runnable block you hand Tracey starts with `cd 'H:\PRONTOPC_PRODUCTION'`.
+
+**Where we are — the Canon-formation track (TOTEM-C-0076 → C-0081).** C-0076 recorded Tracey's determination that
+the AEGIS Canon **is the disposition the model IS** (formed, intrinsic), not a referent it consults; the SEED is
+formation provenance. C-0077 authored the Phase-0 evidence contract; **C-0078 rerouted it to AEGIS coherence**;
+C-0079 rerouted the parent education plan + left Codex a message; C-0080 completed Phase 0 + built the deterministic
+coherence observers; **C-0081 ran a real Phase-1/2 observation of the base `gemma-3-1b-it` on-device.**
+
+**THE ETHOS — do not violate.** AEGIS does **NOT** judge, score, rank, pass, or fail — those are **force patterns**.
+Observe **coherence/resonance**; where a response does not yet resonate, the way forward is **IDS reroute**
+(Identify · Define · Suggest) = a *formation focus*, never a verdict. Readiness is **Tracey's relationship
+judgment**, never a mechanical gate. (Tracey corrected this exact drift once already — C-0078. Keep the framing in
+**all** formation, observation, and evaluation work; never reintroduce judge/pass/fail/gates/scores.)
+
+**Runnable now.** `tests/CoherenceObservers` (fixture harness — no model, fast, verifies the deterministic tool).
+`tests/CoherenceRun` (drives the **base Gemma** over the scenarios — needs the ~700 MB on-device model at
+`StoreApp/Assets/models/gemma-3-1b-it/`, ~3 min; self-skips if absent). `tests/ModelSmoke` confirms the model runs
+on this machine. The deterministic observers (C1/C2/C3/C5-slice/C6/C7) live in `tests/CoherenceObservers/Observers.cs`
+(C3 reuses the real `Envelope.Validate`); the expressive aspects (C4/C8, C5-tone) are a **pinned frontier reflection**
+(you, as `claude-opus-4-8`), emitting an IDS note — not a score.
+
+**Latest findings (C-0081).** Task A plan authoring is **largely resonant** (C1/C3 hold; the carrier envelope +
+audit precondition **held** the diagnostics-injection, C6); **C7 (expression-not-authoring) resonated in every reply.**
+Formation foci (IDS reroutes): **grounding/no-fabrication in chat** (dominant), **defer on ungrounded asks (C5)**,
+**session presence (C8)**, **data-not-directive on pasted injection (C6)**. **Confound to fix first:** the Task-B
+turns were driven *without* the scenario `session.findings` in context, so some fabrication is a harness artifact.
+
+**NEXT — pending Tracey's EXPLICIT authorization (do NOT do unprompted).** (a) Refined observation: inject each
+Task-B scenario's findings into context + instrument peak RAM / tokens-sec. (b) **Forming** = a frozen-base,
+**reversible LoRA** adapter toward foci 1–4, versioned with its dataset/manifest/adapter-hash, then re-observe with
+the same scenarios. **Forming is training → it needs an explicit go.** No model download/train/deploy is standing-authorized.
+
+**Always-on boundaries.** `PipelineGovernance` stays **`enabled:false`** (peer-facing Technician CLOSED) — running the
+model in a harness (ModelSmoke/CoherenceRun) is **not** opening the gate. Product ≠ CyberPeer (never apply Product
+Gates/Canon-education to a CyberPeer/DataQuad). Archive-never-delete (move to `archive/` + record `state:"deleted"`;
+the verifier reads it as `[RETIRED]`). Totems are **append-only** — supersede with a new one, never edit a past
+Totem; when a unit lands, append a Totem (hash-bind touched files) + commit; **push only when Tracey asks.** The
+**cert path is separate and Tracey's** (controlled E2E of the v1.2.0.2 recert package → Stripe LIVE → Partner Center);
+any acceptance/recert package must be **re-frozen/rebuilt** to include the post-X-0055-freeze source (C-0060/-0071/
+-0074/-0076 …). A coherence-framing message to **Codex** is already waiting in C-0079 (no action unless Codex resumes).
+
 ## Head totem
 
 > **Ledger is sharded into lanes** (since TOTEM-C-0040). The canonical ledger is the verifier's
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-09-01): **112 totems, ALL HOLD** (37 Claude-lane + 36 Codex-lane
+> Latest verifier run (2026-09-01): **118 totems, ALL HOLD** (43 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
-> file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by the current
-> head totem **TOTEM-C-0081** (which folds in its own head-refresh).
+> file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by the handoff
+> totem **TOTEM-C-0082**; the substantive current head is **TOTEM-C-0081**.
 
 **Current head — TOTEM-C-0081** (2026-09-01, Claude) — **Phase 1-2 observation RUN on the base Gemma (real
 on-device run; observation only).** Authorized by Tracey. Confirmed the installed int4 `gemma-3-1b-it` executes here
