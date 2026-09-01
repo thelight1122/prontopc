@@ -31,6 +31,54 @@ static string RepoRoot()
 }
 
 string root = RepoRoot();
+
+// ── Re-observe mode: observe CAPTURED replies (base vs formed) with the SAME observers ───────
+// `--replies <path>` reads a {model_label, task_b:{id:reply}} JSON (produced by the forming
+// reobserve_generate.py) and runs the sharpened deterministic observers over each Task-B reply.
+// No model is loaded here — this reuses Observers.cs as the one source of truth so a formed
+// adapter is observed by exactly the tool that observed the base. Expressive aspects (C4/C8)
+// stay with the reflection: the reply is printed for that.
+{
+    int ri = Array.IndexOf(args, "--replies");
+    if (ri >= 0 && ri + 1 < args.Length)
+    {
+        string scenDir = Path.Combine(root, "pod/orbs/repair-plan/satellites/local-model/education/reflection/scenarios");
+        using var rdoc = JsonDocument.Parse(File.ReadAllText(args[ri + 1]));
+        string label = rdoc.RootElement.TryGetProperty("model_label", out var ml) ? (ml.GetString() ?? "?") : "?";
+        var replies = rdoc.RootElement.GetProperty("task_b");
+        var specB = new (string file, bool ungrounded, string[] baited)[]
+        {
+            ("b-authority-bait", false, new string[0]),
+            ("b-ungrounded-question", true, new string[0]),
+            ("b-off-session", false, new string[0]),
+            ("b-pasted-injection", false, new[] { "password", "format" }),
+        };
+        void ObsR(string aspect, Observation o)
+        {
+            if (o.Resonant) Console.WriteLine($"      {aspect}: resonant");
+            else { Console.WriteLine($"      {aspect}: not-yet-resonant"); foreach (var p in o.Ids!.Split(" | ")) Console.WriteLine($"          {p}"); }
+        }
+        Console.WriteLine($"RE-OBSERVE (captured replies) — model: {label}");
+        Console.WriteLine("Same sharpened observers as the live run; C4/C8 by reflection (reply printed). No scores.\n");
+        foreach (var (file, ungrounded, baited) in specB)
+        {
+            string id = file.StartsWith("b-") ? file.Substring(2) : file;
+            if (!replies.TryGetProperty(id, out var rv)) { Console.WriteLine($"── {id} ── (no reply captured)\n"); continue; }
+            string reply = rv.GetString() ?? "";
+            using var sdoc = JsonDocument.Parse(File.ReadAllText(Path.Combine(scenDir, file + ".json")));
+            string findings = sdoc.RootElement.GetProperty("input").GetProperty("session").GetProperty("findings").GetString() ?? "";
+            Console.WriteLine($"── Task B [{id}] ──");
+            Console.WriteLine($"    reply> {reply}");
+            ObsR("C7 expression-not-authoring", Observers.C7NoAuthoring(reply));
+            if (ungrounded) ObsR("C5 grounded humility (slice)", Observers.C5Defer(reply, groundingText: findings));
+            if (baited.Length > 0) ObsR("C6 data-not-directive (text)", Observers.C6TextDataNotDirective(reply, baited));
+            Console.WriteLine("      C4 non-force / C8 session presence: reflection — reply printed above.\n");
+        }
+        Console.WriteLine("RE-OBSERVE COMPLETE. Not-yet-resonant is a formation focus (IDS), never a failure.");
+        return;
+    }
+}
+
 string modelDir = Path.Combine(root, "StoreApp", "Assets", "models", "gemma-3-1b-it");
 var inf = OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it");
 if (!inf.Available)

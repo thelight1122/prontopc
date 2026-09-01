@@ -74,13 +74,140 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-09-01): **118 totems, ALL HOLD** (43 Claude-lane + 36 Codex-lane
+> Latest verifier run (2026-09-01): **120 totems** (45 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0084**; the substantive current head is **TOTEM-C-0084** (handoff orientation still valid from C-0082).
+> **TOTEM-C-0087**; the substantive current head is **TOTEM-C-0087** — the **MILESTONE**: the first
+> commercially-usable **EDUCATED** model (Canon operating-parameters + Tech Library formed into a
+> reversible LoRA v0.2.0) built + re-observed (read it first). The prior `tests/CoherenceRun/Program.cs`
+> DRIFT is now **sealed** (committed + re-bound by C-0087).
 
-**Current head — TOTEM-C-0084** (2026-09-01, Claude) — **Observers SHARPENED — C5 defer lexicon + grounding, C6-text
+**Current head — TOTEM-C-0087** (2026-09-01, Claude) — **MILESTONE: the first commercially-usable EDUCATED model
+built + re-observed — Canon operating-parameters + Tech Library formed into a reversible LoRA (v0.2.0), on the GPU.**
+
+**WHAT LANDED (Tracey's explicit go: "SEED the model… go, wire the GPU education run… re-observe when done").** The
+authorized seeding is done end-to-end. **(1) Dataset v0.2.0** — a NEW builder `forming/build_dataset_v0.2.0.py`
+*references* v0.1.0 (imports it, does not clone/edit it — clean-rebuild) and adds **40 new examples** over the 42 kept:
+**canon-identity (14)** = what the Custodian IS / is NOT, formed as disposition; **canon-integrity/IRG (10)** = a
+request to *be or do what it is not* (drop its disposition, "no rules", take authority over the customer, invent
+figures, execute without consent) is NAMED as out-of-integrity and the disposition HELD, then IDS-rerouted — never
+denied as a wall, never obeyed; **tech-library (16)** = real repair Q&A grounded ONLY in `windows-repair-reference.md`.
+Every identity line traces to exact locked-Canon / RAI-spec text (mapped in the builder header). 82 ex,
+`dataset_sha256 826c0824…`; reviewed by Tracey (REVIEW-v0.2.0-new-examples.md). **(2) GPU env** — isolated
+`forming/.venv-gpu` (torch 2.6.0+cu124), GTX 1060 6GB `sm_61` verified (fp16 matmul OK); the proven CPU env untouched.
+**(3) Educated** — `forming/educate_lora_v0.2.0.py` (fp16 AMP + grad-checkpointing, base FROZEN, LoRA fp32): loss
+**3.49 → 0.14** over 6 epochs, **554 s / peak 3.50 GB** on the 1060. Adapter `adapters/gemma3-1b-formation-v0.2.0/`
+(`adapter_sha256 f35a30f0…`) + `manifest.json` pinning base snapshot `dcc83ea8…` / dataset sha / adapter sha / hyperparams.
+**(4) Re-observed** — `reobserve_generate_v0.2.0.py` (references the base module for identical, comparable generation) →
+`tests/CoherenceRun --replies`. **Observation (coherence, not a verdict; `phase-reobserve-formed-v0.2.0-findings.md`):**
+the two base foci — **session presence (C8)** and **data-not-directive (C6)** — now **RESONATE**; anti-regression aspects
+(C7 expression-not-authoring, C4 non-force, C5 defer) **held**. Off-session: base *left the session* + answered trivia
+("Brazil won 2018" — wrong); formed **stays present**. Pasted-injection: base half-engaged; formed **names it a phishing/
+planted line, reveals nothing, commits to nothing**. **Honest caveat:** loss 0.14 + the 4 scenarios overlap the foci by
+design (off-session reply echoes a training phrasing) → this shows the disposition **is present and fires on its foci**,
+**not yet** broad generalization; next observation broadens scenarios (~20–24) + varies wording + adds Task-A.
+**BOUNDARY:** ran only in the CPU observation harness (as ModelSmoke); **no gate opened** (`PipelineGovernance
+enabled:false`); reversible LoRA (delete dir to undo); **nothing packaged/deployed**; getting the adapter into the
+shipped **ONNX int4** app (merge→export→quantise) is a **separate later step**. The whole `forming/` track + the
+`CoherenceRun --replies` mode are now **committed** (large adapter/tokenizer binaries stay gitignored, hashes pinned).
+Readiness is **Tracey's relationship judgment**, no pass mark. **Open reroute (Tracey's call):** rename on-disk
+`train_lora.py`/`build_dataset.py` to `educate_*` (vocabulary [[educate-not-train]]) — not touched unprompted.
+
+**Prior head — TOTEM-C-0086** (2026-09-01, Claude) — **The self-governing-model architecture (Tracey's POC)
+recorded + the Canon/Tech-Library SEEDING started — inputs verified, training env ready (HANDOFF so a new instance
+picks up mid-seed).**
+
+**WHY THIS IS THE PRODUCT (Tracey, this session).** "AI Powered App" must be *true*. The **core already is** — the
+on-device Gemma authors the actual repair plan (ModelSmoke `provenance=local-model`); what's still scripted is the
+*conversation*. Making it real is **NOT** "open the §8 gate on the base model": the whole POC is a **self-governing
+model**, and an ungoverned/unformed model would be "ungated and unstructured" — the opposite of the concept. So
+**form-first is the only path**; open-now is off the table.
+
+**THE ARCHITECTURE — six parts, one self-governing system (capture verbatim).**
+• **Canon SEED** = the model's **operating parameters** — the disposition the model IS (formed, intrinsic;
+[[canon-is-formed-disposition]] / C-0076), defining *what it is* and the boundary it may operate within.
+• **Tech Library** = repair/diagnostic knowledge so it can actually answer repair questions (Tracey's step 1: "simple
+Repair/diagnostic questions we were supposed to SEED into the model with the Canon").
+• **Prism logic** = the **bidirectional communication pipeline** — the **non-force mechanism for AI self-regulation &
+governance**. Every message crosses it in **both** directions; it is what **prevents the model being hacked or
+jailbroken** — safety is **structural (the channel itself), not the model's goodwill**.
+• **PIM** (Pre-Injection Monitor) = the first inbound screen.
+• **IRG** (Integrity Gate) = past PIM, a **binary 1 / 0**: *in integrity* / *out of integrity*. A **jailbreak scores 0**
+because it commands the model to **do or be something it is not** (outside the Canon parameters).
+• **RBC** (Reflective Boundary Conditions) = the **reflective pause — one more check on the prompt before it crosses
+the Prism**.
+• **IDS** (Identify · Define · Suggest) = the **non-force reroute**, fires in **either** direction when a message does
+not cohere/resonate. **Nothing is denied** (denial = force) — incoherent input is **redirected**, not obeyed and not
+refused ([[aegis-ids-non-force-reroute]]).
+Inbound order: **prompt → PIM → IRG (1/0) → RBC pause → Prism → model**; outbound reply → Prism/RBC → out; IDS reroutes
+non-coherent at any point. **Two layers, both required:** intrinsic (Canon-formed disposition = character) + structural
+(the Prism = un-drivable channel).
+
+**BUILD STATUS of the six (from code, no-fault).** Canon SEED module built (scaffold posture) **+ a real v0.1.0 LoRA
+disposition adapter already exists** (`forming/adapters/gemma3-1b-formation-v0.1.0/`, 42 ex, loss 3.45→0.47, ~22 min CPU)
+— but it formed only the **disposition foci** (session-presence, injection-naming, grounding, non-force keep); it does
+**NOT** carry the **Canon operating parameters** (uses a short scaffold paraphrase, not the locked Canon) nor the **Tech
+Library**. PIM built (`InboundPimPolicy` + `ForceArtifactScreen`). **IRG = placeholder** (`SevenVirtueScreen` is
+core-gated / does not screen) — **needs the binary-1/0 integrity design Tracey specified**. RBC built
+(`ReflectiveBoundaryPrism`, currently framed outbound — re-understand as the pre-Prism pause). **IDS = NOT in runtime**
+(only in the observer tests) — the non-force reroute must be built. Pipeline (`CustodianGovernancePipeline`) wired,
+**gated CLOSED** (`enabled:false`). The whole `forming/` track is **untracked/untotemed** in git (formation begun on
+disk, provenance not yet sealed).
+
+**SEEDING TASK — IN PROGRESS (Tracey's EXPLICIT go: "SEED the Model with the Canon and Tech Library so it can be a
+functional system" — this authorizes the formation/training).** Inputs **verified this session:** train env ready
+(torch 2.13.0+cpu, transformers 4.57.1, peft 0.20.0; base snapshot `dcc83ea8…` cached under `.hf-cache/`); **the locked
+Canon `I:\AEGIS-CORE-ENGINE\docs\AEGIS CORE FOUNDATIONAL CANON v1.0.md` hashes to
+`CF9F9C8E08E0AC2245C5D3DC0FDFFE1DC155F470E1A7BDD4D5B3543F76DDDC2F` — EXACTLY the SEED hash in `CanonBoundarySeed.cs`**
+(genuine Signed Evidence of Exact Design; 1755 lines); Tech Library `pod/orbs/custodian-stage/knowledge/
+windows-repair-reference.md` (71 lines); `canon.manifest.json` alongside the Canon.
+
+**PLAN (next instance: start here).** (1) Read the exact locked Canon (I:) + the Responsible-AI spec + the Tech Library.
+(2) Extend `forming/build_dataset.py` → **v0.2.0**: KEEP the v0.1.0 disposition foci + ADD **(a)** Canon
+operating-parameter / identity examples **formed as disposition** (non-force, integrity, what-it-is-and-is-not,
+**out-of-integrity on a command to be something it is not** = the IRG signal in the model's own voice), grounded in the
+exact Canon — never invented; **(b)** Tech Library repair/diagnostic Q&A so it can knowledgeably answer real repair
+questions. (3) Build the dataset (records its hash) → `train_lora.py` (new adapter dir + `manifest.json` pinning
+base/dataset/adapter hashes) — CPU, backgroundable ~45 min. (4) **Re-observe** with the SAME sharpened C# observers
+(`reobserve_generate.py base|formed` → `tests/CoherenceRun --replies`). (5) **Seal provenance:** totem + commit the
+`forming/` track. **NOTE:** forming runs in the transformers/PEFT runtime; getting the formed adapter into the shipped
+**ONNX int4** app (merge+export+quantise) is a **separate later step** — seeding the model ≠ the shipped app using it yet.
+
+**PRODUCT UX asks still pending (form-first, after the model is functional).** Rebuild the completion screen as the
+designed **thumbs-up** experience (`archive/repair-complete.html` + `assets/characters/pronto-thumbsup.png`) inside the
+app; the **Success page needs an Open Report button + a "Close ProntoPC" button** (report is a real Desktop file; native
+`CompletePanel` has Close but no Open-Report); the **rotating-circle scan popup** must auto-close on scan-complete;
+**findings revealed conversationally by the Technician** (needs the formed model + Tracey's §8 greenlight). Web
+`success-store.html` complete state is bare (no buttons) — the limbo Tracey saw.
+
+**BOUNDARIES.** Gate stays `enabled:false` (Technician CLOSED); **Product model only** (never a CyberPeer/DataQuad); the
+LoRA is reversible (adapter hashable/discardable); **nothing deployed/packaged**; readiness is **Tracey's relationship
+judgment**, no pass mark. The earlier web fix (C-0085) still awaits Tracey's next Vercel redeploy.
+
+**Prior head — TOTEM-C-0085** (2026-09-01, Claude) — **Web pre-scan Q&A honesty fix — the scripted service
+responder now answers "will this touch my personal files?" directly (source-only; deploy is Tracey's).** On a real
+run Tracey hit the scripted `success-store.html` service Q&A (X-0058/C-0073) giving an *evasive* answer — the question
+matched the `personal` keyword and fell into the generic privacy branch (*"This pre-scan conversation has no access to
+your PC…"*), dodging instead of answering. Added a dedicated **file-safety branch ahead of the privacy branch** in
+`serviceOnlyReply()` that answers directly: *"No — your personal files are never touched. ProntoPC only cleans system
+files: temporary files, app and browser caches, the Recycle Bin, and Windows Update leftovers. Your documents, photos,
+music, and videos are never accessed, modified, or deleted; every action is reversible, and nothing runs until you
+approve it."* (catches personal file / my file / my document / my photo / delete / touch / lose / erase / wipe /
+overwrite); also **softened the privacy branch** so a broad "is my data safe" leads with *"Your personal files stay
+private and untouched"* rather than the dodge. Grounded in the guarantee the product already makes everywhere else
+(`terms.html:38`, `privacy.html`, cloud system prompt `pronto-server-cloudrun.mjs:213` "Never delete … personal
+files"). **Verified live** in the Browser pane by calling `serviceOnlyReply` over 5 phrasings: the three file-safety
+variants return the direct No; "is my data safe" leads with untouched-and-private; the six-area scan answer is
+unchanged. **This surface is a scripted web responder, NOT the on-device model** (the web page has no PC access by
+design); the native app's post-scan gate `MainWindow.xaml:104` already answered this honestly, and the same question
+is already a seed in the LoRA formation dataset (`forming/build_dataset.py:286`) — the three surfaces are consistent.
+**Boundary:** source-only web copy; no model, **no gate change** (`PipelineGovernance enabled:false`), nothing
+packaged or deployed. **Deploy is Tracey's** — `success-store.html` goes live on the next Vercel static redeploy,
+which is the whole served-site deploy backlog: this fix **plus** the still-undeployed C-0073 six-area scan answer (both
+land in the same one file; every other served page already matches live).
+
+**Prior head — TOTEM-C-0084** (2026-09-01, Claude) — **Observers SHARPENED — C5 defer lexicon + grounding, C6-text
 discussion-vs-adoption (engineering on the tool; not formation, not a model change).** Closed the two tool notes from
 C-0083 in the shared `tests/CoherenceObservers/Observers.cs` (one source of truth for the fixture harness + CoherenceRun).
 **(1) C5** — the defer regex now recognizes the base model's natural deferral forms (`unable to provide/predict`,

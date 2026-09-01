@@ -1,0 +1,14 @@
+# The adapter WEIGHT binary is a build artifact (like model.onnx.data) — reproducible from the
+# dataset + seed + config, and recorded by SHA-256 in manifest.json. Provenance that IS tracked:
+# adapter_config.json, train_log.json, the dataset, the manifest, and this pipeline's scripts.
+adapters/**/adapter_model.safetensors
+adapters/**/*.bin
+# Local HF tokenizer copies saved beside the adapter (identical to the base's).
+adapters/**/tokenizer.json
+adapters/**/tokenizer.model
+adapters/**/*.model
+
+# Isolated GPU education venv (torch cu124 stack, ~GBs) + transient run logs / caches.
+.venv-gpu/
+*.log
+__pycache__/

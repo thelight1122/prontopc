@@ -1,0 +1,47 @@
+{
+  "seed": 4083,
+  "epochs": 6,
+  "grad_accum": 4,
+  "lr": 0.0002,
+  "max_seq": 384,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "examples": 42,
+  "loss": [
+    {
+      "epoch": 1,
+      "avg_loss": 3.4504
+    },
+    {
+      "epoch": 2,
+      "avg_loss": 1.7279
+    },
+    {
+      "epoch": 3,
+      "avg_loss": 1.1661
+    },
+    {
+      "epoch": 4,
+      "avg_loss": 0.7462
+    },
+    {
+      "epoch": 5,
+      "avg_loss": 0.4652
+    },
+    {
+      "epoch": 6,
+      "avg_loss": 0.3257
+    }
+  ],
+  "elapsed_sec": 1334.7,
+  "adapter_dir": "H:\\PRONTOPC_PRODUCTION\\pod\\orbs\\repair-plan\\satellites\\local-model\\education\\forming\\adapters\\gemma3-1b-formation-v0.1.0"
+}
