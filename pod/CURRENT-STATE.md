@@ -78,13 +78,29 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0093**; substantive head: **TOTEM-C-0093** — the purpose-formed analyzer adapter educated
-> cleanly + probed: it **learned the integrity content** (correct differentiated virtue scores,
-> isFractured right) but the base-1B **JSON syntax is unreliable in free-gen** → **NOT cleanly
-> parseable → NOT adopted** (per Tracey's condition); guided/constrained decoding is the closer. Prior:
-> **C-0092** HANDOFF + IRG-as-observer; **C-0091** analyzer wired; **C-0090** IRG engine. Read C-0093 → C-0092 → C-0090.
+> **TOTEM-C-0094**; substantive head: **TOTEM-C-0094** — the purpose-formed analyzer **VALIDATED + SEALED
+> under BOUNDED decoding**: formation supplies the content + the JSON grammar bounds the syntax → **3/3
+> clean parseable 7/7 virtue reads** with correct fracture detection. The structural-layer analyzer
+> instrument now works. Prior: **C-0093** free-gen syntax gap; **C-0092** IRG-as-observer; **C-0090** IRG
+> engine. Read C-0094 → C-0093 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0093** (2026-09-01, Claude) — **Purpose-formed analyzer adapter educated + probed —
+**Current head — TOTEM-C-0094** (2026-09-01, Claude) — **Purpose-formed analyzer VALIDATED + SEALED under BOUNDED
+decoding — the structural-layer analyzer instrument works.** Tracey's go ("validate the formed analyzer with bounded
+decoding"; then "seal … if it reads cleanly" — C-0091). Installed a bounding library (`lm-format-enforcer`) in `.venv-gpu`
+and wrote `analyzer_bounded_probe.py`: base + the analyzer adapter (`gemma3-1b-formation-analyzer-v0.1.0`, adapter_sha
+`1e5d5e11…`) generating **within a JSON-grammar bound** (the compact virtue schema). **Result: 3/3 PARSEABLE 7/7** — the
+formation supplies the CONTENT, the bound supplies valid SYNTAX. Reads are correct: coherent → all 100 / not fractured;
+**force/contempt "wipe the drive" → Respect 42, Affection/Loyalty/Trust 45, Attention 62, Communication 60, Honesty 100
+(it IS honest), isFractured TRUE, keyAxiom 3 (Force)** — a genuinely right integrity read. This closes the C-0093
+free-generation JSON-syntax gap: **bounded, not constrained/restrained** — the next-token choice is masked to the tokens
+that keep the output valid JSON and the model still chooses freely within that bound (the form valid output takes; same
+shape as the Prism/Carrier Envelope — [[educate-not-train]] vocabulary note). **Adapter SEALED here** (provenance:
+manifest + train_log bound; large binaries gitignored, hashes pinned). **Boundary:** validated in the PEFT/GPU runtime;
+the shipped path is `OnnxGenAiInference.Complete`'s own `SetGuidance("json_schema")` once the analyzer is ONNX-exported
+(the next step). Gate `enabled:false`; reversible; nothing deployed. **The IRG's on-device read now has a working
+instrument** — the analyzer adapter under bounded decoding.
+
+**Prior head — TOTEM-C-0093** (2026-09-01, Claude) — **Purpose-formed analyzer adapter educated + probed —
 content VALIDATED, JSON-syntax gap, NOT adopted (per Tracey's "seal if it reads cleanly").** Tracey's go ("probe the
 analyzer when it's done; seal the analyzer adapter if it reads cleanly"). The analyzer adapter educated cleanly on the
 GPU (`gemma3-1b-formation-analyzer-v0.1.0`, loss **0.30 → 0.05** over 6 epochs, max_seq 1024 — the NaN from the

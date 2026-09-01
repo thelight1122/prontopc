@@ -1,0 +1,35 @@
+{
+  "adapter_version": "analyzer-v0.1.0",
+  "created_utc": "2026-09-01T23:21:57Z",
+  "base_model": "google/gemma-3-1b-it",
+  "base_snapshot": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+  "dataset_file": "formation-seed-analyzer-v0.1.0.jsonl",
+  "dataset_sha256": "59748ca92db5845fbe687d5e16f5ee9de720073486642cdc7e4ddd4cffc1ac9c",
+  "adapter_sha256": "1e5d5e111151f6868de395a53904406118dece135ed140e27b27e4c1d86d21d1",
+  "hyperparameters": {
+    "seed": 4083,
+    "epochs": 6,
+    "grad_accum": 4,
+    "lr": 0.0002,
+    "max_seq": 1024,
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ]
+  },
+  "precision": "fp16-amp",
+  "device": "NVIDIA GeForce GTX 1060 6GB",
+  "torch_version": "2.6.0+cu124",
+  "elapsed_sec": 1597.7,
+  "peak_vram_gb": 5.097,
+  "reversible": true,
+  "note": "Reversible LoRA over a frozen base (canon-is-formed-disposition). No gate opened; nothing deployed. Delete this dir to undo."
+}
