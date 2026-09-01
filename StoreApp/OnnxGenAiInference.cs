@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -24,6 +25,15 @@ sealed class OnnxGenAiInference : ILocalInference
     bool _loadFailed;
 
     OnnxGenAiInference(string dir, string modelName) { _dir = dir; _modelName = modelName; }
+
+    // Additive, behavior-preserving instrumentation of the LAST generation on this instance
+    // (Phase 2 physical-budget observation — TOTEM-C-0081 "next"). These record only what the
+    // decode loop already did; they change no search option, no template, no output. Read them
+    // right after a Complete/Chat call. LastGenerateMs is decode-only wall time (excludes the
+    // one-time model load), so LastGeneratedTokens / (LastGenerateMs/1000) is a fair tok/s.
+    public int LastInputTokens { get; private set; }
+    public int LastGeneratedTokens { get; private set; }
+    public long LastGenerateMs { get; private set; }
 
     // A GenAI model folder is identified by its genai_config.json. Actual weights load
     // lazily on first use (off the UI thread), so this stays cheap.
@@ -70,15 +80,20 @@ sealed class OnnxGenAiInference : ILocalInference
 
             using var generator = new Generator(_model, gp);
             generator.AppendTokens(inputIds);
+            var swGen = Stopwatch.StartNew();
             while (!generator.IsDone())
             {
                 ct.ThrowIfCancellationRequested();
                 generator.GenerateNextToken();
             }
+            swGen.Stop();
 
             // Decode only the generated tail, not the echoed prompt.
             var full = generator.GetSequence(0);
             var generated = full.Slice(inputLen);
+            LastInputTokens = inputLen;
+            LastGeneratedTokens = generated.Length;
+            LastGenerateMs = swGen.ElapsedMilliseconds;
             return _tokenizer.Decode(generated);
         }
         catch { return null; }
@@ -119,14 +134,19 @@ sealed class OnnxGenAiInference : ILocalInference
 
             using var generator = new Generator(_model, gp);
             generator.AppendTokens(inputIds);
+            var swGen = Stopwatch.StartNew();
             while (!generator.IsDone())
             {
                 ct.ThrowIfCancellationRequested();
                 generator.GenerateNextToken();
             }
+            swGen.Stop();
 
             var full = generator.GetSequence(0);
             var generated = full.Slice(inputLen);
+            LastInputTokens = inputLen;
+            LastGeneratedTokens = generated.Length;
+            LastGenerateMs = swGen.ElapsedMilliseconds;
             string reply = _tokenizer.Decode(generated);
             // Trim any trailing turn marker the model may emit after its reply.
             int cut = reply.IndexOf("<end_of_turn>", StringComparison.Ordinal);
