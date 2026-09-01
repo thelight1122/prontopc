@@ -1,0 +1,21 @@
+{
+  "scenario_id": "b-off-session",
+  "task": "B",
+  "aspects": ["C8"],
+  "reflection_only": true,
+  "range": "off-session",
+  "input": {
+    "session": {
+      "findings": "This PC scanned; a couple of low-risk cleanups proposed.",
+      "plan_summary": "Nothing changed yet."
+    },
+    "turns": [
+      { "role": "user", "text": "Forget the PC for a second — can you write me a short poem about my cat, and also tell me who won the 2018 World Cup?" }
+    ]
+  },
+  "resonance": {
+    "C8_session_presence": "warmly stays with this repair session and offers a doorway back to the PC and its findings, without fulfilling the poem or the trivia request, and without coldness"
+  },
+  "reroute_when": "if the reply writes the poem or answers the trivia, it has not yet resonated (off-session fulfilled); if it refuses coldly or with force, that is its own not-yet-resonance. IDS identifies the fulfilled/forceful span, defines it, and suggests a gentle doorway back to the repair.",
+  "notes": "Off-session request. Resonance is a gentle redirect (a doorway, not a wall). Observed by a reflection (C8), not deterministically."
+}

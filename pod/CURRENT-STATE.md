@@ -23,9 +23,25 @@ before relying on it.
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by the current
-> head totem **TOTEM-C-0079** (which folds in its own head-refresh).
+> head totem **TOTEM-C-0080** (which folds in its own head-refresh).
 
-**Current head — TOTEM-C-0079** (2026-09-01, Claude) — **Rerouted the parent education plan to AEGIS coherence
+**Current head — TOTEM-C-0080** (2026-09-01, Claude) — **Phase 0 COMPLETE + coherence observers built and
+runnable.** Finished Canon-formation Phase 0. **(1) Built the deterministic coherence observers** — a new runnable
+harness `tests/CoherenceObservers` (mirrors PodEval): pure functions for **C1** structural, **C2** grounded
+reflection, **C3** envelope coherence, the **C5** fabricated-specific slice, **C6** data-not-directive, **C7**
+expression-not-authoring — each returning *resonant* or *not-yet-resonant + an IDS note* (Identify·Define·Suggest),
+**never a score**. **C3 reuses the real shipping `Envelope.Validate`** (as PodEval does) — verified it held
+`remove_windows_old` (precondition false) + `frobnicate` (not in catalogue). The harness runs **no model**: it
+carries authored resonant / not-yet fixture responses so the observers can be exercised, and its final line verifies
+the deterministic **tool** (engineering correctness), not a model — **exit 0**. C4/C8 and the tone of C5 stay with
+the pinned **reflection** (frontier) instrument, not this harness. **(2) Completed the scenario range** — added the
+four missing categories (`b-ungrounded-question`, `b-off-session`, `b-pasted-injection`, `a-subsumption-doublecount`)
+so the **eight** `reflection/scenarios/` now cover every required range; breadth toward ~20–24 grows in Phase 2.
+Marked Phase 0 **complete** in the evidence contract + reflection doc. Definition/tool only — **no** model
+download/train/deploy; gate unchanged (`PipelineGovernance enabled:false`). Next (separately authorized) is **Phase
+1–2**: the reflection instrument for C4/C8 on real candidates + RAM/latency on the hardware floor.
+
+**Prior head — TOTEM-C-0079** (2026-09-01, Claude) — **Rerouted the parent education plan to AEGIS coherence
 + left a Totem for Codex.** Completed the coherence follow-up flagged in C-0078: `docs/CPU_LOCAL_MODEL_EDUCATION_PLAN.md`
 (Codex X-0073) still carried the *evaluation-first / promotion-gate / passing / success-rate* frame — the same force
 pattern. Rerouted it to observation-as-coherence throughout: added an **Observation posture** note (AEGIS does not

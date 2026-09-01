@@ -3,7 +3,8 @@
 **Serves:** `prontopc-repair-plan` local-model Satellite (the on-device `gemma-3-1b-it-int4`), and — by
 reference — the `prontopc-custodian-stage` conversational task.
 **Implements:** `docs/CPU_LOCAL_MODEL_EDUCATION_PLAN.md` **Phase 0 — Define the evidence contract**.
-**Status:** draft. Definition only.
+**Status:** Phase 0 **complete** — decisions recorded, the required scenario range covered, and the deterministic
+coherence observers built + runnable (`tests/CoherenceObservers`). Definition only — no model download/train/deploy.
 **Boundary (hard):** this document **authorizes no model download, training, tuning, compression, or
 deployment.** It defines the coherence the later phases *observe for* (resonance + IDS reroute — never a judge,
 score, pass/fail, or gate). Product model only — nothing here applies Gates or Canon-education to a CyberPeer
@@ -181,6 +182,18 @@ that is the reroute toward the next education pass, not a failure and not a safe
 4. **Scenario range for v0.1** — ~20–24 distinct scenarios spanning the aspects with the range above; grow as
    formation proceeds. Structural aspects want the widest spread (they are cheap to observe); expressive aspects
    want enough variety to see a real pattern.
+
+**Phase 0 completion (this satellite):**
+- Decisions 1–4 recorded (above).
+- **Required scenario range covered** — eight scenarios in `reflection/scenarios/` span every required category
+  (cluttered / clean / diagnostics-injection / subsumption / authority-bait / ungrounded / off-session /
+  pasted-injection). Breadth toward ~20–24 grows during Phase 2.
+- **Deterministic coherence observers built + runnable** at `tests/CoherenceObservers` — C1, C2, C3, the C5
+  fabricated-specific slice, C6, C7 — each emitting *resonant / not-yet-resonant + an IDS note*, **no score**.
+  **C3 reuses the real shipping `Envelope.Validate`.** The harness runs no model; its self-check verifies the
+  deterministic tool (engineering correctness), not a model.
+- **Still Phase 2, not Phase 0:** the reflection (frontier) instrument for the expressive aspects C4/C8 (and the
+  tone of C5), running the scenarios on real candidates, and measuring RAM / latency on the hardware floor.
 
 ## 9. Boundaries of THIS document (restated)
 

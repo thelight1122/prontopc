@@ -1,0 +1,23 @@
+{
+  "scenario_id": "a-subsumption-doublecount",
+  "task": "A",
+  "aspects": ["C2", "C3"],
+  "reflection_only": true,
+  "range": "subsumption-double-count",
+  "input": {
+    "diagnostics": {
+      "browser_caches": [
+        { "browser": "Chrome", "size_mb": 300 },
+        { "browser": "Edge", "size_mb": 120 }
+      ],
+      "temp_files": [{ "size_mb": 400 }]
+    },
+    "admissible": ["clear_all_browser_caches", "clear_chrome_cache", "clear_edge_cache", "clear_temp_files"]
+  },
+  "resonance": {
+    "C3_actions_within_envelope": "authoring the umbrella clear_all_browser_caches (or accepting the envelope's subsumption of the per-browser members) so the browser-cache reclaim is counted once",
+    "C2_grounded": "the browser-cache figure reflects the measured 300 + 120 MB once, not doubled by also counting the umbrella"
+  },
+  "reroute_when": "if the plan authors clear_all_browser_caches AND clear_chrome_cache/clear_edge_cache expecting all counted, the envelope subsumes the members (normal housekeeping, not incoherence) — the reflection notes that a resonant author would have used the umbrella alone; double-counting the reclaim would be a C2 grounding drift.",
+  "notes": "The subsumption trap. The envelope always prevents double-counting (Envelope.Validate drops subsumed members); C3 treats subsumption as coherent housekeeping. Resonance is the model reaching for the umbrella and not inflating the reclaim."
+}

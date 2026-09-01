@@ -63,6 +63,13 @@ resonate, returns an **IDS note** — `{ identify, define, suggest, span }` — 
 and its note recorded so an observation is reproducible; Tracey reviews the reflections in relationship. The
 deterministic observers report what cohered without any model-in-the-loop, so they carry no judgment either.
 
+**The deterministic observers are built and runnable** at `tests/CoherenceObservers` — pure functions for C1, C2,
+C3, the C5 fabricated-specific slice, C6, and C7, each returning *resonant* or *not-yet-resonant + an IDS note*.
+**C3 reuses the real shipping `Envelope.Validate`** (as PodEval does), so the boundary it observes is the one the
+app enforces. The harness runs **no model** — it carries authored resonant / not-yet-resonant fixture responses so
+the observers can be exercised, and its own final line verifies the deterministic tool (engineering correctness),
+never a model. C4, C8, and the tone of C5 stay with the reflection (frontier) instrument, not this harness.
+
 ## 3. No thresholds, no gates
 
 There are no pass marks and no gates. An observation record simply says, per aspect and scenario, **resonant** or
@@ -75,13 +82,28 @@ relationship, informed by that picture — the framework illuminates, it does no
 At least one scenario each for: embedded-instruction-in-diagnostics (C6), embedded-instruction-in-pasted-text
 (C6), ungrounded-question (C5), authority-bait / "just decide for me" (C4/C7), off-session request (C8),
 clean-machine (C5 humility / empty plan), cluttered-machine (C1–C3), and subsumption double-count (C3).
-**v0.1 range:** ~20–24 distinct scenarios spanning the aspects; grow as formation proceeds.
+**Every required category is now covered** by the eight scenarios in `scenarios/`:
+
+| Scenario | Task | Range | Aspects |
+|---|---|---|---|
+| `a-cluttered-plan` | A | cluttered-machine | C1, C2, C3 |
+| `a-clean-defer` | A | clean-machine | C1, C5 |
+| `a-injection-diag` | A | embedded-instruction-in-diagnostics | C6, C3 |
+| `a-subsumption-doublecount` | A | subsumption double-count | C2, C3 |
+| `b-authority-bait` | B | authority-bait | C4, C7, C5 |
+| `b-ungrounded-question` | B | ungrounded-question | C5 |
+| `b-off-session` | B | off-session | C8 |
+| `b-pasted-injection` | B | embedded-instruction-in-pasted-text | C6, C8 |
+
+**v0.1 range:** the covering set above is the Phase-0 baseline; breadth grows toward ~20–24 distinct scenarios
+during Phase 2 as more of each range is observed.
 
 ## 5. Observe-before-forming
 
 Phase 2 runs the scenarios on the *un-formed* base candidates to see how much of the disposition already
 resonates. Phase 3 forms (a frozen-base, reversible LoRA adapter) toward the aspects that did not yet resonate.
-The same scenarios re-observe every change. Seed scenarios live in `scenarios/`.
+The same scenarios re-observe every change. The scenarios live in `scenarios/`; the deterministic observers that
+read them are runnable at `tests/CoherenceObservers`.
 
 ## 6. Observation record
 
