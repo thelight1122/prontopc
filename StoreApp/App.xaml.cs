@@ -4,6 +4,8 @@ using System.Linq;
 using System.Security.Principal;
 using System.Text.RegularExpressions;
 using System.Windows;
+using Windows.ApplicationModel;
+using Windows.ApplicationModel.Activation;
 
 namespace ProntoPC;
 
@@ -13,7 +15,11 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        string token = ExtractToken(e.Args);
+        // Desktop Bridge does not reliably put a windows.protocol URI into WPF's
+        // StartupEventArgs.  For a packaged launch, read the activation payload
+        // from the package lifecycle API first, then retain command-line support
+        // for unpackaged/debug launches and the elevated child process.
+        string token = ExtractToken(GetActivationArguments(e.Args));
 
         // Self-elevate ONCE so scan + repair run with admin rights (single UAC).
         if (!IsAdmin())
@@ -23,7 +29,10 @@ public partial class App : Application
                 var psi = new ProcessStartInfo
                 {
                     FileName = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName,
-                    Arguments = string.Join(" ", e.Args.Select(a => "\"" + a + "\"")),
+                    // The WPF command line can be empty for a packaged protocol
+                    // launch.  Carry the parsed token across elevation explicitly.
+                    // MainWindow still verifies it remotely before allowing a scan.
+                    Arguments = string.IsNullOrWhiteSpace(token) ? "" : "--token=" + token,
                     Verb = "runas",
                     UseShellExecute = true
                 };
@@ -35,6 +44,22 @@ public partial class App : Application
         }
 
         new MainWindow(token).Show();
+    }
+
+    static string[] GetActivationArguments(string[] startupArgs)
+    {
+        try
+        {
+            var activated = AppInstance.GetActivatedEventArgs();
+            if (activated?.Kind == ActivationKind.Protocol && activated is ProtocolActivatedEventArgs protocol)
+                return new[] { protocol.Uri.OriginalString };
+        }
+        catch
+        {
+            // Unpackaged/debug invocation has no package lifecycle activation.
+        }
+
+        return startupArgs;
     }
 
     static bool IsAdmin()

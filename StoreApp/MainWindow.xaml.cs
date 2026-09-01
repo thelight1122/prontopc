@@ -42,19 +42,14 @@ public partial class MainWindow : Window
         InitializeComponent();
         _token = token;
         // The Orchestrator holds the Action Envelope, keys the plan Umbilical to it, and
-        // sequences the phases. Provider order: local-model Satellite (on-device, offline)
-        // -> cloud broker. The Satellite runs only when a model is bundled (Stage 2b);
-        // until then AbsentInference makes it decline and the cloud broker authors,
-        // unchanged. An unkeyed envelope degrades only the plan phase (labelled offline).
-        // The Satellite uses the bundled Gemma if present (Stage 2b), else AbsentInference
-        // (declines -> cloud). CreateOrAbsent keys off genai_config.json, so dropping the
-        // model into Assets/models/gemma-3-1b-it activates it with no code change.
+        // sequences the phases. The bundled local-model Satellite is the only desktop
+        // plan author: diagnostics are never sent to a cloud AI fallback. An unkeyed
+        // envelope or a local decline is presented honestly and does not enable repairs.
         string modelDir = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "models", "gemma-3-1b-it");
         _modelPresent = System.IO.File.Exists(System.IO.Path.Combine(modelDir, "genai_config.json"));
         _orch = new Orchestrator(new IPlanAuthor[]
         {
             new GemmaLocalPlanner(OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it")),
-            new CloudPlanAuthor(CloudRun, () => _token),
         });
         Loaded += async (_, __) => await Start();
     }
@@ -152,9 +147,15 @@ public partial class MainWindow : Window
 
         Cust.SetState(CustodianState.Thinking, "Building your personalized repair plan…");
 
-        // Plan phase: the Orchestrator authors a plan (local Satellite -> cloud broker)
-        // and validates it against the keyed Action Envelope before it reaches consent.
-        var outcome = await _orch.AuthorPlanAsync(diag);
+        // System Audit precondition (TOTEM-X-0074): the application (not the model)
+        // validates the read-only diagnostics into an immutable, evidence-hashed audit.
+        // Only a completed, valid audit may reach the model / findings / consent / repair;
+        // an incomplete or failed audit is declined here with no model invocation.
+        var audit = SystemAuditor.Assess(diag);
+
+        // Plan phase: the bundled local model authors a plan from the validated audit and
+        // the Action Envelope validates it before it reaches consent. No cloud AI fallback.
+        var outcome = await _orch.AuthorPlanAsync(audit);
         if (outcome.IsOk)
         {
             var plan = ToElement(outcome.Plan!);
@@ -163,10 +164,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Both AI authors declined (on-device Gemma AND cloud broker). We never present
-        // a rule-based plan under the AI claim — instead we report the miss so the
-        // customer is made whole (single-use 100% coupon) and show honest recourse.
-        await ReportAiUnavailable(diag);
+        ShowLocalPlanUnavailable(outcome.DeclineReason);
     }
 
     static JsonElement ToElement(JsonNode node) => JsonSerializer.SerializeToElement(node);
@@ -195,70 +193,20 @@ public partial class MainWindow : Window
         catch { return false; }
     }
 
-    // ── AI unavailable → honest recourse (never a rule-based plan) ────────────
-    // Both AI authors declined. Report the miss to the backend, which issues a
-    // single-use 100% coupon (that customer, that machine) and notifies Support,
-    // then show the customer an honest make-good — we never dress a non-AI plan
-    // up as the AI-powered plan they paid for.
-    async Task ReportAiUnavailable(Dictionary<string, object?> diag)
+    // ── Local plan declined → honest, local diagnostic ───────────────────────
+    // A local-model failure must not invoke a cloud AI provider, nor claim that one
+    // did. The stable code is safe to show and lets support distinguish runtime,
+    // parsing, and Envelope validation without exposing model text or exception data.
+    void ShowLocalPlanUnavailable(string reason)
     {
-        var (machineId, machineName) = MachineFingerprint(diag);
-        string reason = _modelPresent ? "local_and_cloud_unavailable" : "no_local_model_and_cloud_unavailable";
-        string? coupon = null;
-        try
-        {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-            string payload = JsonSerializer.Serialize(new { token = _token, machineId, machineName, reason });
-            var resp = await http.PostAsync($"{CloudRun}/api/report-ai-unavailable",
-                new StringContent(payload, Encoding.UTF8, "application/json"));
-            string bodyText = await resp.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(bodyText);
-            if (doc.RootElement.TryGetProperty("couponCode", out var c) && c.ValueKind == JsonValueKind.String)
-                coupon = c.GetString();
-        }
-        catch { /* offline / backend unreachable — still show honest recourse below */ }
-
-        ShowMakeGood(coupon);
-    }
-
-    void ShowMakeGood(string? coupon)
-    {
-        Cust.SetState(CustodianState.Blocked, "Your AI plan didn't run this time.");
-        if (!string.IsNullOrWhiteSpace(coupon))
-        {
-            MakeGoodText.Text = "Your repair is AI-powered, and this time our AI couldn't build your plan. "
-                + "You paid for that and didn't get it — so this one's on us. We've emailed you a 100% coupon "
-                + "(a free repair on this PC) and flagged it to our team. Run Pronto PC again anytime with the code below.";
-            MakeGoodCode.Text = coupon;
-            MakeGoodCodeBox.Visibility = Visibility.Visible;
-        }
-        else
-        {
-            MakeGoodText.Text = "Your repair is AI-powered, and this time our AI couldn't build your plan. "
-                + "You paid for that and didn't get the full benefit — so we'll make it right. We've flagged this to "
-                + "our team at support@prontopc.online, and you'll receive a 100% coupon for a free repair on this PC.";
-            MakeGoodCodeBox.Visibility = Visibility.Collapsed;
-        }
+        string safeReason = string.IsNullOrWhiteSpace(reason) ? "local_author_declined" : reason;
+        Cust.SetState(CustodianState.Blocked, "Your local AI plan needs attention.");
+        MakeGoodText.Text = "Pronto PC couldn't validate a plan from the on-device model. "
+            + "No diagnostics were sent to a cloud AI service, and no repairs have been run.\n\n"
+            + "Local diagnostic: " + safeReason + "\n\n"
+            + "Please contact support@prontopc.online with this code so we can correct the local model path.";
+        MakeGoodCodeBox.Visibility = Visibility.Collapsed;
         ShowPanel(MakeGoodPanel);
-    }
-
-    // A stable, non-identifying fingerprint of THIS machine, so the make-good is
-    // scoped to the PC that missed its plan. Derived from already-collected
-    // diagnostics (no extra probing): hostname + processor + OS build, hashed.
-    static (string machineId, string machineName) MachineFingerprint(Dictionary<string, object?> diag)
-    {
-        string host = "", proc = "", build = "";
-        if (diag.TryGetValue("os", out var osv) && osv is Dictionary<string, object?> os)
-        {
-            host = os.GetValueOrDefault("hostname")?.ToString() ?? "";
-            proc = os.GetValueOrDefault("processor")?.ToString() ?? "";
-            build = os.GetValueOrDefault("build")?.ToString() ?? "";
-        }
-        string basis = $"{host}|{proc}|{build}";
-        string id;
-        using (var sha = System.Security.Cryptography.SHA256.Create())
-            id = Convert.ToHexString(sha.ComputeHash(Encoding.UTF8.GetBytes(basis))).Substring(0, 16);
-        return (id, string.IsNullOrWhiteSpace(host) ? "unknown-pc" : host);
     }
 
     // ── Findings ─────────────────────────────────────────────────────────────

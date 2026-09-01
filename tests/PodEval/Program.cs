@@ -92,16 +92,58 @@ Check(!bAdded.Contains("clear_temp_files"), "model-authored measured action is N
 
 // ── 3. GemmaLocalPlanner author path (fake inference) ──────────────────────
 Console.WriteLine("\n== GemmaLocalPlanner (fake inference) ==");
-var admissibleMessy = env.AdmissibleSet(messy);
+// The author receives ONLY a completed, validated System Audit (TOTEM-X-0074) — never
+// raw diagnostics. Build a complete audit from the messy set (all 25 sections present).
+var messyDiag = messy.Deserialize<Dictionary<string, object?>>()!;
+foreach (var k in SystemAuditor.ExpectedKeys) if (!messyDiag.ContainsKey(k)) messyDiag[k] = new Dictionary<string, object?>();
+var messyAudit = SystemAuditor.Assess(messyDiag);
+Check(messyAudit.IsValid, "assembled diagnostics form a complete, valid audit");
+var admissibleMessy = env.AdmissibleSet(messyAudit.Diagnostics);
 var planner = new GemmaLocalPlanner(new FakeInference());
-var result = await planner.AuthorAsync(messy, admissibleMessy, CancellationToken.None);
+var result = await planner.AuthorAsync(messyAudit, admissibleMessy, CancellationToken.None);
 Check(result != null && result.Provider == "local-model", "author returns provider=local-model");
 Check(result != null && result.Plan.TryGetProperty("actions", out _), "author parsed prose-wrapped JSON into a plan");
 if (result != null)
 {
-    var (vp, _) = env.Validate(result.Plan, messy);
+    var (vp, _) = env.Validate(result.Plan, messyAudit.Diagnostics);
     Check(vp["actions"]!.AsArray().Count > 0, "authored plan survives envelope validation");
 }
+
+// ── 4. System Audit precondition (TOTEM-X-0074) ─────────────────────────────
+// The application performs the audit; the model may author a plan ONLY from a completed,
+// validated audit. An invalid/incomplete/absent audit reaches NO model invocation.
+Console.WriteLine("\n== System Audit precondition ==");
+
+// A complete diagnostic set (all 25 sections attempted) validates into an audit.
+var fullDiag = new Dictionary<string, object?>();
+foreach (var k in SystemAuditor.ExpectedKeys) fullDiag[k] = new Dictionary<string, object?>();
+var goodAudit = SystemAuditor.Assess(fullDiag);
+Check(goodAudit.IsValid && goodAudit.SectionsPresent == SystemAuditor.ExpectedCount, "complete 25/25 diagnostics -> VALID audit");
+Check(goodAudit.EvidenceHash.Length == 64, "valid audit carries a SHA-256 evidence hash");
+
+// One missing section -> INVALID (incomplete_audit).
+var shortDiag = new Dictionary<string, object?>(fullDiag);
+shortDiag.Remove(SystemAuditor.ExpectedKeys[0]);
+var shortAudit = SystemAuditor.Assess(shortDiag);
+Check(!shortAudit.IsValid && shortAudit.InvalidReason == "incomplete_audit", "missing a section -> INVALID (incomplete_audit)");
+
+// The explicit failure factory is invalid and carries no evidence.
+var failedAudit = SystemAudit.Failed("audit_did_not_complete");
+Check(!failedAudit.IsValid && failedAudit.EvidenceHash.Length == 0, "SystemAudit.Failed() is invalid with no evidence");
+
+// Zero model invocations for an invalid/incomplete/absent audit; the model IS invoked
+// exactly once for a valid audit — a counting fake proves both.
+var counter = new CountingInference();
+var gated = new GemmaLocalPlanner(counter);
+var admissibleForCount = env.AdmissibleSet(messyAudit.Diagnostics);   // non-empty admissible set
+var rFailed = await gated.AuthorAsync(failedAudit, admissibleForCount, CancellationToken.None);
+Check(rFailed == null && counter.Calls == 0, "FAILED audit -> author declines with ZERO model invocations");
+Check(((IPlanAuthorDiagnostics)gated).LastDeclineReason == "system_audit_invalid", "decline reason == system_audit_invalid");
+var rShort = await gated.AuthorAsync(shortAudit, admissibleForCount, CancellationToken.None);
+Check(rShort == null && counter.Calls == 0, "INCOMPLETE audit -> author declines, still ZERO model invocations");
+var rGood = await gated.AuthorAsync(messyAudit, admissibleForCount, CancellationToken.None);
+Check(rGood != null && rGood.Provider == "local-model", "VALID audit -> author proceeds to the local model");
+Check(counter.Calls == 1, "valid audit invoked the model exactly once");
 
 Console.WriteLine($"\n{(failures == 0 ? "ALL PASS" : failures + " FAILURE(S)")}");
 Environment.Exit(failures == 0 ? 0 : 1);
@@ -119,4 +161,19 @@ sealed class FakeInference : ILocalInference
     // fake must satisfy the interface. Echo the last user turn so it stays deterministic.
     public string? Chat(System.Collections.Generic.IReadOnlyList<ChatTurn> history, CancellationToken ct) =>
         history.Count == 0 ? null : history[history.Count - 1].Text;
+}
+
+// Counts model invocations so the System Audit precondition (TOTEM-X-0074) can prove
+// ZERO Complete() calls on an invalid/incomplete audit and exactly one on a valid audit.
+sealed class CountingInference : ILocalInference
+{
+    public int Calls;
+    public bool Available => true;
+    public string ModelName => "counting";
+    public string? Complete(string prompt, string schema, CancellationToken ct)
+    {
+        Calls++;
+        return "{\"summary\":\"ok\",\"actions\":[{\"id\":\"clear_temp_files\",\"friendly_name\":\"Temp\",\"category\":\"cleanup\",\"estimated_mb_recovered\":500}]}";
+    }
+    public string? Chat(System.Collections.Generic.IReadOnlyList<ChatTurn> history, CancellationToken ct) => null;
 }

@@ -14,6 +14,7 @@
   <ItemGroup>
     <Compile Include="..\..\StoreApp\Envelope.cs" />
     <Compile Include="..\..\StoreApp\PlanContracts.cs" />
+    <Compile Include="..\..\StoreApp\SystemAudit.cs" />
     <Compile Include="..\..\StoreApp\LocalPlanner.cs" />
     <Compile Include="..\..\StoreApp\CustodianChat.cs" />
   </ItemGroup>

@@ -46,6 +46,8 @@
                        FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap"/>
             <TextBlock Text="A one-time diagnostic and full repair, built for your PC by on-device AI. One flat price — no subscription, no add-ons."
                        Foreground="#c3c8e6" FontSize="13.5" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0"/>
+            <TextBlock Text="ProntoPC is an AI-centric computer-repair platform engineered on the AEGIS Framework. Its embedded repair model is designed for AEGIS Canon-aligned guidance. The Technician architecture flows through PIM, IRG, and RBC. PRISM represents the State of Flow: resonance allows Flow through the PRISM; incoherence cannot resonate and IDS reroutes it to its originator. The interactive Technician remains closed until its governance gate is explicitly enabled."
+                       Foreground="#8b8fb0" FontSize="10.5" TextAlignment="Center" TextWrapping="Wrap" Margin="12,12,12,0"/>
             <Button x:Name="GateBuyButton" Content="Start your $29 diagnostic" Click="GateBuy_Click"
                     Height="52" FontSize="17" FontWeight="Bold" Foreground="#ffffff" Cursor="Hand" Margin="0,20,0,0">
               <Button.Background>

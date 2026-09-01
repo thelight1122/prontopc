@@ -10,14 +10,12 @@ namespace ProntoPC;
 
 // The local-model Satellite (pod/orbs/repair-plan/satellites/local-model/).
 // Authors the repair plan ON-DEVICE with an embedded small model, so the AI plan is
-// present offline with no billable provider — the durable kill for the C3 billing
-// cliff. It is the FIRST author in the Orchestrator's provider order; on any failure
-// it returns null and the Orchestrator falls through to the cloud broker.
+// present offline with no billable provider. It is the desktop's only plan author:
+// a local decline remains local and is surfaced as an honest diagnostic outcome.
 //
 // The actual inference is isolated behind ILocalInference so the ONNX Runtime GenAI
 // dependency and the ~1GB Gemma weights can be added when they land (Stage 2b) without
-// touching the prompt/grammar/parse logic here. Until then AbsentInference makes this
-// author a graceful no-op (returns null -> cloud), so the app ships unchanged.
+// touching the prompt/grammar/parse logic here.
 
 interface ILocalInference
 {
@@ -44,24 +42,36 @@ sealed class AbsentInference : ILocalInference
     public string? Chat(IReadOnlyList<ChatTurn> history, CancellationToken ct) => null;
 }
 
-sealed class GemmaLocalPlanner : IPlanAuthor
+sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
 {
     readonly ILocalInference _model;
+    public string LastDeclineReason { get; private set; } = "local_not_started";
     public GemmaLocalPlanner(ILocalInference model) { _model = model; }
 
-    public async Task<PlanResult?> AuthorAsync(JsonElement diag, IReadOnlySet<string> admissible, CancellationToken ct)
+    public async Task<PlanResult?> AuthorAsync(SystemAudit audit, IReadOnlySet<string> admissible, CancellationToken ct)
     {
-        if (!_model.Available || admissible.Count == 0) return null;
+        LastDeclineReason = "local_not_started";
+        // System Audit precondition (TOTEM-X-0074): the model is never invoked on an
+        // invalid/incomplete/absent audit. This is the model-facing enforcement point;
+        // the Orchestrator gates the same invariant before the author is even reached.
+        if (!audit.IsValid) { LastDeclineReason = "system_audit_invalid"; return null; }
+        if (!_model.Available) { LastDeclineReason = "local_model_unavailable"; return null; }
+        if (admissible.Count == 0) { LastDeclineReason = "no_admissible_actions"; return null; }
 
-        string prompt = BuildPrompt(diag, admissible);
+        // Only the validated audit's evidence reaches the prompt.
+        string prompt = BuildPrompt(audit.Diagnostics, admissible);
         string schema = BuildSchema(admissible);
 
-        string? text = await Task.Run(() => _model.Complete(prompt, schema, ct), ct);
-        if (string.IsNullOrWhiteSpace(text)) return null;
+        string? text;
+        try { text = await Task.Run(() => _model.Complete(prompt, schema, ct), ct); }
+        catch (OperationCanceledException) { LastDeclineReason = "local_inference_cancelled"; return null; }
+        catch { LastDeclineReason = "local_inference_failed"; return null; }
+        if (string.IsNullOrWhiteSpace(text)) { LastDeclineReason = "local_completion_empty"; return null; }
 
-        if (!TryExtractJson(text, out var plan)) return null;
+        if (!TryExtractJson(text, out var plan)) { LastDeclineReason = "local_plan_json_invalid"; return null; }
         // The Orchestrator re-validates against the envelope (catalogue, admissibility,
         // mb clamp, risk stamp), so a slightly off plan is still made safe downstream.
+        LastDeclineReason = "";
         return new PlanResult(plan, "local-model", _model.ModelName);
     }
 

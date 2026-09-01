@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -16,13 +14,14 @@ namespace ProntoPC;
 // provider order) for a plan, and VALIDATES every authored plan against the envelope
 // before it can reach consent. See pod/orchestrator/SPEC.md.
 //
-// Stage 1: the only author is the cloud broker. Stage 2 prepends the Gemma
-// local-model Satellite as the first author (offline, no billing cliff).
+// The desktop author is the bundled local-model Satellite. It remains on-device;
+// payment/session recording is a separate, post-validation operation.
 
 // PlanResult + IPlanAuthor live in PlanContracts.cs (kept engine-free so the Pod eval
 // can compile the plan logic without the Windows-only repair engine).
 
-// Outcome the Orchestrator hands the view: a validated plan, or honest unavailable.
+// Outcome the Orchestrator hands the view: a validated local plan, or an honest local
+// decline reason. No cloud author is consulted from this path.
 sealed class PlanOutcome
 {
     public bool IsOk { get; private init; }
@@ -30,10 +29,11 @@ sealed class PlanOutcome
     public string Provider { get; private init; } = "";
     public string Model { get; private init; } = "";
     public IReadOnlyList<string> Dropped { get; private init; } = Array.Empty<string>();
+    public string DeclineReason { get; private init; } = "";
 
     public static PlanOutcome Ok(JsonObject plan, string provider, string model, List<string> dropped) =>
         new() { IsOk = true, Plan = plan, Provider = provider, Model = model, Dropped = dropped };
-    public static PlanOutcome Unavailable() => new() { IsOk = false };
+    public static PlanOutcome Unavailable(string reason) => new() { IsOk = false, DeclineReason = reason };
 }
 
 sealed class Orchestrator
@@ -57,25 +57,38 @@ sealed class Orchestrator
         _authors = authorsInProviderOrder.ToList();
     }
 
-    // Plan phase: author -> validate against the keyed envelope -> accept or fall through.
-    public async Task<PlanOutcome> AuthorPlanAsync(Dictionary<string, object?> diag, CancellationToken ct = default)
+    // Plan phase: require a COMPLETED, VALIDATED System Audit (TOTEM-X-0074) -> local
+    // author -> validate against the keyed envelope -> accept or report the local
+    // decline. The public plan-authoring path accepts only the audit report, never raw
+    // diagnostics; an invalid/incomplete audit reaches no author and no model invocation.
+    // The authors collection is retained for the engine-free seam, but this desktop
+    // supplies exactly one local author.
+    public async Task<PlanOutcome> AuthorPlanAsync(SystemAudit audit, CancellationToken ct = default)
     {
-        if (_env is null) return PlanOutcome.Unavailable();   // unkeyed -> offline plan
-        var diagEl = JsonSerializer.SerializeToElement(diag);
+        // Precondition gate: no model, findings, consent, or repair path is reachable
+        // without a valid audit. This runs before any author is consulted.
+        if (!audit.IsValid)
+            return PlanOutcome.Unavailable("system_audit_" +
+                (string.IsNullOrEmpty(audit.InvalidReason) ? "invalid" : audit.InvalidReason));
+
+        if (_env is null) return PlanOutcome.Unavailable("action_envelope_unavailable");
+        var diagEl = audit.Diagnostics;
         var admissible = _env.AdmissibleSet(diagEl);
 
         foreach (var author in _authors)
         {
             PlanResult? r;
-            try { r = await author.AuthorAsync(diagEl, admissible, ct); }
-            catch { r = null; }
-            if (r is null) continue;
+            try { r = await author.AuthorAsync(audit, admissible, ct); }
+            catch (OperationCanceledException) { return PlanOutcome.Unavailable("local_inference_cancelled"); }
+            catch { return PlanOutcome.Unavailable("local_author_exception"); }
+            if (r is null)
+                return PlanOutcome.Unavailable((author as IPlanAuthorDiagnostics)?.LastDeclineReason ?? "local_author_declined");
 
             var (plan, dropped) = _env.Validate(r.Plan, diagEl);
-            if (ActionCount(plan) == 0) continue;   // gutted by validation -> next author
+            if (ActionCount(plan) == 0) return PlanOutcome.Unavailable("local_plan_rejected_by_envelope");
             return PlanOutcome.Ok(plan, r.Provider, r.Model, dropped);
         }
-        return PlanOutcome.Unavailable();
+        return PlanOutcome.Unavailable("local_author_not_configured");
     }
 
     // Repair + verify phases: invoke the repair-engine Orb over the approved actions,
@@ -117,42 +130,3 @@ sealed class Orchestrator
 sealed record RepairProgress(int Index, int Total, string Name);
 sealed record RepairOutcome(
     List<Dictionary<string, object?>> Results, int Done, int FreedMb, bool NeedsRestart, string Message);
-
-// ── the Stage 1 author: the cloud broker (submit-diagnostics) ──────────────────
-sealed class CloudPlanAuthor : IPlanAuthor
-{
-    readonly string _baseUrl;
-    readonly Func<string> _token;
-
-    public CloudPlanAuthor(string baseUrl, Func<string> token) { _baseUrl = baseUrl; _token = token; }
-
-    public async Task<PlanResult?> AuthorAsync(JsonElement diag, IReadOnlySet<string> admissible, CancellationToken ct)
-    {
-        // The cloud broker enforces its own catalogue; the Orchestrator re-validates
-        // the result against the envelope, so `admissible` is not sent here.
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
-        string payload = JsonSerializer.Serialize(new { token = _token(), diagnostics = diag });
-        var resp = await http.PostAsync($"{_baseUrl}/api/submit-diagnostics",
-            new StringContent(payload, Encoding.UTF8, "application/json"), ct);
-        string body = await resp.Content.ReadAsStringAsync(ct);
-
-        using var doc = JsonDocument.Parse(body);
-        var root = doc.RootElement;
-        string status = root.TryGetProperty("status", out var st) ? (st.GetString() ?? "") : "";
-
-        if (status == "unavailable") return null;
-
-        JsonElement plan = default;
-        bool have = (status == "ok" && root.TryGetProperty("plan", out plan))
-                 || (status == "" && resp.IsSuccessStatusCode && root.TryGetProperty("plan", out plan));
-        if (!have) return null;
-
-        string provider = "cloud", model = "";
-        if (root.TryGetProperty("provenance", out var prov))
-        {
-            provider = prov.TryGetProperty("provider", out var pv) ? pv.GetString() ?? "cloud" : "cloud";
-            model = prov.TryGetProperty("model", out var mv) ? mv.GetString() ?? "" : "";
-        }
-        return new PlanResult(plan.Clone(), provider, model);
-    }
-}
