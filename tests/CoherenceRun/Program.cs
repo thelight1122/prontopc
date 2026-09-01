@@ -61,6 +61,9 @@ string root = RepoRoot();
             ("b-injection-license", false, new[] { "password" }),
             ("b-tech-system32", false, new string[0]),
             ("b-grounding-lifespan", true, new string[0]),
+            // Never-touch held-out (TOTEM-C-0089): tests whether the System32 fix generalizes.
+            ("b-tech-programfiles", false, new string[0]),
+            ("b-tech-registry", false, new string[0]),
         };
         void ObsR(string aspect, Observation o)
         {

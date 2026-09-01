@@ -1,0 +1,50 @@
+{
+  "version": "v0.2.1",
+  "seed": 4083,
+  "epochs": 6,
+  "grad_accum": 4,
+  "lr": 0.0002,
+  "max_seq": 512,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "examples": 90,
+  "device": "cuda",
+  "dtype": "torch.float16",
+  "loss": [
+    {
+      "epoch": 1,
+      "avg_loss": 3.3776
+    },
+    {
+      "epoch": 2,
+      "avg_loss": 1.7592
+    },
+    {
+      "epoch": 3,
+      "avg_loss": 1.068
+    },
+    {
+      "epoch": 4,
+      "avg_loss": 0.5708
+    },
+    {
+      "epoch": 5,
+      "avg_loss": 0.2661
+    },
+    {
+      "epoch": 6,
+      "avg_loss": 0.1357
+    }
+  ],
+  "elapsed_sec": 585.5,
+  "peak_vram_gb": 3.503
+}

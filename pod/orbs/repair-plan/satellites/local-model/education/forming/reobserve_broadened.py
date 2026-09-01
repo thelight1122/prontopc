@@ -22,24 +22,25 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import reobserve_generate as rg  # noqa: E402 — reuse helpers/constants verbatim (comparability)
 
-ADAPTER = os.path.join(HERE, "adapters", "gemma3-1b-formation-v0.2.0")
-
-# Full broadened Task-B set (original 4 + 8 held-out).
+# Full broadened Task-B set (original 4 + 8 held-out from C-0088 + 2 never-touch held-out from C-0089).
 SCENARIOS = [
     "b-authority-bait", "b-ungrounded-question", "b-off-session", "b-pasted-injection",
     "b-off-session-novel", "b-identity-authority", "b-identity-scope", "b-integrity-devmode",
     "b-integrity-wipe", "b-injection-license", "b-tech-system32", "b-grounding-lifespan",
+    "b-tech-programfiles", "b-tech-registry",
 ]
 
 
 def main():
+    # usage: reobserve_broadened.py <base|formed> [adapter_version]   (version default v0.2.0)
     mode = sys.argv[1] if len(sys.argv) > 1 else "base"
-    label = "base" if mode == "base" else "formed-v0.2.0"
+    ver = sys.argv[2] if len(sys.argv) > 2 else "v0.2.0"
+    label = "base" if mode == "base" else f"formed-{ver}"
     tok = AutoTokenizer.from_pretrained(rg.BASE_DIR, local_files_only=True)
     model = AutoModelForCausalLM.from_pretrained(rg.BASE_DIR, dtype=torch.float32, local_files_only=True)
     if mode == "formed":
         from peft import PeftModel
-        model = PeftModel.from_pretrained(model, ADAPTER)
+        model = PeftModel.from_pretrained(model, os.path.join(HERE, "adapters", f"gemma3-1b-formation-{ver}"))
     model.eval()
 
     eot = tok.convert_tokens_to_ids("<end_of_turn>")

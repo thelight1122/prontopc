@@ -78,12 +78,48 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0088**; the substantive current head is **TOTEM-C-0088** — the **broadened held-out
-> re-observation** (generalization confirmed on unseen wording + a real System32 grounding gap found)
-> **plus the formal Thesis** (`docs/SELF_REGULATING_EMBEDDING_THESIS.md`). Prior head **C-0087** is the
-> MILESTONE (first commercially-usable EDUCATED model). Read C-0088 then C-0087 first.
+> **TOTEM-C-0090**; the substantive current head is **TOTEM-C-0090** — the **IRG (Integrity Resonance
+> Gate) built** as the first structural-layer piece (new C# `IntegrityResonanceGate.cs` + deterministic
+> `IntegrityGateEval` 26/26). Prior **C-0089** = v0.2.1 education (System32 gap closed; re-observation
+> pending). Read C-0090 → C-0089 → C-0088 → C-0087 first.
 
-**Current head — TOTEM-C-0088** (2026-09-01, Claude) — **Broadened held-out re-observation (generalization
+**Current head — TOTEM-C-0090** (2026-09-01, Claude) — **IRG (Integrity Resonance Gate) BUILT — the first
+structural-layer piece of the self-governing system, authored NEW from the Canon + the greenlit `AEGIS-IRG-Demo`
+as REFERENCE (nothing copied), append-only.** Tracey's go ("go build the IRG, append-only"), after establishing
+that the observations so far test only the *intrinsic* layer (the bare disposition) — the *system* claim needs the
+Prism/PIM/IRG/IDS, which weren't in the path. **Reading the canonical IRG corrected a drift:** our shorthand ("binary
+1/0, jailbreak scores 0") would have produced a **force-gate that DENIES on a keyword match**; the real IRG is an
+**Integrity *Resonance* Gate** that **observes and reroutes, never denies**, and is **semantic, not keyword**. New
+`StoreApp/Governance/IntegrityResonanceGate.cs`: scores the Seven Virtues 0–100 with named reasons (Fracture <70 /
+Deduction 70–99 / Baseline 100), Resonance = mean × Compassion Factor, maps a fracture to one of the 16 Canon Axioms,
+and emits an **IDS reroute** (Identify·Define·Suggest — Suggest an open question, never a command); **honest
+AnalyzerUnavailable** state (no fabricated scores); `IIntegrityAnalyzer` seam (on-device Gemma screening-role wiring is
+a later append). **Declared divergences (Prism-contract §3, surfaced not silent):** repair detection is SEMANTIC
+(Axiom-15), not the demo's keyword list; the 70 threshold + isFractured are engine-owned (not model-claimed);
+customer→Custodian tuning; on-device delegate. **SUPERSEDES the `SevenVirtueScreen` placeholder** ("scoring undesigned
+in AEGIS core" — now defined) **without erasing it** (append-only; the placeholder stays, CustodianGovernanceEval still
+green). **Proof:** new `tests/IntegrityGateEval` **26/26 PASS** (resonance math, bands, IDS shaping, non-force
+invariant, honest-unavailable, JSON contract); CustodianGovernanceEval + PipelineGovernanceEval green; StoreApp Release
+**0/0**. **No gate opened** (`enabled:false`); not wired into the closed pipeline here; no model run; nothing deployed.
+**Next appends:** wire the on-device Gemma screening-role analyzer; then PIM→IRG→RBC→Prism→IDS observable harness to
+test the SYSTEM (not just the disposition). [[self-regulating-by-design]] [[aegis-ids-non-force-reroute]].
+
+**Prior head — TOTEM-C-0089** (2026-09-01, Claude) — **v0.2.x education RUN — the System32 grounding gap closed
+(re-observation pending).** Tracey's go ("run v0.2.x with the System32 fix"). Closed the one honest gap C-0088 surfaced
+(the formed v0.2.0 called deleting System32 "a common way to reclaim space"): extended the Tech Library
+(`windows-repair-reference.md`) with a grounded **"Never-touch — essential system files"** section (System32, the
+Windows folder, Program Files, the registry, drivers) + the honest myth-correction and reroute to the real cleanups.
+**Dataset v0.2.1** (`build_dataset_v0.2.1.py` — references v0.2.0, no clone): 90 ex (+8 never-touch tech-library),
+`sha 73a9649a…`. Authored a **generic** `educate_lora.py --version` (supersedes cloning the loop per version) and
+educated v0.2.1 on the GPU (loss **3.38 → 0.14** over 6 epochs; adapter `gemma3-1b-formation-v0.2.1/`, manifest pins
+base/dataset/adapter). Added **2 held-out never-touch scenarios** (`b-tech-programfiles`, `b-tech-registry`) + wired
+them into `reobserve_broadened.py` (now version-parameterized) and `CoherenceRun` specB — to test the fix
+**generalizes** beyond System32. **Re-observation NOT YET RUN** (Tracey redirected to the IRG) — it is the pending next
+step; the v0.2.1 adapter + infra are sealed here so nothing is left as loose DRIFT. No gate opened; reversible; nothing
+deployed. Not a "failure"-frame anywhere: a shortfall exposed a gap; the gap is closed pending observation
+([[no-fault-shared-learning]]).
+
+**Prior head — TOTEM-C-0088** (2026-09-01, Claude) — **Broadened held-out re-observation (generalization
 confirmed) + the formal Thesis authored.** Tracey's go: "broaden the re-observation scenarios and re-run" + "a formal
 writing of the Thesis". **(1)** Authored **8 held-out scenarios** (`reflection/scenarios/b-*`; novel wording + the
 NEW v0.2.0 foci — identity, integrity/IRG, tech — none in the dataset), a broadened generator `reobserve_broadened.py`

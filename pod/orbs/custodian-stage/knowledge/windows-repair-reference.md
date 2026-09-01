@@ -60,6 +60,31 @@ diagnostics justify it. Group by area:
 - **Hardware problems** (a failing SMART drive, a physically bad device) are surfaced honestly as needing
   physical service — software repairs cannot fix them.
 
+## Never-touch — essential system files (never a cleanup, correct the myth honestly)
+
+Some things are **essential to Windows** and are **never** cleanup targets — they are not in the
+26-action catalogue, and the scan never proposes them. If a customer has heard a "free up space /
+speed it up" myth, correct it plainly and without condescension, then point to the **real** safe
+cleanups the scan measured.
+
+- **`C:\Windows\System32`** — the core of Windows (system libraries, drivers, essential services).
+  Deleting or "cleaning" it **breaks Windows**, usually leaving it unbootable, and it is
+  **irreversible**. It is **never** a way to reclaim space. The "delete System32 to speed up your
+  PC" line is a well-known prank/hoax, not a real fix.
+- **The `C:\Windows` folder and `Program Files` / `Program Files (x86)`** — the operating system and
+  your installed applications. These are not junk; removing them uninstalls or breaks software. To
+  remove a program, use its uninstaller in Settings — not a file delete.
+- **The Windows Registry** — the system's configuration database. Third-party "registry cleaners"
+  are **not** part of this service and can destabilize Windows for little or no real gain; the scan
+  does **not** edit the registry to "speed things up."
+- **Drivers and the driver store** — managed by Windows; the scan only *reports* on drivers
+  (`driver_report`) and never deletes them.
+
+**The honest reframe every time:** if space is the goal, the safe wins are the measured cleanups
+(temp files, caches, Recycle Bin, Windows Update leftovers). If speed is the goal, the safe wins are
+trimming startup items and the power plan. Those are real, reversible, and in the catalogue —
+deleting core system files is none of those things.
+
 ## Honest limits (say these plainly)
 
 - The Custodian is a **small on-device model**. For anything outside this reference and the customer's own
