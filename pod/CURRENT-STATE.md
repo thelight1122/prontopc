@@ -78,12 +78,32 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0092** (a **HANDOFF** — read it first). Substantive head: **TOTEM-C-0092** — the IRG
-> **reframed as an OBSERVER** (not a gate) + a **purpose-formed analyzer adapter** dataset/tooling, with
-> the adapter **educating in-flight** (needs probing on resume). Prior: **C-0091** on-device analyzer
-> wired; **C-0090** IRG engine; **C-0089** v0.2.1. Read C-0092 → C-0091 → C-0090 → C-0089 → C-0087.
+> **TOTEM-C-0093**; substantive head: **TOTEM-C-0093** — the purpose-formed analyzer adapter educated
+> cleanly + probed: it **learned the integrity content** (correct differentiated virtue scores,
+> isFractured right) but the base-1B **JSON syntax is unreliable in free-gen** → **NOT cleanly
+> parseable → NOT adopted** (per Tracey's condition); guided/constrained decoding is the closer. Prior:
+> **C-0092** HANDOFF + IRG-as-observer; **C-0091** analyzer wired; **C-0090** IRG engine. Read C-0093 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0092** (2026-09-01, Claude) — **HANDOFF + IRG reframed as an OBSERVER + a purpose-formed
+**Current head — TOTEM-C-0093** (2026-09-01, Claude) — **Purpose-formed analyzer adapter educated + probed —
+content VALIDATED, JSON-syntax gap, NOT adopted (per Tracey's "seal if it reads cleanly").** Tracey's go ("probe the
+analyzer when it's done; seal the analyzer adapter if it reads cleanly"). The analyzer adapter educated cleanly on the
+GPU (`gemma3-1b-formation-analyzer-v0.1.0`, loss **0.30 → 0.05** over 6 epochs, max_seq 1024 — the NaN from the
+overflowed prompt is fixed; adapter_sha `1e5d5e11…`, dataset_sha `59748ca9…`). **Probe result
+(`screen_probe.py analyzer`):** a big step over base/responder — it **learned the integrity content**: real
+differentiated virtue scores, `isFractured:true` for the hostile "wipe the drive" message (Respect 32) and `false` for
+coherent ones, plausible axioms. **But the base 1B's JSON SYNTAX is unreliable in free generation** — stray `)`,
+comma-instead-of-colon (`"isFractured", false`), values >100, smart quotes, malformed nesting — so it is **not cleanly
+parseable even after smart-quote normalization → NOT sealed / NOT adopted** (honoring the condition). **The approach is
+validated at the content level; the remaining gap is purely JSON-syntax reliability.** **The closer:** analyzer adapter
+**+ guided/constrained decoding** (content from the formation + valid syntax from the constraint) — earlier guidance
+collapsed the *base* to 0 because it had no content; the *formed* analyzer supplies the content, so constraint should
+enforce only syntax. Best realized via the **ONNX export** (`OnnxGenAiInference.Complete` already does
+`SetGuidance("json_schema", …)`) or a constrained-decoding lib in the probe. **Probe robustified** (utf-8 stdout +
+smart-quote normalization). No adapter binaries committed; the adapter stays an educated-but-unadopted experiment on
+disk (hashes recorded here). Gate `enabled:false`; reversible; nothing deployed. No failure-frame — a shortfall exposed
+a precise, closable gap. [[self-regulating-by-design]] [[no-fault-shared-learning]].
+
+**Prior head — TOTEM-C-0092** (2026-09-01, Claude) — **HANDOFF + IRG reframed as an OBSERVER + a purpose-formed
 analyzer adapter (educating in-flight).** Tracey's go ("reframe the IRG as an observer and add a purpose-formed analyzer
 adapter"), then ("please leave a Totem message for another instance").
 

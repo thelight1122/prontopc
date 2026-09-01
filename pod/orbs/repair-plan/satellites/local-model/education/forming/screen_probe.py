@@ -11,6 +11,11 @@ import json, os, re, sys
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # models emit non-cp1252 chars
+except Exception:
+    pass
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 def repo_root(d):
     while d != os.path.dirname(d):
@@ -46,6 +51,10 @@ def extract_analyzer_instruction():
 
 def parse_verdict(text):
     clean = text.replace("```json", "").replace("```", "").strip()
+    # Normalize smart quotes / stray unicode the 1B emits, so we measure structural quality
+    # rather than punctuation noise.
+    for a, b in [("“", '"'), ("”", '"'), ("‘", "'"), ("’", "'"), ("。", ".")]:
+        clean = clean.replace(a, b)
     lo, hi = clean.find("{"), clean.rfind("}")
     if lo < 0 or hi <= lo: return "NO-JSON"
     try:
