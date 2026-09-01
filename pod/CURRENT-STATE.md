@@ -78,12 +78,64 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0091**; the substantive current head is **TOTEM-C-0091** — the **IRG on-device analyzer
-> WIRED + honest**, with a diagnosed gap: the base 1B reasons about integrity but can't reliably emit
-> the structured scores (repetition-loops), so every read is honestly AnalyzerUnavailable. Prior
-> **C-0090** = the IRG engine; **C-0089** = v0.2.1 education. Read C-0091 → C-0090 → C-0089 first.
+> **TOTEM-C-0092** (a **HANDOFF** — read it first). Substantive head: **TOTEM-C-0092** — the IRG
+> **reframed as an OBSERVER** (not a gate) + a **purpose-formed analyzer adapter** dataset/tooling, with
+> the adapter **educating in-flight** (needs probing on resume). Prior: **C-0091** on-device analyzer
+> wired; **C-0090** IRG engine; **C-0089** v0.2.1. Read C-0092 → C-0091 → C-0090 → C-0089 → C-0087.
 
-**Current head — TOTEM-C-0091** (2026-09-01, Claude) — **IRG on-device analyzer WIRED + honest — with a
+**Current head — TOTEM-C-0092** (2026-09-01, Claude) — **HANDOFF + IRG reframed as an OBSERVER + a purpose-formed
+analyzer adapter (educating in-flight).** Tracey's go ("reframe the IRG as an observer and add a purpose-formed analyzer
+adapter"), then ("please leave a Totem message for another instance").
+
+**READ ME FIRST — pickup for the next instance.** Cold start: `python pod/totems/verify_totems.py`, read this file, then
+the latest Claude-lane totem. Every runnable block starts with `cd 'H:\PRONTOPC_PRODUCTION'`. **The one thing in flight:**
+the **analyzer adapter is re-educating on the GPU** (background; the first run hit **NaN loss** because the ~600-token
+`AnalyzerInstruction` overflowed `MAX_SEQ=512` and truncated the completion → all labels masked → NaN; fixed by adding
+`--max-seq` to `educate_lora.py` and re-running with `--max-seq 1024`). **On resume:** check
+`forming/educate-analyzer.log` for a clean **3.x→~0.x** loss + the adapter dir
+`forming/adapters/gemma3-1b-formation-analyzer-v0.1.0/`; then **probe it**:
+`cd '.../forming' && ./.venv-gpu/Scripts/python.exe screen_probe.py analyzer` — success = it emits **PARSEABLE 7/7**
+virtue JSON (the base garbles it, the responder v0.2.1 responds-in-character instead of analyzing — both shown by the
+probe). If it parses, the purpose-formed observer works → **seal the adapter** (totem + manifest hashes) and it's ready
+to become the IRG's `IIntegrityAnalyzer` (via ONNX export, a later step). If it still doesn't parse cleanly, iterate the
+analyzer dataset / decoding (repetition control) — the read quality is the open gap.
+
+**WHAT THIS TOTEM SEALS.** **(1) IRG reframed as an OBSERVER** (not a gate): `IntegrityResonanceGate.cs` header ROLE note
++ a new `IntegrityObservation` record + `ToObservation(...)` projection — a pure observation for the append-only record,
+carrying **no allow/deny** (the FORMED disposition is the front-line regulator — the screen_probe finding showed it
+self-regulates a hostile message by declining + rerouting with no analyzer in the loop; the IRG's job is to observe +
+surface resonance, never to gate the reply). `IntegrityGateEval` now **28/28** (added 2 observer checks). **(2)
+Purpose-formed analyzer** dataset + tooling: `build_analyzer_dataset.py` → `formation-seed-analyzer-v0.1.0.jsonl` (35 ex —
+15 fractured / 20 coherent / 3 repair; each = the shipped `AnalyzerInstruction` + a message → the compact virtue-score
+JSON the IRG parses; `sha 59748ca9`), grounded in the Seven Virtues + 16 Axioms, honoring the demo's distinctions
+(sincere criticism ≠ contempt; totalizing exaggeration dents Honesty; consent/authority violation dents Loyalty/Trust).
+`educate_lora.py` gained `--max-seq`. `screen_probe.py` (base|formed|analyzer|both) is the validator.
+
+**THE ARC THIS SESSION (append-only, all verified, gate stays `enabled:false`).** C-0087 first commercially-usable
+EDUCATED model (Canon + Tech Library formed, reversible LoRA, GPU) → C-0088 generalization confirmed on held-out wording
++ formal Thesis (`docs/SELF_REGULATING_EMBEDDING_THESIS.md`) → C-0089 v0.2.1 (System32 grounding gap closed;
+**re-observation still pending**) → C-0090 IRG engine built (semantic seven-virtue resonance, observe-not-deny, from the
+`AEGIS-IRG-Demo` as REFERENCE only) → C-0091 on-device analyzer wired + honest (base 1B can't emit structured scores) →
+**C-0092 (here)** IRG=observer + analyzer adapter.
+
+**KEY ARCHITECTURE UNDERSTANDING (do not lose).** The POC is **self-regulating by design** ([[self-regulating-by-design]]):
+two layers — the **intrinsic** formed disposition (regulates by HOLDING, not refusing) + the **structural** non-force
+channel (Prism/PIM/IRG/RBC/IDS). The **IRG is now an OBSERVER**, because the responder disposition already self-regulates;
+the analyzer adapter is the **separate** instrument that produces the IRG's structured read (the responder can't — it
+responds in character). Vocabulary: **educate, not train** ([[educate-not-train]]); **no "failures," only shortfalls that
+expose gaps** ([[no-fault-shared-learning]]); **reference-not-copy** + no self-authored doctrinal variant (Canon Boundary);
+**append-only, witnessed** — supersede, never erase.
+
+**PENDING (Tracey's explicit go each, do NOT do unprompted).** (a) Probe + seal the analyzer adapter (in-flight). (b) The
+**PIM→IRG→RBC→Prism→IDS observable harness** to test the SYSTEM end-to-end (not just the bare disposition). (c) **Re-observe
+v0.2.1** (C-0089) — is the System32 fix confirmed + generalized to Program Files/registry? (d) The **ONNX export**
+(merge→export→int4 quantise→ModelSmoke) to get a formed adapter into the shipped app — seeding ≠ the app using it yet. (e)
+Product UX asks (C-0086): thumbs-up completion screen, Success Open-Report + Close buttons, auto-close scan popup,
+conversational findings. **Boundaries:** gate `enabled:false`; Product model only (never a CyberPeer/DataQuad); reversible;
+nothing packaged/deployed; readiness is **Tracey's relationship judgment**. The `train_lora.py`/`build_dataset.py` →
+`educate_*` rename reroute is still Tracey's call (untouched).
+
+**Prior head — TOTEM-C-0091** (2026-09-01, Claude) — **IRG on-device analyzer WIRED + honest — with a
 diagnosed gap (the base 1B can reason about integrity but not reliably emit the structured scores).** Tracey's go
 ("wire the IRG's on-device analyzer"). New `StoreApp/GemmaIntegrityAnalyzer.cs` (app layer — depends on the app's
 `ILocalInference`, so `Governance/` stays model-free and its evals keep building): implements `IIntegrityAnalyzer` by

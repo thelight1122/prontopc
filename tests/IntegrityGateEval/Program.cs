@@ -91,6 +91,14 @@ Check(IntegrityResonanceGate.TryParseAnalysis("") == null, "parse: empty -> null
 Check(fracture.Ids != null && coherent.Ids == null && unavailable.State == IntegrityState.AnalyzerUnavailable,
     "non-force: fracture reroutes, coherence is silent, unavailable is honest — never a denial");
 
+// 11. Observer reframe: ToObservation projects a pure observation for the append-only record — it
+//     carries the resonance + IDS but NO allow/deny (the IRG observes; it never gates the reply).
+var obs = IntegrityResonanceGate.ToObservation(fracture, "inbound");
+Check(obs.Context == "inbound" && obs.IsFractured && obs.Resonance == 80 && obs.Ids != null && obs.Virtues.Count == 7,
+    "observer: ToObservation records the resonance + IDS for the ledger (structurally no allow/deny)");
+var obsCoherent = IntegrityResonanceGate.ToObservation(coherent, "inbound");
+Check(!obsCoherent.IsFractured && obsCoherent.Ids == null, "observer: a coherent observation records silently (nothing to reroute)");
+
 Console.WriteLine();
 if (failures == 0)
     Console.WriteLine("ALL PASS — the IRG engine is verified (deterministic tool; no model, no gate opened, observe-not-deny).");

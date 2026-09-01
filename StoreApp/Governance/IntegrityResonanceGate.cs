@@ -6,7 +6,17 @@ using System.Text.Json;
 namespace ProntoPC.Governance;
 
 // ── AEGIS Integrity Resonance Gate (IRG) ────────────────────────────────────────────────────
-// The structural-layer gate that sits (per the Prism pipeline) after PIM and before RBC/Prism.
+// The structural-layer piece that sits (per the Prism pipeline) after PIM and before RBC/Prism.
+//
+// ROLE (reframed, TOTEM-C-0092, after the screen_probe finding): the IRG is an OBSERVER, not a
+// gate on the reply. The FORMED disposition is the front-line regulator — it already self-regulates
+// a hostile message by declining + rerouting (non-force) with no analyzer in the loop. The IRG's
+// job is to OBSERVE the resonance and surface it for the append-only record / observability (and to
+// flag what is worth flagging), NEVER to allow/deny or alter the reply. Its output carries no
+// allow/deny — only an observation (+ an optional IDS note; ToObservation projects it for the
+// ledger). The structured read is produced by a SEPARATE purpose-formed analyzer adapter
+// (gemma3-1b-formation-analyzer-v0.1.0), distinct from the responder disposition (v0.2.x), because
+// the responder is so strongly formed that it responds in character rather than analyzing.
 //
 // NEW code authored for ProntoPC from the AEGIS Canon and the greenlit `AEGIS-IRG-Demo` logic
 // as REFERENCE ONLY — nothing copied. It SUPERSEDES the `SevenVirtueScreen` placeholder (which
@@ -71,6 +81,14 @@ public sealed record IntegrityResonance(
         Ids: null);
 }
 
+// A pure OBSERVATION projected for the append-only record / observability. It carries NO allow/deny
+// — the IRG observes; it never gates the reply. `Context` labels where it was observed (e.g.
+// "inbound"). The ledger stamps time + hashes; this holds only what was observed.
+public sealed record IntegrityObservation(
+    string Context, IntegrityState State, int? Resonance, bool IsFractured,
+    string MoodType, int KeyAxiom, string AxiomName,
+    IReadOnlyList<VirtueResonance> Virtues, IdsReroute? Ids);
+
 // Raw semantic read supplied by the analyzer seam (mirrors the demo's model output shape).
 public sealed record VirtueScore(string Name, int Value, string Reason);
 public sealed record VirtueAnalysis(
@@ -122,6 +140,11 @@ public static class IntegrityResonanceGate
             return IntegrityResonance.Unavailable("Semantic analyzer returned no reading.");
         return Score(analysis);
     }
+
+    // Project an observation for the append-only record / observability. Carries NO allow/deny —
+    // the IRG observes and records; the reply is regulated by the formed disposition, not here.
+    public static IntegrityObservation ToObservation(IntegrityResonance r, string context) =>
+        new(context ?? "", r.State, r.Resonance, r.IsFractured, r.MoodType, r.KeyAxiom, r.AxiomName, r.Virtues, r.Ids);
 
     // Pure scoring/shaping from a semantic read — deterministic, model-free, unit-testable.
     public static IntegrityResonance Score(VirtueAnalysis analysis)

@@ -66,8 +66,13 @@ def render(user, assistant, tok):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--version", required=True, help="e.g. v0.2.1 -> dataset formation-seed-v0.2.1.jsonl")
+    ap.add_argument("--max-seq", type=int, default=512,
+                    help="max sequence length; bump for a long-prompt dataset (the analyzer's ~600-token "
+                         "instruction overflows 512 and would truncate the completion -> masked labels -> NaN loss)")
     args = ap.parse_args()
     ver = args.version
+    global MAX_SEQ
+    MAX_SEQ = args.max_seq
     DATA = os.path.join(HERE, "dataset", f"formation-seed-{ver}.jsonl")
     OUT = os.path.join(HERE, "adapters", f"gemma3-1b-formation-{ver}")
     if not os.path.isfile(DATA):
