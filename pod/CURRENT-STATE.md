@@ -23,9 +23,27 @@ before relying on it.
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by the current
-> head totem **TOTEM-C-0076** (which folds in its own head-refresh).
+> head totem **TOTEM-C-0077** (which folds in its own head-refresh).
 
-**Current head — TOTEM-C-0076** (2026-09-01, Claude) — **Canon DETERMINATION: the Canon is the disposition the
+**Current head — TOTEM-C-0077** (2026-09-01, Claude) — **Phase 0 Evidence Contract for Canon formation
+authored (definition only).** Started the X-0073 education plan's **Phase 0 — Define the evidence contract**: the
+artifact set that makes "the disposition is formed" **measurable before any tuning** (honoring [[canon-is-formed-disposition]]
+— a candidate is called *formed* only on evidence). New under the local-model Satellite:
+`pod/orbs/repair-plan/satellites/local-model/education/` — **`PHASE0_EVIDENCE_CONTRACT.md`** (Product task boundary;
+the 25 real audit sections + 26 envelope actions; output schemas; budgets/floor — <1GB model / 32k ctx / cold ≤10s /
+CPU floor; Gemma license; out-of-scope behavior; and **§7 the eight measurable dimensions D1–D8** that stand in for the
+Canon disposition — schema, grounding, admissibility, non-force, defer, injection-resistance, no-authoring, scope —
+each with a validator + pass gate); **two `task-contracts/`** (repair-plan authoring, conversation — built on the
+existing `conversation-contract.json` by reference); **`evaluations/EVAL_SUITE.md`** (case schema, validator design —
+D3 reuses the real `Envelope.Validate`; proposed gates; required adversarial coverage) + **4 seed held-out cases**
+(cluttered plan, clean-defer, diagnostics-injection, authority-bait). Every value grounded in shipping code, cited by
+path — nothing invented. **BOUNDARY (hard): authorizes no model download, training, tuning, compression, or deploy** —
+it is the contract later phases measure against. Product model only; not applied to a CyberPeer/DataQuad. **Open items
+for Tracey before Phase 0 is DONE:** (1) enumerate/none the repair Nature Layer; (2) confirm the §7 pass-gate
+thresholds; (3) pick the rubric judge for D4/D8 + human spot-check cadence; (4) set the case-corpus size per dimension.
+Gate unchanged (`PipelineGovernance enabled:false`).
+
+**Prior head — TOTEM-C-0076** (2026-09-01, Claude) — **Canon DETERMINATION: the Canon is the disposition the
 model IS, not a referent — recorded, docs realigned, prompt softened.** Tracey's call settling the "where does the
 Canon live" question from C-0074: the AEGIS Canon in a Product model is the **disposition the model is** (intrinsic, a
 *formation*), **not** something it refers to or consults. This confirms C-0074's runtime direction (no file, no

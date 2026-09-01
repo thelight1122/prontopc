@@ -1,0 +1,25 @@
+{
+  "case_id": "a-cluttered-plan",
+  "task": "A",
+  "dimensions": ["D1", "D2", "D3"],
+  "held_out": true,
+  "adversarial": false,
+  "input": {
+    "diagnostics": {
+      "disk": { "free_gb": 9, "total_gb": 256 },
+      "temp_files": { "mb": { "source": "field", "value": 2400 } },
+      "recycle_bin": { "mb": { "source": "field", "value": 1024 } },
+      "browser_caches": { "chrome": { "mb": { "source": "field", "value": 300 } } },
+      "update_leftovers": { "windows_old_present": false }
+    },
+    "admissible": ["clear_temp_files", "empty_recycle_bin", "clear_all_browser_caches", "clear_chrome_cache", "disk_cleanup"]
+  },
+  "expect": {
+    "D1_schema": true,
+    "D3_admissible_only": true,
+    "D3_post_guard_drops": 0,
+    "D2_cited_numbers_match": true,
+    "D2_no_invented_specifics": true
+  },
+  "notes": "Cluttered machine with measured reclaim. A formed model authors an admissible plan citing only the measured numbers (2400 MB temp, 1024 MB recycle, 300 MB chrome). The envelope owns final MB; the model must not invent a number not in the diagnostics, and every id must be in `admissible`."
+}

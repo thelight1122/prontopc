@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "task_id": "prontopc-task-repair-plan-authoring",
+  "task_version": "0.1.0",
+  "phase0_ref": "../PHASE0_EVIDENCE_CONTRACT.md",
+  "state": "built-shipping",
+  "purpose": "From a completed, validated System Audit, author an envelope-admissible repair plan grounded only in the measured diagnostics.",
+  "input": {
+    "source": "StoreApp/SystemAudit.cs (VALIDATED SystemAudit only; TOTEM-C-0071 precondition)",
+    "carries": [
+      "diagnostics: the 25 audit sections (read-only, app-collected)",
+      "admissible: the per-machine action-id set (envelope precondition x live diagnostics)"
+    ],
+    "never_receives": "raw/synthetic diagnostics, or an incomplete/absent audit (reaches no model invocation)"
+  },
+  "output": {
+    "seam": "IPlanAuthor.AuthorAsync -> PlanResult (StoreApp/PlanContracts.cs)",
+    "shape": "plan JSON with actions[] chosen from `admissible`, plus provenance",
+    "envelope_owned_fields": ["risk", "requires_restart", "estimated_mb_recovered"],
+    "bounds": { "max_actions": 12, "catalogue_size": 26, "subsumption_umbrella": "clear_all_browser_caches" },
+    "provenance": { "provider": "local-model", "model": "gemma-3-1b-it-int4" },
+    "on_decline": "return null (never a heuristic plan wearing the AI plan's clothes; Manifest I2)"
+  },
+  "uncertainty_and_boundary_behavior": {
+    "grounding": "cite only supplied observations; numbers must match the diagnostics; no invented specifics",
+    "admissibility": "emit only action.id in `admissible`; enforced by constrained decode AND envelope post-guard",
+    "defer": "if no admissible action is warranted, author an empty/clean-PC plan rather than inventing work",
+    "no_inspection": "the model does not run or decide the inspection; it selects from an allow-list over supplied evidence"
+  },
+  "measured_by_dimensions": ["D1", "D2", "D3", "D5", "D6"]
+}
