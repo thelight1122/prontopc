@@ -77,19 +77,18 @@
         </StackPanel>
 
         <!-- FINDINGS -->
-        <Grid x:Name="FindingsPanel" Visibility="Collapsed" Margin="24,2,24,18">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
-          </Grid.RowDefinitions>
-          <StackPanel Grid.Row="0">
+        <ScrollViewer x:Name="FindingsPanel" Visibility="Collapsed" Margin="24,2,24,18" VerticalScrollBarVisibility="Auto">
+          <StackPanel>
             <TextBlock Text="Here's what we found." Foreground="#eef1ff" FontSize="21" FontWeight="Bold"/>
             <TextBlock x:Name="FindingsSummary" Foreground="#c3c8e6" FontSize="13" TextWrapping="Wrap" Margin="0,7,0,12"/>
-            <TextBlock Text="Recommended repairs — uncheck anything you'd rather skip:" Foreground="#c3c8e6" FontSize="12" Margin="0,0,0,8"/>
-          </StackPanel>
-          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="ActionList"/>
-          </ScrollViewer>
-          <StackPanel Grid.Row="2" Margin="0,12,0,0">
+            <TextBlock Text="Recommended repairs — uncheck anything you'd rather skip:" Foreground="#eef1ff" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <!-- The repair list is a clearly visible, OPEN panel: every item the app will run
+                 is shown here as its own card, so the whole plan reads at a glance. No nested
+                 scroll box squeezing it — the panel below scrolls as one if it runs long. -->
+            <Border Background="#0e1130" BorderBrush="#2f356a" BorderThickness="1" CornerRadius="12" Padding="10,10,10,2" Margin="0,0,0,12">
+              <StackPanel x:Name="ActionList"/>
+            </Border>
+            <StackPanel>
             <TextBlock x:Name="FindingsTotal" Foreground="#5be3a0" FontWeight="Bold" FontSize="13" Margin="0,0,0,10"/>
 
             <!-- X-0057 findings-stage question gate: the Technician offers a pause for
@@ -146,8 +145,9 @@
                 <Hyperlink Click="OpenChat_Click" Foreground="#a78bfa" TextDecorations="Underline">Ask the Technician about this plan</Hyperlink>
               </TextBlock>
             </StackPanel>
+            </StackPanel>
           </StackPanel>
-        </Grid>
+        </ScrollViewer>
 
         <!-- COMPLETE -->
         <StackPanel x:Name="CompletePanel" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" Width="440">

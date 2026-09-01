@@ -88,15 +88,25 @@ def main() -> int:
     # Latest-wins over the merged, time-ordered sequence: the current claimed state of
     # each file is its NEWEST Totem (by utc across trunk + all lanes). Append-only means
     # a file legitimately evolves, so only the most recent reference is authoritative.
-    current = {}  # path -> (totem_id, recorded_sha)
+    current = {}  # path -> (totem_id, recorded_sha, state)
     for t in totems:
         for rec in t.get("files", []):
-            current[rec["path"]] = (t["totem_id"], rec["sha256"])
+            current[rec["path"]] = (t["totem_id"], rec["sha256"], rec.get("state"))
 
     drift = False
     for path in sorted(current):
-        tid, recorded = current[path]
+        tid, recorded, state = current[path]
         p = REPO / path
+        if state == "deleted":
+            # The newest Totem declares this path RETIRED — moved to archive/ under the
+            # never-delete house rule, so history stays reversible. It HOLDS while the path
+            # is genuinely absent; a reappearance is undeclared drift (record it in a Totem).
+            if p.exists():
+                print("  [UNDEAD ]  %s  (authority %s) — recorded deleted but present" % (path, tid))
+                drift = True
+            else:
+                print("  [RETIRED] %s  (%s) — verified absent (archived)" % (path, tid))
+            continue
         if not p.exists():
             print("  [MISSING] %s  (authority %s)" % (path, tid))
             drift = True

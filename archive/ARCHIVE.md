@@ -43,3 +43,18 @@ Archived: 2026-08-28. Live design system: Pronto purple/iris (see `memory/pronto
 The live pages show *what* the design is. These show *why* — the decisions, the rejected options, and
 the mascot-voice rule that a future instance would otherwise have to re-derive. They are the thought
 process behind the current state.
+
+---
+
+## Retired source modules
+
+- **`StoreApp-Governance/CanonProvisioning.cs`** — retired 2026-09-01.
+  - Was the installed-app resolver for an **external** AEGIS Canon file provisioned to
+    `%ProgramData%\ProntoPC\Canon\…` via an authorized, hash-verified manifest.
+  - Retired because the architecture was corrected (Tracey): **the Canon is not external to the
+    model** — it is the model's embedded foundation, *what the model stands on*, not a file to load,
+    hash, inject, or provision. "Everything needs to be locally available to the model." With the
+    Canon in-model, external provisioning has no role.
+  - Replaced by the in-model `CanonBoundarySeed` (no filesystem; a reflective-posture seed only) and
+    a single-switch `PipelineGovernance.OfferingAllowed` (the §8 `enabled` gate; no external-Canon
+    check). Kept here (not deleted) for the reversible trail. See the Totem recording this rework.

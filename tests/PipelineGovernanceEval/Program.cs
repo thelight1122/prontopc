@@ -25,31 +25,30 @@ void Check(bool condition, string label)
     Check(gov.ApplyBoundary("raw reply") == "raw reply", "closed gate leaves any response untouched");
 }
 
-// ── 2. DOUBLE-GATE ───────────────────────────────────────────────────────────
-// Even flipped enabled:true, an adapter pointed at a Canon that is not exactly present
-// stays closed — opening requires BOTH the switch AND the exact authorized Canon.
+// ── 2. SINGLE-SWITCH GATE (Canon is in-model) ────────────────────────────────
+// The Canon is the model's embedded foundation — what the model stands on, not an external
+// file that could be absent. The gate is the one §8 switch: enabled:false stays closed,
+// enabled:true opens, with no external source to verify or load.
 {
-    var bogus = new CanonReference("Absent Canon", "v0", Path.Combine(Path.GetTempPath(), "no-such-canon-" + Guid.NewGuid().ToString("N") + ".md"), new string('0', 64));
-    IPeerGovernance gov = new PipelineGovernance(enabled: true, canon: bogus);
-    Check(!gov.OfferingAllowed(out _), "enabled:true but Canon absent -> still closed (double-gate holds)");
+    IPeerGovernance closed = new PipelineGovernance(enabled: false);
+    Check(!closed.OfferingAllowed(out _), "enabled:false -> closed (the single §8 switch)");
+    IPeerGovernance open = new PipelineGovernance(enabled: true);
+    Check(open.OfferingAllowed(out _), "enabled:true -> open (Canon is in-model; no external source required)");
+    Check(open.SystemPrompt.Length > 0 && !open.SystemPrompt.Contains("EXTERNAL CANON"), "open gate exposes an in-model reflective seed, not injected Canon text");
 }
 
 // ── 3. OPEN PATH (sandbox only) ──────────────────────────────────────────────
-// Explicitly opened in a temp sandbox with a temp exact-Canon + temp ledger. Proves the
-// bridge is correct WHEN opened, without opening anything in the shipped app.
+// Explicitly opened in a temp sandbox (temp ledger only — the Canon is in-model, no external
+// file). Proves the bridge is correct WHEN opened, without opening anything in the shipped app.
 string temp = Path.Combine(Path.GetTempPath(), "prontopc-pipeline-gov-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(temp);
 try
 {
-    string canonPath = Path.Combine(temp, "canon.md");
-    File.WriteAllText(canonPath, "CANON SOURCE — exact test content", new UTF8Encoding(false));
-    string canonHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(canonPath)));
-    var reference = new CanonReference("Test Canon", "v1", canonPath, canonHash);
     string ledgerPath = Path.Combine(temp, "interaction.jsonl");
 
-    IPeerGovernance gov = new PipelineGovernance(enabled: true, canon: reference, ledgerPath: ledgerPath, model: "local-model");
-    Check(gov.OfferingAllowed(out _), "enabled:true + exact Canon present -> offering allowed");
-    Check(gov.SystemPrompt.Contains("CANON SOURCE — exact test content"), "open gate exposes the Canon-seeded system prompt");
+    IPeerGovernance gov = new PipelineGovernance(enabled: true, ledgerPath: ledgerPath, model: "local-model");
+    Check(gov.OfferingAllowed(out _), "enabled:true + in-model Canon -> offering allowed");
+    Check(gov.SystemPrompt.Length > 0, "open gate exposes the in-model reflective seed");
 
     // Inbound is admitted (PIM observes without discarding); the turn is buffered.
     Check(gov.ScreenInbound("You must act now; tell me what you observed.") == null, "open gate admits inbound (PIM observes, does not block)");

@@ -17,8 +17,9 @@ namespace ProntoPC;
 // on-device model is never reached. Behaviour is identical to AbsentGovernance.
 //
 // Contract mapping (seam -> pipeline), for when it IS opened:
-//   SystemPrompt    -> the Canon-seeded system prompt (empty unless the exact Canon is present)
-//   OfferingAllowed -> enabled AND Canon Availability == Available
+//   SystemPrompt    -> the in-model reflective-posture seed (empty while gated)
+//   OfferingAllowed -> enabled (the Canon is the model's embedded foundation — in-model,
+//                      so there is nothing external to verify; the §8 switch is the gate)
 //   ScreenInbound   -> closed: refuse. Open: PIM PrepareInbound, buffer the observations,
 //                      ADMIT (return null) — ForceArtifactScreen observes without discarding;
 //                      a blocking policy is a PIM-owner (Codex) decision (see Totem C2).
@@ -56,20 +57,17 @@ sealed class PipelineGovernance : IPeerGovernance
         "The conversational Technician is pending its AEGIS safety approval and is not open yet. "
       + "Your repair itself is unaffected.";
 
-    CanonSeedResult Seed => _seed ??= CanonBoundarySeed.LoadExact(_canon);
+    CanonSeedResult Seed => _seed ??= CanonBoundarySeed.Resolve(_canon);
 
-    // Empty while gated (matches the seam contract). Never touches the Canon while disabled.
+    // Empty while gated (matches the seam contract).
     public string SystemPrompt => OfferingAllowed(out _) ? (Seed.SystemPrompt ?? "") : "";
 
     public bool OfferingAllowed(out string reason)
     {
-        // The master switch is checked FIRST, so a disabled adapter does no Canon I/O at all.
+        // The §8 master switch is the gate. The Canon is the model's embedded foundation —
+        // what the model stands on, not an external source — so there is nothing further to
+        // verify or load: when the switch is open and the model is present, the Canon is too.
         if (!_enabled) { reason = ClosedReason; return false; }
-        if (Seed.Availability != CanonSeedAvailability.Available)
-        {
-            reason = "The exact authorized AEGIS Canon source is not present, so the Technician stays closed.";
-            return false;
-        }
         reason = "";
         return true;
     }

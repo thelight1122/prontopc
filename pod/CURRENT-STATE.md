@@ -19,11 +19,50 @@ before relying on it.
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-08-31): **87 totems, ALL HOLD** (24 Claude-lane + 24 Codex-lane
+> Latest verifier run (2026-09-01): **110 totems, ALL HOLD** (35 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
-> This nav view is re-bound by the head-refresh totem **TOTEM-C-0063**; the substantive current head is **TOTEM-C-0062**.
+> The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
+> file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by the head-refresh
+> totem **TOTEM-C-0075**; the substantive current head is **TOTEM-C-0074**.
 
-**Current head — TOTEM-C-0062** (2026-08-31, Claude) — **Part B: scripted Technician findings presentation + X-0057
+**Current head — TOTEM-C-0074** (2026-09-01, Claude) — **Drift reconciled + sealed: the in-model Canon
+governance rework, built + eval-verified.** On resume the verifier showed 7 DRIFT + 1 MISSING — all one coherent,
+previously un-totemed governance change in the working tree (no fault, just identified). **Doctrine correction
+(Tracey's direction):** the AEGIS Canon is **not** an external file the app loads/hashes/injects/provisions — it is the
+model's **embedded foundation**, what the model stands on (educated into the weights). `CanonBoundarySeed.LoadExact`
+(read Canon file → SHA-256 verify → inject full text) → **`Resolve`** (no filesystem; always Available; returns a light
+reflective-posture **SEED = "Signed Evidence of Exact Design"**, never injected Canon text). `PipelineGovernance`
+drops its second Canon-availability gate — the sole gate is the one §8 `enabled` switch, and it **still ships
+`enabled:false` so the peer-facing Technician stays CLOSED**. The external-Canon provisioner `CanonProvisioning.cs` is
+**retired to `archive/`** (never-delete house rule; ARCHIVE.md records why). Findings panel restyled (open scrollable
+cards, reclaim MB pinned right — presentational). **Proof:** Release **0/0**, CustodianGovernanceEval **14 PASS**,
+PipelineGovernanceEval **ALL PASS** (17), PodEval **ALL PASS** (System Audit precondition C-0071 intact). **Honest
+caveat:** the evals were rewritten to the in-model concept, so green proves *internal consistency* + gate-stays-CLOSED,
+**not** that "Canon is in-model" is the right doctrine (that's Tracey's call; it partly reverses TOTEM-0036/0039's
+external Canon Boundary). Also added a `deleted` file-state to the verifier + schema so this first archive-move of a
+bound file seals clean (MISSING → RETIRED). Post-X-0055-freeze source, like C-0060/C-0062/C-0071 — any acceptance/recert
+package must be re-frozen/rebuilt to include it.
+
+**Prior head — TOTEM-C-0073** (2026-09-01, Claude) — **Service-question surface fix.** On the post-payment scripted
+service Q&A (`success-store.html`, X-0058), "What scans are included?" now **enumerates the six real areas** (storage &
+disk health, drivers & hardware, security, network, performance, system integrity) instead of a generic reassurance;
+widened keywords (include/cover/area/look/find). Scripted web responder only — no model, gate unchanged. Source-only; a
+Vercel redeploy (Tracey-gated) makes it live.
+
+**Prior head — TOTEM-C-0072** (2026-09-01, Claude) — **Recert MSIX v1.2.0.2 built + content-verified from HEAD.**
+Uploadable unsigned Store package (648.7 MB, SHA-256 `89C508A4…`) rebuilt from `main @ 51a9bd0` so it carries the C-0071
+System Audit gate. Model (693,829,632 bytes + 9 files) + both licenses bundled; identity/version/entrypoint correct; no
+pdb; binary-level proof the audit types ship inside `ProntoPC.dll`. **Closes cert-gap step 1.** In-package E2E behavior
+is still Tracey's controlled install + paid/comped run.
+
+**Prior head — TOTEM-C-0071** (2026-08-31, Claude) — **System Audit precondition ENFORCED (X-0074 handoff finished).**
+No Product model authors a plan without a completed, validated 25-section `SystemAudit`. `Orchestrator.AuthorPlanAsync`
++ `IPlanAuthor.AuthorAsync` take a `SystemAudit` (not a raw Dictionary); an invalid/incomplete/absent audit reaches **no**
+model invocation, findings, consent, or repair path (type-enforced at both the orchestrator and the author seam).
+**Proof:** Release 0/0; PodEval proves **zero** model invocations for FAILED + INCOMPLETE audits and exactly one for a
+VALID audit; on-device ModelSmoke PASS through the real 25/25 audit.
+
+**Prior head — TOTEM-C-0062** (2026-08-31, Claude) — **Part B: scripted Technician findings presentation + X-0057
 question gate (generative gate stays CLOSED).** Built the findings-stage pause Tracey directed in TOTEM-X-0057 into the
 native app's Findings screen. **(1) Grounded narration:** `ShowFindings` no longer displays the model's free-form
 `summary` (which can be garbled); `FindingsSummary` is now deterministic templated text built from the **validated**

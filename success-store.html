@@ -215,8 +215,8 @@ let pollTimer = null;
 const serviceOnlyReply = (question) => {
   const text = question.toLowerCase();
   const mentions = (...words) => words.some(word => text.includes(word));
-  if (mentions("scan", "check", "diagnostic", "diagnose"))
-    return "The ProntoPC app performs a read-only diagnostic scan of your PC. It does not change files or settings. Afterward, the app shows what it found before any repair can be considered.";
+  if (mentions("scan", "check", "diagnostic", "diagnose", "include", "cover", "area", "look", "find"))
+    return "The read-only scan checks six areas of your PC: storage & disk health (drive space, SMART health, temp and cache files, Recycle Bin, large files), drivers & hardware, security, network (adapters, DNS, connectivity), performance (CPU, memory, startup programs, power plan, battery), and overall system integrity. It only reads — nothing on your PC is changed — and you see everything it found before any repair is considered.";
   if (mentions("change", "modify", "alter", "repair", "fix", "approve", "consent"))
     return "Nothing is repaired automatically. After the scan, ProntoPC shows the proposed repairs and you choose whether to approve them in the app. Windows asks for permission before repairs begin.";
   if (mentions("privacy", "data", "information", "personal", "safe", "secure"))

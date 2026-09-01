@@ -23,7 +23,7 @@
         "properties": {
           "path": { "type": "string" },
           "sha256": { "type": "string", "pattern": "^[A-F0-9]{64}$" },
-          "state": { "type": "string", "enum": ["created", "modified"] }
+          "state": { "type": "string", "enum": ["created", "modified", "deleted"] }
         },
         "additionalProperties": false
       }

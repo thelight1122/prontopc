@@ -227,18 +227,44 @@ public partial class MainWindow : Window
                 var box = new CheckBox { IsChecked = true, VerticalAlignment = VerticalAlignment.Center };
                 var text = new TextBlock
                 {
-                    Text = mb > 0 ? $"{name}   (~{FormatMb(mb)})" : name,
+                    Text = name,
                     Foreground = new SolidColorBrush(Color.FromRgb(0xee, 0xf1, 0xff)),
                     FontSize = 14, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(10, 0, 0, 0)
+                    Margin = new Thickness(10, 0, 10, 0)
                 };
-                var row = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
+                var row = new DockPanel { LastChildFill = true };
                 DockPanel.SetDock(box, Dock.Left);
                 row.Children.Add(box);
+                if (mb > 0)
+                {
+                    // Reclaim amount pinned to the right so the value the customer cares about
+                    // reads clearly against the item name.
+                    var amount = new TextBlock
+                    {
+                        Text = $"~{FormatMb(mb)}",
+                        Foreground = new SolidColorBrush(Color.FromRgb(0x5b, 0xe3, 0xa0)),
+                        FontSize = 13, FontWeight = FontWeights.SemiBold,
+                        VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 2, 0)
+                    };
+                    DockPanel.SetDock(amount, Dock.Right);
+                    row.Children.Add(amount);
+                }
                 row.Children.Add(text);
+                // Each repair is its own card so the list is clearly visible and every item
+                // the app will run is legible at a glance (not faint text on the dark ground).
+                var card = new Border
+                {
+                    Background = new SolidColorBrush(Color.FromRgb(0x16, 0x19, 0x3a)),
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(0x2f, 0x35, 0x6a)),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(12, 10, 12, 10),
+                    Margin = new Thickness(0, 0, 0, 8),
+                    Child = row
+                };
                 box.Checked += (_, __) => UpdateTotal();
                 box.Unchecked += (_, __) => UpdateTotal();
-                ActionList.Children.Add(row);
+                ActionList.Children.Add(card);
                 _rows.Add((action, box));
             }
         }

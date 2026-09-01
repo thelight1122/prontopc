@@ -14,18 +14,14 @@ string temp = Path.Combine(Path.GetTempPath(), "prontopc-governance-" + Guid.New
 Directory.CreateDirectory(temp);
 try
 {
-    string canonPath = Path.Combine(temp, "canon.md");
-    File.WriteAllText(canonPath, "CANON SOURCE — exact test content", new System.Text.UTF8Encoding(false));
-    string canonHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(canonPath)));
-    var reference = new CanonReference("Test Canon", "v1", canonPath, canonHash);
-    CanonSeedResult seed = CanonBoundarySeed.LoadExact(reference);
-    Check(seed.Availability == CanonSeedAvailability.Available && seed.SystemPrompt!.Contains("CANON SOURCE — exact test content"), "Canon seed reads exact hash-matching source");
-    Check(CanonBoundarySeed.LoadExact(reference with { Sha256 = new string('0', 64) }).Availability == CanonSeedAvailability.HashMismatch, "Canon seed refuses mismatched source");
-    Check(CanonBoundarySeed.LoadExact(reference with { SourcePath = Path.Combine(temp, "missing.md") }).Availability == CanonSeedAvailability.SourceUnavailable, "Canon seed reports unavailable source");
-    if (File.Exists(CanonBoundarySeed.ProntoPcCanonV1.SourcePath))
-        Check(CanonBoundarySeed.LoadExact(CanonBoundarySeed.ProntoPcCanonV1).Availability == CanonSeedAvailability.Available, "Declared AEGIS Canon source hash verifies and seeds");
-    else
-        Console.WriteLine("SKIP Declared AEGIS Canon source is not mounted in this environment");
+    // The Canon is IN-MODEL — what the model stands on, not an external file. The seed
+    // consults no filesystem and is always available; it carries a reflective-posture
+    // orientation, never injected Canon text.
+    var reference = CanonBoundarySeed.ProntoPcCanonV1;
+    CanonSeedResult seed = CanonBoundarySeed.Resolve(reference);
+    Check(seed.Availability == CanonSeedAvailability.Available, "in-model Canon seed is always available (no external source)");
+    Check(!string.IsNullOrEmpty(seed.SystemPrompt) && !seed.SystemPrompt!.Contains("EXTERNAL CANON"), "seed is a reflective posture, not injected Canon text");
+    Check(reference.SourcePath == "in-model:embedded-foundation", "declared Canon provenance is in-model, not a filesystem path");
 
     var ledger = new AppendOnlyInteractionLedger(Path.Combine(temp, "interaction.jsonl"), () => new DateTimeOffset(2026, 8, 30, 20, 30, 0, TimeSpan.Zero));
     var pipeline = new CustodianGovernancePipeline(ledger, reference);
@@ -52,13 +48,6 @@ try
     try { ledger.ReadAndVerify(); } catch (InvalidDataException) { tamperObserved = true; }
     Check(tamperObserved, "Interaction ledger reveals malformed appended record");
 
-    string manifestPath = Path.Combine(temp, "canon-provisioning.json");
-    var manifest = new CanonProvisioningManifest("1.0.0", reference, "test-provisioner", new DateTimeOffset(2026, 8, 30, 21, 0, 0, TimeSpan.Zero), "test-authorization");
-    File.WriteAllText(manifestPath, System.Text.Json.JsonSerializer.Serialize(manifest, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
-    Check(!CanonProvisioning.LoadAuthorized(manifestPath, null).IsAvailable, "Canon provisioner stays closed without an authorizer");
-    Check(CanonProvisioning.LoadAuthorized(manifestPath, m => m.AuthorizationEvidence == "test-authorization").IsAvailable, "Authorized provisioned Canon resolves only after hash verification");
-    File.WriteAllText(canonPath, "tampered Canon", new System.Text.UTF8Encoding(false));
-    Check(!CanonProvisioning.LoadAuthorized(manifestPath, _ => true).IsAvailable, "Provisioned Canon closes on payload hash drift");
 }
 finally
 {

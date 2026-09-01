@@ -15,8 +15,9 @@ namespace ProntoPC;
 // it — and nothing else in the UI — turns the Technician on, safely.
 interface IPeerGovernance
 {
-    // The Canon-seeded system prompt (carries the reflection platform + RBC framing).
-    // Empty while gated; the real implementation returns the Canon-seeded prompt.
+    // The in-model reflective-posture seed for the system prompt. The Canon is not carried
+    // or referenced here — it is the model's embedded foundation, the ground it stands on —
+    // so this only orients reflection (non-force, describe-and-offer). Empty while gated.
     string SystemPrompt { get; }
 
     // The §8 admission gate. False until every governance module is present and passing;
