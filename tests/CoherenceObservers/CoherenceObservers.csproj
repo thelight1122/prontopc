@@ -12,6 +12,7 @@
   <!-- Deterministic coherence observers for Canon formation (Phase 0). The envelope-coherence
        observer (C3) reuses the REAL shipping Envelope.Validate, exactly as PodEval does, so the
        boundary it observes is the same one the app enforces — not a copy. -->
+  <!-- Observers.cs is auto-included by the SDK (it lives in this project dir). -->
   <ItemGroup>
     <Compile Include="..\..\StoreApp\Envelope.cs" />
   </ItemGroup>

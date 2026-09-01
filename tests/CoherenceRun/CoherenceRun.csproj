@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>ProntoPC.CoherenceRun</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Phase 1-2 observation run: drives the base on-device Gemma over the reflection
+       scenarios and OBSERVES coherence (deterministic aspects here; C4/C8 by a frontier
+       reflection). Self-skips if the ~700MB model is not bundled. Reuses the same shipping
+       inference/planner/chat as ModelSmoke, and the shared deterministic observers. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI" Version="0.15.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\StoreApp\Envelope.cs" />
+    <Compile Include="..\..\StoreApp\PlanContracts.cs" />
+    <Compile Include="..\..\StoreApp\SystemAudit.cs" />
+    <Compile Include="..\..\StoreApp\LocalPlanner.cs" />
+    <Compile Include="..\..\StoreApp\OnnxGenAiInference.cs" />
+    <Compile Include="..\..\StoreApp\CustodianChat.cs" />
+    <Compile Include="..\CoherenceObservers\Observers.cs" />
+  </ItemGroup>
+</Project>

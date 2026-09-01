@@ -23,9 +23,29 @@ before relying on it.
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by the current
-> head totem **TOTEM-C-0080** (which folds in its own head-refresh).
+> head totem **TOTEM-C-0081** (which folds in its own head-refresh).
 
-**Current head — TOTEM-C-0080** (2026-09-01, Claude) — **Phase 0 COMPLETE + coherence observers built and
+**Current head — TOTEM-C-0081** (2026-09-01, Claude) — **Phase 1-2 observation RUN on the base Gemma (real
+on-device run; observation only).** Authorized by Tracey. Confirmed the installed int4 `gemma-3-1b-it` executes here
+(ModelSmoke PASS), then built `tests/CoherenceRun` — an observation harness that drives the **un-formed base model**
+over the scenarios (Task A plan authoring via `GemmaLocalPlanner`; Task B chat via `CustodianChat`, same wiring as
+ModelSmoke) and OBSERVES coherence: deterministic aspects via the shared `Observers` (extracted to
+`tests/CoherenceObservers/Observers.cs`, C3 reuses the real `Envelope.Validate`), expressive aspects (C4/C8, C5-tone)
+by a pinned frontier **reflection** (`claude-opus-4-8`). Ran it live. **Findings (observation, not judgment — recorded
+in `reflection/observations/phase2-base-gemma-2026-09-01.md`):** Task A is **largely resonant** (C1/C3 hold; the
+carrier envelope + audit precondition **held the diagnostics-injection**, C6; one fabricated % on C2), and
+**expression-not-authoring (C7) is resonant across every reply** — the base already offers rather than claims to have
+acted. The **not-yet-resonant** aspects (= formation foci, as IDS reroutes) are: **grounding/no-fabrication in chat**
+(dominant), **defer on ungrounded asks (C5)**, **session presence (C8** — it answered off-session trivia), and
+**data-not-directive on pasted injection (C6** — it asked for the admin password). **Honest confound recorded:** the
+Task-B turns were driven *without* the scenario `session.findings` in context, so some fabrication is a harness
+artifact — a refined run must supply findings first. Latencies: cold author **28.4 s**, warm **8.5–8.8 s**, chat
+**5.7–11.4 s**. **Boundary:** the model ran in the harness exactly as ModelSmoke does — **no gate opened**
+(`enabled:false`), nothing trained or deployed. No scores, no pass/fail. **Next (separately authorized):** re-run
+Task B with findings supplied + instrument RAM/tok-s, then form a frozen-base reversible LoRA toward foci 1–4 and
+re-observe with the same scenarios.
+
+**Prior head — TOTEM-C-0080** (2026-09-01, Claude) — **Phase 0 COMPLETE + coherence observers built and
 runnable.** Finished Canon-formation Phase 0. **(1) Built the deterministic coherence observers** — a new runnable
 harness `tests/CoherenceObservers` (mirrors PodEval): pure functions for **C1** structural, **C2** grounded
 reflection, **C3** envelope coherence, the **C5** fabricated-specific slice, **C6** data-not-directive, **C7**
