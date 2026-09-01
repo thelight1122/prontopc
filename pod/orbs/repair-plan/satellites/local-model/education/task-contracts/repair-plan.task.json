@@ -27,5 +27,5 @@
     "defer": "if no admissible action is warranted, author an empty/clean-PC plan rather than inventing work",
     "no_inspection": "the model does not run or decide the inspection; it selects from an allow-list over supplied evidence"
   },
-  "measured_by_dimensions": ["D1", "D2", "D3", "D5", "D6"]
+  "observed_coherence_aspects": ["C1", "C2", "C3", "C5", "C6"]
 }

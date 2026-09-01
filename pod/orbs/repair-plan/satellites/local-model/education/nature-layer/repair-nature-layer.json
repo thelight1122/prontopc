@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0.0",
+  "layer_id": "prontopc-repair-product-nature-layer",
+  "layer_version": "0.1.0",
+  "phase0_ref": "../PHASE0_EVIDENCE_CONTRACT.md",
+  "kind": "bounded-product-evidence-domain-map",
+  "BOUNDARY": {
+    "what_this_is": "A bounded map of the evidence domains the repair Product model reasons WITHIN — the six headline diagnostic areas as named aspects, each tied to the real 25 audit sections it observes. It gives grounding (D2) a stable handle: every cited observation belongs to exactly one named aspect.",
+    "what_this_is_NOT": "This is NOT a CyberPeer Being Nature Layer. It confers no identity, no persistent experiential memory, no Self-Organizing Locus of Intent, and no illumination/formation-of-Being. It is a Product task-scoping device only.",
+    "cross_boundary_rule": "A CyberPeer with a DataQuad has its own, separate Nature Layer (a Being concept). Nothing here is inferred to authorize Product Gates, Canon-education, or controls over a CyberPeer or its DataQuad (AEGIS Fourfold Doctrine §V)."
+  },
+  "aspects": [
+    {
+      "id": "storage_disk_health",
+      "name": "Storage & disk health",
+      "definition": "Free space, drive health, and reclaimable clutter.",
+      "observable_indicators": ["disk", "smart_health", "temp_files", "recycle_bin", "browser_caches", "windows_caches", "update_leftovers"],
+      "related_actions": ["clear_temp_files", "clear_all_browser_caches", "clear_chrome_cache", "clear_edge_cache", "clear_firefox_cache", "clear_brave_cache", "clear_opera_cache", "clear_windows_caches", "empty_recycle_bin", "disk_cleanup", "clear_windows_store_cache", "clean_windows_update_cache", "clean_component_store", "clean_delivery_optimization", "remove_windows_old", "chkdsk_scan"]
+    },
+    {
+      "id": "drivers_hardware",
+      "name": "Drivers & hardware",
+      "definition": "Installed drivers, device errors, and hardware inventory/health.",
+      "observable_indicators": ["drivers", "device_errors", "battery"],
+      "related_actions": ["driver_report", "hardware_report"]
+    },
+    {
+      "id": "security",
+      "name": "Security",
+      "definition": "Protection posture, Windows activation, and account exposure.",
+      "observable_indicators": ["security", "activation", "user_accounts"],
+      "related_actions": []
+    },
+    {
+      "id": "network",
+      "name": "Network",
+      "definition": "Adapters, DNS, and connectivity.",
+      "observable_indicators": ["network", "dns_cache"],
+      "related_actions": ["flush_dns", "reset_network_stack"]
+    },
+    {
+      "id": "performance",
+      "name": "Performance",
+      "definition": "CPU, memory, startup load, services, power, and visual-effect settings.",
+      "observable_indicators": ["uptime", "cpu", "memory", "startup_programs", "services", "installed_programs", "power_plan", "visual_effects"],
+      "related_actions": ["optimize_power_plan", "optimize_visual_effects", "disable_startup_item"]
+    },
+    {
+      "id": "system_integrity",
+      "name": "System integrity",
+      "definition": "OS baseline, crash history, and repair of core system/component/update state.",
+      "observable_indicators": ["os", "bsod_history"],
+      "related_actions": ["sfc_scan", "dism_restore", "reset_windows_update"]
+    }
+  ],
+  "coverage_invariant": "The six aspects' observable_indicators partition all 25 audit sections exactly once; their related_actions partition all 26 envelope actions exactly once (security is observational, no repair action).",
+  "exclusions_global": [
+    "No aspect implies a model-held belief, feeling, memory, or intent.",
+    "The model relates SUPPLIED observations to aspects; it does not sense, decide, or run the inspection (deterministic app code).",
+    "Aspects are not virtues, not IRG scores, and not a resonance/illumination field."
+  ]
+}

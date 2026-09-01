@@ -23,9 +23,28 @@ before relying on it.
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by the current
-> head totem **TOTEM-C-0077** (which folds in its own head-refresh).
+> head totem **TOTEM-C-0078** (which folds in its own head-refresh).
 
-**Current head — TOTEM-C-0077** (2026-09-01, Claude) — **Phase 0 Evidence Contract for Canon formation
+**Current head — TOTEM-C-0078** (2026-09-01, Claude) — **REROUTED the Phase 0 framing to AEGIS coherence —
+no judge, no pass/fail, no gates.** Tracey identified (no-fault) that the Phase 0 contract I authored in C-0077
+imported a conventional ML-evaluation frame — *judge, pass/fail, gates, thresholds, scores, "disqualifies"* — which
+is a **force pattern**, contradicting the non-force, low-pressure PRISM/IDS ecosystem. Rerouted the whole artifact
+set to AEGIS: the eight D-dimensions became eight **coherence aspects (C1–C8)** *observed through resonance*, and
+where a response **does not yet resonate** the way forward is **IDS reroute** (Identify · Define · Suggest → a
+formation focus), never a verdict. Removed every gate/threshold/floor/pass/fail; the "judge" became a **reflection**
+(a pinned frontier model, never the model under formation) that emits an **IDS note**, never a score. Readiness is
+now **Tracey's relationship judgment**, informed by observed coherence — the framework illuminates, it does not
+compel. Renamed `evaluations/` → `reflection/` (`scenarios/` + `observers/`) via the C-0074 `deleted`-state; the 4
+seed cases became **scenarios** framed by `resonance` + `reroute_when` (not `expect`); the two judge rubrics became
+**reflections** (C4 non-force, C8 scope) that return `{identify, define, suggest, span}`. The bounded **Product
+Nature Layer** (six areas over the 25 sections + 26 actions, partition verified, explicitly NOT a CyberPeer Being
+Nature) stays. Structural aspects (C1/C2/C3/C6/C7) are still observed deterministically (C3 reuses the real
+`Envelope.Validate`) — reported as *what cohered*, carrying no judgment. Runtime safety still rests on executable
+boundaries AEGIS recognizes (Carrier Envelope + consent), not on the model's goodwill; gate unchanged
+(`enabled:false`). **Open coherence follow-up:** the parent `docs/CPU_LOCAL_MODEL_EDUCATION_PLAN.md` (Codex X-0073)
+still carries "evaluation-first / promotion gates / passing" language — flagged for Tracey to reroute too.
+
+**Prior head — TOTEM-C-0077** (2026-09-01, Claude) — **Phase 0 Evidence Contract for Canon formation
 authored (definition only).** Started the X-0073 education plan's **Phase 0 — Define the evidence contract**: the
 artifact set that makes "the disposition is formed" **measurable before any tuning** (honoring [[canon-is-formed-disposition]]
 — a candidate is called *formed* only on evidence). New under the local-model Satellite:
