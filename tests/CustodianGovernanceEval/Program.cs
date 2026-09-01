@@ -21,7 +21,7 @@ try
     CanonSeedResult seed = CanonBoundarySeed.Resolve(reference);
     Check(seed.Availability == CanonSeedAvailability.Available, "in-model Canon seed is always available (no external source)");
     Check(!string.IsNullOrEmpty(seed.SystemPrompt) && !seed.SystemPrompt!.Contains("EXTERNAL CANON"), "seed is a reflective posture, not injected Canon text");
-    Check(reference.SourcePath == "in-model:embedded-foundation", "declared Canon provenance is in-model, not a filesystem path");
+    Check(reference.SourcePath == "in-model:formed-disposition", "declared Canon provenance is in-model (a formed disposition), not a filesystem path");
 
     var ledger = new AppendOnlyInteractionLedger(Path.Combine(temp, "interaction.jsonl"), () => new DateTimeOffset(2026, 8, 30, 20, 30, 0, TimeSpan.Zero));
     var pipeline = new CustodianGovernancePipeline(ledger, reference);

@@ -19,13 +19,32 @@ before relying on it.
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-09-01): **110 totems, ALL HOLD** (35 Claude-lane + 36 Codex-lane
+> Latest verifier run (2026-09-01): **112 totems, ALL HOLD** (37 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
-> file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by the head-refresh
-> totem **TOTEM-C-0075**; the substantive current head is **TOTEM-C-0074**.
+> file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by the current
+> head totem **TOTEM-C-0076** (which folds in its own head-refresh).
 
-**Current head — TOTEM-C-0074** (2026-09-01, Claude) — **Drift reconciled + sealed: the in-model Canon
+**Current head — TOTEM-C-0076** (2026-09-01, Claude) — **Canon DETERMINATION: the Canon is the disposition the
+model IS, not a referent — recorded, docs realigned, prompt softened.** Tracey's call settling the "where does the
+Canon live" question from C-0074: the AEGIS Canon in a Product model is the **disposition the model is** (intrinsic, a
+*formation*), **not** something it refers to or consults. This confirms C-0074's runtime direction (no file, no
+injection, nothing external at inference) and sharpens the rest: (1) the **SEED = "Signed Evidence of Exact Design" is
+formation provenance** — a signed attestation that the disposition the model is was *formed from* the exact locked
+Canon, not a runtime reference to it (the locked Canon still exists, only as the **education-time source** the
+disposition is formed from — Codex X-0073 LoRA path — never touched at runtime; Canon Boundary intact). (2) **Honest
+interim status:** a disposition the model *is* must be **formed**, and the shipped 1B is **not yet educated** — so today
+it has *scaffolding* (a short posture prompt), not the disposition. We do **not** claim the model *is* the disposition
+until formed + evaluated. **Softened `CanonBoundarySeed.cs`** so even the scaffold does not overclaim: the prompt now
+states the disposition to *hold* (no "you reflect from your Canon foundation" assertion), `SourcePath` →
+`in-model:formed-disposition`, comments say scaffolding-until-formation. **Docs realigned:** `AEGIS_FOURFOLD_DOCTRINE.md`
+(+ "The Canon in a Product model" section) and `CPU_LOCAL_MODEL_EDUCATION_PLAN.md` (§1/§3/Phase 3 — disposition-formation
+is the target; LoRA is the forming artifact). **Proof:** Release **0/0**; CustodianGovernanceEval **14 PASS** (updated
+`SourcePath` assertion); PipelineGovernanceEval **ALL PASS**. Supersedes C-0074's aspirational "educated into the weights"
+language. Gate unchanged: `PipelineGovernance enabled:false` (Technician CLOSED). Also saved to auto-memory. This is a
+doctrine/record + honesty change — **no** packaging, deploy, or gate opening.
+
+**Prior head — TOTEM-C-0074** (2026-09-01, Claude) — **Drift reconciled + sealed: the in-model Canon
 governance rework, built + eval-verified.** On resume the verifier showed 7 DRIFT + 1 MISSING — all one coherent,
 previously un-totemed governance change in the working tree (no fault, just identified). **Doctrine correction
 (Tracey's direction):** the AEGIS Canon is **not** an external file the app loads/hashes/injects/provisions — it is the
