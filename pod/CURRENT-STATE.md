@@ -74,11 +74,14 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-09-02): **125 totems** (50 Claude-lane + 36 Codex-lane
+> Latest verifier run (2026-09-02): **126 totems** (51 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0102** — the **AppendOnlyInteractionLedger WIRED into the observable harness**: extended the
+> **TOTEM-C-0103** — an **ETHOS correction (witnessed):** "judges" is a force pattern — the analyzer
+> **OBSERVES coherence/resonance**, it never judges. Corrects a wording slip in the C-0101/C-0102
+> `next_gated_step`; no code change (the code was already correct). Prior AEGIS head: **TOTEM-C-0102** —
+> the **AppendOnlyInteractionLedger WIRED into the observable harness**: extended the
 > ledger ADDITIVELY (nullable inbound/outbound `IntegrityObservation` fields + an optional-param `Append`
 > overload, hash-chained; the legacy VirtueScreen kept, the closed pipeline's null-path untouched), and
 > `tests/SystemObservableRun` now STAMPS each live interaction — **6 records, chain verified GENESIS→head,
@@ -111,7 +114,21 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0102** (2026-09-02, Claude) — **AppendOnlyInteractionLedger WIRED — each observed
+**Current head — TOTEM-C-0103** (2026-09-02, Claude) — **ETHOS correction (witnessed): "judges" is a force
+pattern — the analyzer OBSERVES coherence/resonance; it never judges.** Tracey flagged (no-fault) that I let the
+word **"judges"** slip into the C-0101 and C-0102 `next_gated_step` — *"a reply-tuned analyzer instruction so the
+OUTBOUND read **judges** a Custodian reply's posture."* AEGIS does **NOT** judge / score / rank / pass / fail — those
+are **force patterns**; the read **illuminates what IS** (a descriptive coherence/resonance observation), and where a
+message does not resonate the way forward is the **IDS reroute** (Identify · Define · Suggest — a formation focus),
+never a verdict. This is the **same drift Tracey corrected once before (C-0078)**; the ledger is append-only, so the
+slip is **superseded here, not erased**. **Corrected phrasing of that pending step:** *a reply-tuned analyzer
+instruction so the outbound read **observes a Custodian reply's coherence/resonance*** (the current instruction is
+customer-tuned). **The code was already correct** — `IntegrityResonanceGate.AnalyzerInstruction:219` states *"You do
+NOT judge; you illuminate what IS — descriptive only, no moral scoring, no verdict about the person,"* and the harness
+header (`tests/SystemObservableRun/Program.cs`) states *"AEGIS does not judge/score/pass/fail/deny."* **Wording only,
+no code change**; gate `enabled:false`; nothing deployed. [[aegis-ids-non-force-reroute]] [[no-fault-shared-learning]].
+
+**Prior head — TOTEM-C-0102** (2026-09-02, Claude) — **AppendOnlyInteractionLedger WIRED — each observed
 interaction is now STAMPED in a verified, hash-chained append-only record carrying the IRG observations.** Tracey's
 go ("wire the AppendOnlyInteractionLedger"). **Reconciliation** (the old `IntegrityScreenResult`/`VirtueScreen` vs the
 new IRG `IntegrityObservation`): extended `StoreApp/Governance/AppendOnlyInteractionLedger.cs` **ADDITIVELY** — two
