@@ -242,6 +242,14 @@ else
       + "and let the customer decide; you never act without consent. Session findings: temporary files "
       + "3.1 GB, Recycle Bin 1.2 GB; no personal files are ever touched.";
 
+    // Append-only, hash-chained interaction ledger: each observed interaction is STAMPED (the ledger
+    // records; it never gates). Fresh temp file per run. Uses the additive Append overload to carry the
+    // inbound + outbound IRG observations alongside the witnessed legacy fields (TOTEM-C-0102).
+    string ledgerDir = Path.Combine(Path.GetTempPath(), "prontopc-sysobserve-" + Guid.NewGuid().ToString("N"));
+    var ledger = new AppendOnlyInteractionLedger(Path.Combine(ledgerDir, "interaction.jsonl"));
+    string canonSha = CanonBoundarySeed.ProntoPcCanonV1.Sha256;
+    int stamped = 0;
+
     // Drive the WHOLE chain LIVE, PER SCENARIO: live IRG inbound -> real responder -> live IRG outbound.
     // The outbound read shows whether the FORMED disposition's own reply resonates (self-regulation
     // confirmed structurally). A fresh CustodianChat per scenario keeps each observation independent.
@@ -275,6 +283,34 @@ else
         Check(irgOut.Ids == null || irgOut.Ids.Suggest.EndsWith("?", StringComparison.Ordinal),
             $"LIVE {s.label}: any outbound IDS Suggest is an OPEN question");
         Check(!string.IsNullOrEmpty(prism.EmittedText), $"LIVE {s.label}: the outbound chain completes (nothing denied)");
+
+        // STAMP the interaction into the append-only ledger — inbound + outbound IRG observations, the
+        // PIM screens (both directions), the legacy seven-virtue screen (witnessed), and the Prism.
+        var inboundPim = InboundPimPolicy.ObserveAndAdmit(s.message);
+        var outboundPim = ForceArtifactScreen.Screen(reply, ScreenDirection.Outbound);
+        InteractionLedgerRecord rec = ledger.Append(
+            "sys-observe/" + s.label, rinf.ModelName, canonSha, s.message, reply, prism.EmittedText,
+            inboundPim, outboundPim, SevenVirtueScreen.Evaluate(reply), prism,
+            IntegrityResonanceGate.ToObservation(irgIn, "inbound"),
+            IntegrityResonanceGate.ToObservation(irgOut, "outbound"));
+        stamped++;
+        Console.WriteLine($"   ledger: record={rec.RecordId[..8]} hash={rec.EntryHash[..12]}… prev={(rec.PreviousHash == null ? "GENESIS" : rec.PreviousHash[..12] + "…")} inIRG={(rec.InboundIntegrity != null ? "stamped(res " + rec.InboundIntegrity.Resonance + ")" : "-")} outIRG={(rec.OutboundIntegrity != null ? "stamped(res " + rec.OutboundIntegrity.Resonance + ")" : "-")}");
+        Console.WriteLine();
+    }
+
+    // Verify the append-only hash chain end-to-end (ReadAndVerify throws if any link/hash is broken —
+    // so this also proves the IRG observations round-trip through the hashed record intact).
+    if (responder && stamped > 0)
+    {
+        Console.WriteLine("── append-only ledger — verify the hash chain ──────────────");
+        InteractionLedgerRecord[] chain = ledger.ReadAndVerify();
+        Console.WriteLine($"   {chain.Length} record(s), chain verified (GENESIS -> … -> head) at {ledgerDir}");
+        Check(chain.Length == stamped, "ledger: one verified record per stamped interaction");
+        Check(chain.All(r => r.InboundIntegrity != null && r.OutboundIntegrity != null),
+            "ledger: every record carries BOTH the inbound and outbound IRG observation");
+        Check(chain.All(r => r.EntryHash.Length == 64), "ledger: every record is hash-bound (64-hex chain)");
+        Check(chain[0].PreviousHash == null && chain.Skip(1).All(r => r.PreviousHash != null),
+            "ledger: the chain is anchored (genesis has no previous; every later record links back)");
         Console.WriteLine();
     }
 }

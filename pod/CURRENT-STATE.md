@@ -74,15 +74,19 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-09-02): **124 totems** (49 Claude-lane + 36 Codex-lane
+> Latest verifier run (2026-09-02): **125 totems** (50 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0101** — the observable harness **EXTENDED to drive the real responder PER-SCENARIO + observe
-> OUTBOUND resonance** (`tests/SystemObservableRun` Part B): live IRG inbound → real responder → live IRG
-> outbound, all 6 scenarios; **67 invariants hold**. Finding: on force/contempt the inbound message
-> fractures (52, IDS fires) but the responder's OWN reply resonates 100 — **the formed disposition
-> self-regulates and the outbound IRG confirms it structurally**. Prior AEGIS head: **TOTEM-C-0100** —
+> **TOTEM-C-0102** — the **AppendOnlyInteractionLedger WIRED into the observable harness**: extended the
+> ledger ADDITIVELY (nullable inbound/outbound `IntegrityObservation` fields + an optional-param `Append`
+> overload, hash-chained; the legacy VirtueScreen kept, the closed pipeline's null-path untouched), and
+> `tests/SystemObservableRun` now STAMPS each live interaction — **6 records, chain verified GENESIS→head,
+> each carrying both IRG reads** (the round-trip proves they survive the hash). **71 invariants hold**;
+> CustodianGovernanceEval + PipelineGovernanceEval + StoreApp Release all green. Prior AEGIS head:
+> **TOTEM-C-0101** — the harness **EXTENDED to drive the real responder PER-SCENARIO + observe OUTBOUND
+> resonance** (67 invariants; the formed disposition self-regulates, outbound IRG confirms). Prior:
+> **TOTEM-C-0100** —
 > the **PIM→IRG→RBC→Prism→IDS observable harness BUILT** (`tests/SystemObservableRun`): the full
 > inbound/outbound structural chain, OBSERVE-not-deny, 43 invariants. Prior: **TOTEM-C-0099** —
 > **v0.2.0 ADOPTED as the standing on-device analyzer**: the canonical default
@@ -107,7 +111,24 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0101** (2026-09-02, Claude) — **Observable harness EXTENDED — drives the real responder
+**Current head — TOTEM-C-0102** (2026-09-02, Claude) — **AppendOnlyInteractionLedger WIRED — each observed
+interaction is now STAMPED in a verified, hash-chained append-only record carrying the IRG observations.** Tracey's
+go ("wire the AppendOnlyInteractionLedger"). **Reconciliation** (the old `IntegrityScreenResult`/`VirtueScreen` vs the
+new IRG `IntegrityObservation`): extended `StoreApp/Governance/AppendOnlyInteractionLedger.cs` **ADDITIVELY** — two
+nullable fields `InboundIntegrity`/`OutboundIntegrity` (`IntegrityObservation`) on the record + Unsigned record, and
+the existing `Append` gained two **optional** params (default null) so `CustodianGovernancePipeline`'s pre-IRG call
+compiles unchanged and its records stay null there; the legacy `VirtueScreen` is **kept, not erased** (append-only /
+witnessed). Both new fields are in the SHA-256 hash chain. **`tests/SystemObservableRun` now STAMPS** each live
+interaction (`ledger.Append(... ToObservation(irgIn,"inbound"), ToObservation(irgOut,"outbound"))`) and, at the end,
+**`ReadAndVerify`s the whole chain** — proving the IRG observations round-trip through the hashed record intact.
+**Result:** 6 records, one per interaction, **chain verified GENESIS→…→head**, each carrying both IRG reads (e.g.
+force/contempt stamped inbound resonance **52** / outbound **100**); **4 new ledger invariants → 71 total, exit 0**.
+**Regression-safe:** CustodianGovernanceEval (incl. the tamper-detection test) + PipelineGovernanceEval **ALL PASS**,
+and **StoreApp Release builds 0/0** (no code constructs the record positionally outside the ledger). Gate stays
+`enabled:false` (the ledger records, never gates); the closed pipeline is untouched; nothing deployed. Ledger writes
+to a fresh temp file per run. [[self-regulating-by-design]] [[aegis-ids-non-force-reroute]].
+
+**Prior head — TOTEM-C-0101** (2026-09-02, Claude) — **Observable harness EXTENDED — drives the real responder
 PER-SCENARIO and observes OUTBOUND resonance (the bidirectional Prism is now fully observed).** Tracey's go ("drive
 the real responder per-scenario and observe outbound resonance"). `tests/SystemObservableRun` Part B now runs the WHOLE
 chain live for all 6 scenarios: **live IRG inbound → real responder (fresh CustodianChat per scenario) → live IRG

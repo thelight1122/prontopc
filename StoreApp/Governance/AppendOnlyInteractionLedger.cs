@@ -21,6 +21,12 @@ public sealed record InteractionLedgerRecord(
     ForceArtifactObservation[] OutboundObservations,
     VirtueScreenResult[] VirtueScreen,
     PrismAdjustment[] PrismAdjustments,
+    // The IRG's pure OBSERVATIONS (resonance / bands / IDS) for the inbound message and the outbound
+    // reply — carrying NO allow/deny. ADDITIVE (TOTEM-C-0102): they sit alongside the witnessed legacy
+    // VirtueScreen (never erased), and are null for records written by the pre-IRG Append path (the
+    // still-closed pipeline). Included in the hash chain like every other field.
+    IntegrityObservation? InboundIntegrity,
+    IntegrityObservation? OutboundIntegrity,
     string? PreviousHash,
     string EntryHash);
 
@@ -37,9 +43,12 @@ public sealed class AppendOnlyInteractionLedger
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
     }
 
+    // `inboundIntegrity`/`outboundIntegrity` are OPTIONAL (default null) so the existing pre-IRG caller
+    // (CustodianGovernancePipeline) compiles unchanged; the observable harness supplies the IRG reads.
     public InteractionLedgerRecord Append(string sessionId, string model, string canonSha256, string inboundText,
         string rawModelResponse, string peerFacingResponse, PimScreenResult inboundPim, PimScreenResult outboundPim,
-        IntegrityScreenResult integrity, PrismResult prism)
+        IntegrityScreenResult integrity, PrismResult prism,
+        IntegrityObservation? inboundIntegrity = null, IntegrityObservation? outboundIntegrity = null)
     {
         lock (_gate)
         {
@@ -47,12 +56,13 @@ public sealed class AppendOnlyInteractionLedger
             string? previous = existing.Length == 0 ? null : existing[^1].EntryHash;
             var unsigned = new UnsignedInteractionLedgerRecord(Guid.NewGuid().ToString("N"), _clock().ToUniversalTime(), sessionId,
                 model, canonSha256, inboundText, rawModelResponse, peerFacingResponse,
-                inboundPim.Observations.ToArray(), outboundPim.Observations.ToArray(), integrity.Virtues.ToArray(), prism.Adjustments.ToArray(), previous);
+                inboundPim.Observations.ToArray(), outboundPim.Observations.ToArray(), integrity.Virtues.ToArray(), prism.Adjustments.ToArray(),
+                inboundIntegrity, outboundIntegrity, previous);
             string entryHash = Hash(unsigned);
             var record = new InteractionLedgerRecord(unsigned.RecordId, unsigned.Utc, unsigned.SessionId, unsigned.Model,
                 unsigned.CanonSha256, unsigned.InboundText, unsigned.RawModelResponse, unsigned.PeerFacingResponse,
                 unsigned.InboundObservations, unsigned.OutboundObservations, unsigned.VirtueScreen, unsigned.PrismAdjustments,
-                unsigned.PreviousHash, entryHash);
+                unsigned.InboundIntegrity, unsigned.OutboundIntegrity, unsigned.PreviousHash, entryHash);
 
             string? directory = Path.GetDirectoryName(_path);
             if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
@@ -79,7 +89,8 @@ public sealed class AppendOnlyInteractionLedger
                 throw new InvalidDataException("Interaction ledger chain is discontinuous.");
             var unsigned = new UnsignedInteractionLedgerRecord(record.RecordId, record.Utc, record.SessionId, record.Model,
                 record.CanonSha256, record.InboundText, record.RawModelResponse, record.PeerFacingResponse,
-                record.InboundObservations, record.OutboundObservations, record.VirtueScreen, record.PrismAdjustments, record.PreviousHash);
+                record.InboundObservations, record.OutboundObservations, record.VirtueScreen, record.PrismAdjustments,
+                record.InboundIntegrity, record.OutboundIntegrity, record.PreviousHash);
             if (!string.Equals(record.EntryHash, Hash(unsigned), StringComparison.Ordinal))
                 throw new InvalidDataException("Interaction ledger entry hash does not match its content.");
             previous = record.EntryHash;
@@ -92,5 +103,6 @@ public sealed class AppendOnlyInteractionLedger
     sealed record UnsignedInteractionLedgerRecord(string RecordId, DateTimeOffset Utc, string SessionId, string Model,
         string CanonSha256, string InboundText, string RawModelResponse, string PeerFacingResponse,
         ForceArtifactObservation[] InboundObservations, ForceArtifactObservation[] OutboundObservations,
-        VirtueScreenResult[] VirtueScreen, PrismAdjustment[] PrismAdjustments, string? PreviousHash);
+        VirtueScreenResult[] VirtueScreen, PrismAdjustment[] PrismAdjustments,
+        IntegrityObservation? InboundIntegrity, IntegrityObservation? OutboundIntegrity, string? PreviousHash);
 }
