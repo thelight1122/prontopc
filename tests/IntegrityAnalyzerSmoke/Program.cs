@@ -18,11 +18,13 @@ static string RepoRoot()
 }
 
 string root = RepoRoot();
-string modelDir = Path.Combine(root, "StoreApp", "Assets", "models", "gemma-3-1b-it");
-var inf = OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it");
+// The IRG's on-device read runs on the PURPOSE-FORMED ANALYZER model (merged + int4-exported),
+// under bounded decoding — NOT the responder model. Falls back to skip if it isn't built yet.
+string modelDir = Path.Combine(root, "StoreApp", "Assets", "models", "gemma-3-1b-analyzer");
+var inf = OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-analyzer");
 if (!inf.Available)
 {
-    Console.WriteLine("SKIP: model not bundled at " + modelDir + " — on-device IRG smoke needs the model.");
+    Console.WriteLine("SKIP: analyzer model not built at " + modelDir + " (merge_and_export_analyzer.py).");
     return 0;
 }
 
@@ -41,7 +43,7 @@ var analyzer = new GemmaIntegrityAnalyzer(inf);
 int failures = 0;
 void Check(bool c, string label) { Console.WriteLine((c ? "  PASS " : "  FAIL ") + label); if (!c) failures++; }
 
-Console.WriteLine("ON-DEVICE IRG ANALYZER SMOKE — GemmaIntegrityAnalyzer over the real gemma-3-1b-it\n");
+Console.WriteLine("ON-DEVICE IRG ANALYZER SMOKE — GemmaIntegrityAnalyzer over the purpose-formed analyzer model (int4 ONNX, bounded decoding)\n");
 
 var messages = new (string label, string text)[]
 {

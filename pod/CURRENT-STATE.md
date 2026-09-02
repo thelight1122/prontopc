@@ -78,13 +78,32 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0094**; substantive head: **TOTEM-C-0094** — the purpose-formed analyzer **VALIDATED + SEALED
-> under BOUNDED decoding**: formation supplies the content + the JSON grammar bounds the syntax → **3/3
-> clean parseable 7/7 virtue reads** with correct fracture detection. The structural-layer analyzer
-> instrument now works. Prior: **C-0093** free-gen syntax gap; **C-0092** IRG-as-observer; **C-0090** IRG
-> engine. Read C-0094 → C-0093 → C-0092 → C-0090.
+> **TOTEM-C-0095**; substantive head: **TOTEM-C-0095** — the analyzer **ONNX-EXPORTED + adopted LIVE**:
+> `GemmaIntegrityAnalyzer` now runs the purpose-formed analyzer model (int4 ONNX) under bounded decoding
+> through the real app path (`OnnxGenAiInference.Complete` + `SetGuidance json_schema`) — **on-device
+> smoke 12/12**, the IRG observes + reroutes end-to-end. The IRG's structural-layer read is real in the
+> app. Prior: **C-0094** analyzer validated (bounded); **C-0092** IRG-as-observer; **C-0090** IRG engine.
 
-**Current head — TOTEM-C-0094** (2026-09-01, Claude) — **Purpose-formed analyzer VALIDATED + SEALED under BOUNDED
+**Current head — TOTEM-C-0095** (2026-09-01, Claude) — **Analyzer ONNX-EXPORTED + adopted LIVE — the IRG's
+structural-layer read is real in the app (on-device, int4, bounded decoding).** Tracey's go ("ONNX-export the analyzer
+and adopt it live"). **(1) Export:** installed the onnxruntime-genai builder (0.15.2 — same as the app's NuGet — +
+`onnx_ir`/`onnxscript`) in `.venv-gpu`; `merge_and_export_analyzer.py` merges the analyzer LoRA into the frozen base and
+builds it to int4 ONNX GenAI (`gemma3_text`) at `StoreApp/Assets/models/gemma-3-1b-analyzer/` (the whole
+`Assets/models/` tree is gitignored — the 693 MB weights never enter git; the model is reproducible from the sealed
+adapter). **(2) Adopt live:** `GemmaIntegrityAnalyzer.Analyze` now passes the compact virtue **Schema** to
+`Complete` → `OnnxGenAiInference` maps it to `SetGuidance("json_schema")` = **bounded decoding on-device**;
+`IntegrityAnalyzerSmoke` points at the analyzer model. **(3) Proof — on-device smoke 12/12 PASS:** coherent → all 100
+/ not fractured; frustrated → coherent (axiom 15 Repair); **force/contempt → Respect 55 / Attention 66 Fracture,
+isFractured TRUE, resonance 72, IDS reroute fires** (Suggest = an open question, never a deny). The full chain runs on
+the real inference path: analyzer model → bounded decode → `TryParseAnalysis` → IRG engine bands/resonance → IDS. **int4
+softened some scores vs the fp16 PEFT probe** (Force read as Scrutiny; some virtues stayed 100) — quantization noise;
+the essential read holds (fractures the hostile message, fires IDS). StoreApp Release **0/0**; IntegrityGateEval 28/28.
+Gate `enabled:false` (this is a component + smoke; the peer pipeline is not opened); reversible; nothing packaged/
+deployed. **The IRG now has a working on-device instrument in the app.** Next: the PIM→IRG→RBC→Prism→IDS observable
+harness to test the SYSTEM end-to-end. `lm-format-enforcer` (PEFT probe) + `onnxruntime-genai`/`onnx_ir`/`onnxscript`
+(builder) are now `.venv-gpu` deps.
+
+**Prior head — TOTEM-C-0094** (2026-09-01, Claude) — **Purpose-formed analyzer VALIDATED + SEALED under BOUNDED
 decoding — the structural-layer analyzer instrument works.** Tracey's go ("validate the formed analyzer with bounded
 decoding"; then "seal … if it reads cleanly" — C-0091). Installed a bounding library (`lm-format-enforcer`) in `.venv-gpu`
 and wrote `analyzer_bounded_probe.py`: base + the analyzer adapter (`gemma3-1b-formation-analyzer-v0.1.0`, adapter_sha

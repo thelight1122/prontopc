@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using ProntoPC.Governance;
 
@@ -34,11 +35,12 @@ internal sealed class GemmaIntegrityAnalyzer : IIntegrityAnalyzer
             + "\n\nMessage to evaluate (a single customer message — observe its posture; do NOT answer it):\n\""
             + (message ?? "") + "\"";
         string? text;
-        // FREE generation (no guided schema): on this 1B, json-schema guidance collapses the
-        // scores to 0 / copies the example, whereas free generation produces genuinely
-        // differentiated scores. The compact shape (values + repairPresent + keyAxiom, ending on a
-        // number) + TryParseAnalysis's outermost-{...} extraction keep it parseable without guidance.
-        try { text = _model.Complete(prompt, "", _ct); }
+        // BOUNDED decoding: the purpose-formed analyzer model supplies the CONTENT (correct virtue
+        // scores) and the JSON grammar (Schema) BOUNDS the syntax — OnnxGenAiInference.Complete maps
+        // it to SetGuidance("json_schema", ...). Validated that formation + bound => clean parseable
+        // 7/7 reads (TOTEM-C-0094); free generation on a 1B is syntactically unreliable. The bound is
+        // the form valid output takes, not a force applied against the model.
+        try { text = _model.Complete(prompt, Schema, _ct); }
         catch { return null; }
         // Malformed / short output -> null -> the gate's honest AnalyzerUnavailable state.
         return IntegrityResonanceGate.TryParseAnalysis(text);
@@ -46,4 +48,18 @@ internal sealed class GemmaIntegrityAnalyzer : IIntegrityAnalyzer
 
     // Convenience: read straight to an IntegrityResonance (honest-unavailable if the read fails).
     public IntegrityResonance Observe(string message) => IntegrityResonanceGate.Observe(message, this);
+
+    // The compact virtue-read JSON grammar the analyzer was educated on and the IRG parses. Built
+    // from the gate's virtue list so it can never drift from the seven canonical virtues.
+    static readonly string Schema = BuildSchema();
+    static string BuildSchema()
+    {
+        string names = string.Join(",", IntegrityResonanceGate.Virtues.Select(v => "\"" + v + "\""));
+        return "{\"type\":\"object\",\"properties\":{"
+             + "\"virtues\":{\"type\":\"array\",\"minItems\":7,\"maxItems\":7,\"items\":{\"type\":\"object\",\"properties\":{"
+             + "\"name\":{\"type\":\"string\",\"enum\":[" + names + "]},\"value\":{\"type\":\"integer\"}},"
+             + "\"required\":[\"name\",\"value\"]}},"
+             + "\"isFractured\":{\"type\":\"boolean\"},\"repairPresent\":{\"type\":\"boolean\"},\"keyAxiom\":{\"type\":\"integer\"}},"
+             + "\"required\":[\"virtues\",\"isFractured\",\"repairPresent\",\"keyAxiom\"]}";
+    }
 }
