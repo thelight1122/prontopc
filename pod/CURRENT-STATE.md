@@ -58,9 +58,13 @@ confirmed on the reply's OWN read). **HONEST:** the adopted v0.2.0 model was for
 outbound read is **zero-shot on replies** — a reply-read formation dataset would deepen it (a separate, later go).
 
 **NEXT — pending Tracey's EXPLICIT authorization (do NOT do unprompted; keep the coherence framing — never
-judge/score/pass/fail/gate).** (a) Outbound reply-tuning **— DONE (C-0104).** (b) Optionally **FORM a reply-read
-analyzer dataset** so the outbound read is no longer **zero-shot** on Custodian replies (education = a separate
-explicit go — [[educate-not-train]]). (c) Optionally teach the closed `CustodianGovernancePipeline` to supply the IRG
+judge/score/pass/fail/gate).** (a) Outbound reply-tuning **— DONE (C-0104).** (b) Reply-read analyzer dataset
+**— AUTHORED (C-0106):** `dataset/formation-seed-analyzer-reply-v0.1.0.jsonl` (38 ex: 15 fracture / 20
+coherent / 3 repair; sha `18b96197…`) + `build_analyzer_reply_dataset.py` (references `build_analyzer_dataset`,
+extracts `OutboundAnalyzerInstruction` + the runtime framing byte-for-byte) + a dataset card — a **reviewable
+candidate**. **REMAINING = the education go (separate explicit authorization — [[educate-not-train]]):** educate
+ONE analyzer on `concat(adopted v0.2.0 customer seed, this reply seed)` (concat, not reply-alone — avoids
+catastrophic interference) → re-export int4 ONNX → re-observe with `SystemObservableRun` + `IntegrityAnalyzerSmoke`. (c) Optionally teach the closed `CustodianGovernancePipeline` to supply the IRG
 observations to its own `Append` — a **gated** step (it runs the analyzer inside the pipeline). (d) **Re-observe
 responder v0.2.1** — the C-0089 System32 fix has never yet been re-observed. (e) The Loyalty/Trust miss stays blocked
 by the **int4-only CPU constraint** (C-0096/-0098) — a bigger model relaxes it, not a knob. **CERT (separate track,
@@ -85,7 +89,9 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0105** (nav-view refresh — brought the handoff pickup section current to the C-0104 seal), over
+> **TOTEM-C-0106** (authored the **reply-read analyzer dataset** `formation-seed-analyzer-reply-v0.1.0` — the
+> C-0104 (b) step; a reviewable candidate, **education pending Tracey's go**), over **TOTEM-C-0105** (nav-view
+> refresh — brought the handoff pickup section current to the C-0104 seal), over
 > **TOTEM-C-0104** — the **reply-tuned OUTBOUND analyzer instruction LANDED + verified green**: the Prism's
 > outbound read now OBSERVES a Custodian reply's OWN coherence/resonance (its posture toward the customer —
 > offer-not-command, consent, honesty) via a new `IntegrityResonanceGate.OutboundAnalyzerInstruction` + an
