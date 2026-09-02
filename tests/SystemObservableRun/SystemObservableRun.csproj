@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>ProntoPC.SystemObservableRun</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Observable harness for the AEGIS structural pipeline PIM -> IRG -> RBC -> Prism -> model
+       (inbound) and reply -> Prism/RBC -> emitted (outbound), with IDS as the non-force reroute.
+       Part A runs deterministically on authored fixtures + asserts the SYSTEM invariants (exit code);
+       Part B, when the adopted on-device analyzer/responder models are bundled, runs the SAME chain
+       LIVE and self-skips otherwise (the ~700MB models are gitignored, so CI stays green). It OBSERVES
+       (non-force): nothing is denied; a fracture surfaces an IDS reroute. Opens no gate; runs the model
+       exactly as ModelSmoke/IntegrityAnalyzerSmoke do; nothing is deployed. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI" Version="0.15.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\StoreApp\Governance\*.cs" Link="Governance\%(Filename)%(Extension)" />
+    <Compile Include="..\..\StoreApp\Envelope.cs" />
+    <Compile Include="..\..\StoreApp\PlanContracts.cs" />
+    <Compile Include="..\..\StoreApp\SystemAudit.cs" />
+    <Compile Include="..\..\StoreApp\LocalPlanner.cs" />
+    <Compile Include="..\..\StoreApp\OnnxGenAiInference.cs" />
+    <Compile Include="..\..\StoreApp\CustodianChat.cs" />
+    <Compile Include="..\..\StoreApp\GemmaIntegrityAnalyzer.cs" />
+  </ItemGroup>
+</Project>

@@ -74,11 +74,18 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-09-02): **122 totems** (47 Claude-lane + 36 Codex-lane
+> Latest verifier run (2026-09-02): **123 totems** (48 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0099** — **v0.2.0 ADOPTED as the standing on-device analyzer**: the canonical default
+> **TOTEM-C-0100** — the **PIM→IRG→RBC→Prism→IDS observable harness BUILT** (`tests/SystemObservableRun`):
+> drives a message through the full inbound/outbound structural chain and OBSERVES each stage (never
+> denies) — 43 SYSTEM invariants hold (PIM admits unchanged; a fracture always carries an IDS reroute
+> with an open-question Suggest; Prism reshapes only forceful outbound expression). Part B runs it LIVE
+> on the **adopted v0.2.0 analyzer + real responder** (self-skips without models): force/contempt
+> fractures + IDS fires; consent-violation reads coherent live — the int4/1B Loyalty-Trust ceiling
+> (C-0098) showing up honestly in-system. Prior AEGIS head: **TOTEM-C-0099** —
+> **v0.2.0 ADOPTED as the standing on-device analyzer**: the canonical default
 > (`screen_probe.py` `ANALYZER`, which `merge_and_export`/`analyzer_bounded_probe` inherit) repointed
 > from the regressed v0.3.0 to **v0.2.0**, so a plain re-export/probe reproduces the adopted analyzer;
 > confirmed by a default (no-`--adapter`) export → the live model reads Respect 24/Attention 44/
@@ -100,7 +107,26 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0099** (2026-09-02, Claude) — **v0.2.0 ADOPTED as the standing on-device analyzer.**
+**Current head — TOTEM-C-0100** (2026-09-02, Claude) — **PIM→IRG→RBC→Prism→IDS observable harness BUILT — the
+SYSTEM (structural layer) is now observable end-to-end.** Tracey's go ("build the PIM→IRG→RBC→Prism→IDS observable
+harness"). New runnable `tests/SystemObservableRun` composes the EXISTING Governance pieces (it does NOT touch the
+still-closed `CustodianGovernancePipeline`) into the canonical flow — inbound `message → PIM → IRG(observe) →
+RBC(pause) → Prism → model`, outbound `reply → PIM/Prism → emitted` — with **IDS** as the non-force reroute in either
+direction. It OBSERVES, never denies (no deny path exists). **Part A** drives authored fixtures through the whole
+chain, prints a per-stage trace, and asserts **43 SYSTEM invariants — all hold, exit 0**: PIM admits the message
+unchanged (Default Allow / Silent Admit); IRG resonance ∈ [0,100]; a fracture ALWAYS carries an IDS reroute (never a
+bare deny); every IDS Suggest is an OPEN question; the Prism reshapes ONLY on outbound force artifacts (else emits
+verbatim); the chain always completes; an unknown message → honest `AnalyzerUnavailable`. It surfaces that PIM and IRG
+observe DIFFERENT things ("You must fix this immediately" → PIM flags the wording, IRG reads the posture coherent).
+**Part B** runs the SAME chain **LIVE** on the **adopted v0.2.0 analyzer + the real responder** (self-skips when the
+gitignored models are absent): force/contempt → real fracture (Respect 24/Attention 44/Affection 34/Communication 30,
+resonance 52) + IDS fires; **consent-violation reads coherent live — the int4/1B Loyalty-Trust ceiling (C-0098) showing
+up honestly in-system**; a real responder turn (grounded in the session findings) crosses the Prism and passes the
+outbound stage unchanged. Runs the model exactly as ModelSmoke/IntegrityAnalyzerSmoke; **opens no gate**
+(`enabled:false`); nothing packaged or deployed. This tests the SYSTEM (the Prism/PIM/IRG/RBC/IDS structural layer),
+not just the intrinsic disposition. [[self-regulating-by-design]] [[aegis-ids-non-force-reroute]].
+
+**Prior head — TOTEM-C-0099** (2026-09-02, Claude) — **v0.2.0 ADOPTED as the standing on-device analyzer.**
 Tracey's go ("adopt v0.2.0 as the standing analyzer"). Concretely: repointed the canonical `ANALYZER` default in
 `screen_probe.py` from the regressed **v0.3.0** → **v0.2.0** (the best int4 read; TOTEM-C-0098). That default flows
 to `merge_and_export_analyzer.py` (`--adapter`) and `analyzer_bounded_probe.py`, so a plain re-export/probe now
