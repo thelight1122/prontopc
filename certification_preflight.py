@@ -16,12 +16,13 @@ thing and were then caught by the next unverified claim:
 Every check below exists because something like it was missed.
 
 Product shift (2026-08-29): the shipping product authors the repair plan ON-DEVICE
-(a bundled Gemma model), with the cloud only as a fallback. So the AI-plan gate is
-no longer "is the cloud endpoint up" - it is "is the on-device model bundled", and
-the cloud endpoint is exercised as a non-blocking fallback. This is the durable kill
-of the 2026-08-26 dual-provider outage: the reviewer's plan is authored locally with
-no network dependency. On-device authoring is proven by tests/ModelSmoke (asserts a
-local-model plan with an admissible action) - run that alongside this preflight.
+(a bundled Gemma model). The cloud fallback has since been RETIRED (2026-09-02): the
+desktop Orchestrator has a single local author and no cloud authoring path — a local
+decline leads to honest make-good, never a cloud- or heuristic-authored plan. So the
+AI-plan gate is entirely "is the on-device model bundled". This is the durable kill of
+the 2026-08-26 dual-provider outage: the reviewer's plan is authored locally with no
+network dependency at all. On-device authoring is proven by tests/ModelSmoke (asserts
+a local-model plan with an admissible action) - run that alongside this preflight.
 
 Run:  python certification_preflight.py
 """
@@ -148,18 +149,20 @@ def check_success_path():
 
 
 # ── 3. THE CLAIM THAT FAILED: an AI-built repair plan ────────────────────────
-# The shipping product authors the plan ON-DEVICE (bundled Gemma); cloud is only a
-# fallback. BLOCKING gate: the on-device model is bundled in the app - without it the
-# .msixupload falls through to the (possibly dead) cloud, reintroducing the exact
-# 2026-08-26 failure. The cloud endpoint is then exercised NON-BLOCKING: an outage
-# there is handled by the on-device path + the make-good, not by failing the plan.
+# The shipping product authors the plan ON-DEVICE (bundled Gemma) and has NO cloud
+# fallback: MainWindow constructs the Orchestrator with a single local author, and a
+# local decline leads to honest make-good, never a cloud- or heuristic-authored plan.
+# So the AI-plan gate is entirely "is the on-device model bundled". There is no cloud
+# authoring path to probe (the server /api/repair-plan endpoint remains only for the
+# legacy web/agent flow, which the certified Store app does not use).
 MODEL_DIR = HERE / "StoreApp" / "Assets" / "models" / "gemma-3-1b-it"
 
 
 def check_ai_repair_plan():
     print("\n[3] \"AI-powered repair plan\" is genuinely present  (10.1.2.10)")
 
-    # 3a — BLOCKING: on-device model bundled. This is the cert-critical packaging fact.
+    # BLOCKING: on-device model bundled. This is the cert-critical packaging fact —
+    # without it the .msixupload cannot author a plan and the app can only make-good.
     cfg = MODEL_DIR / "genai_config.json"
     weights = MODEL_DIR / "model.onnx.data"
     have_model = (cfg.exists() and weights.exists()
@@ -169,65 +172,6 @@ def check_ai_repair_plan():
     record("on-device authoring proven by tests/ModelSmoke", have_model,
            "model present — run: dotnet run --project tests/ModelSmoke -c Release"
            if have_model else "cannot prove on-device authoring without the model")
-
-    # 3b — NON-BLOCKING: cloud fallback health. Strengthens the fallback + make-good
-    # path, but the reviewer's plan no longer depends on it.
-    payload = {
-        "session": "certification-preflight",
-        "diagnostics": {
-            "os": {"hostname": "PREFLIGHT-PC", "caption": "Windows 11 Pro"},
-            "disk": [{"device": "C:", "percent_used": 91, "free_gb": 11}],
-            "memory": {"percent_used": 88},
-            "uptime": {"uptime_days": 23},
-            "drivers": {"unsigned": 3, "outdated": 7},
-            "security": {"real_time_protection": True, "firewall": True},
-            "temp_files": {"mb": 4200},
-            "startup": {"count": 19},
-        },
-    }
-    req = urllib.request.Request(
-        BACKEND + "/api/repair-plan",
-        data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=150) as r:
-            body = json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        try:
-            body = json.loads(e.read())
-        except Exception:
-            body = {"ok": False, "error": "HTTP %s" % e.code}
-    except Exception as e:
-        record("cloud fallback reachable", False, e, blocking=False)
-        return
-
-    if not body.get("ok"):
-        record("cloud fallback returns a plan", False,
-               body.get("reason") or body.get("error"), blocking=False)
-        return
-
-    plan = body.get("plan") or {}
-    summary = (plan.get("summary") or "").strip()
-    actions = plan.get("actions") or []
-    record("cloud fallback returns a plan", True, "%d actions" % len(actions),
-           blocking=False)
-    record("cloud plan has a summary", len(summary) > 30, summary[:90], blocking=False)
-    record("cloud plan proposes actions", len(actions) > 0,
-           "%d actions" % len(actions), blocking=False)
-
-    # A local rule-based fallback is what shipped last time and looked like AI.
-    # Its summary is a fixed string; the AI's is not.
-    canned = "Your system scan completed. We found maintenance items"
-    record("cloud plan is NOT the local canned fallback",
-           canned.lower() not in summary.lower(),
-           "canned-string absent" if canned.lower() not in summary.lower()
-           else "MATCHES LOCAL FALLBACK TEXT", blocking=False)
-
-    # The plan should reference the actual diagnostics it was given.
-    referenced = sum(1 for t in ["disk", "memory", "driver", "temp", "startup", "uptime"]
-                     if t in json.dumps(plan).lower())
-    record("cloud plan references supplied diagnostics", referenced >= 2,
-           "%d/6 diagnostic topics referenced" % referenced, blocking=False)
 
 
 # ── 4. Countable claims made in the listing ──────────────────────────────────
