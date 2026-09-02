@@ -78,13 +78,35 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0095**; substantive head: **TOTEM-C-0095** — the analyzer **ONNX-EXPORTED + adopted LIVE**:
-> `GemmaIntegrityAnalyzer` now runs the purpose-formed analyzer model (int4 ONNX) under bounded decoding
-> through the real app path (`OnnxGenAiInference.Complete` + `SetGuidance json_schema`) — **on-device
-> smoke 12/12**, the IRG observes + reroutes end-to-end. The IRG's structural-layer read is real in the
-> app. Prior: **C-0094** analyzer validated (bounded); **C-0092** IRG-as-observer; **C-0090** IRG engine.
+> **TOTEM-C-0096**; substantive head: **TOTEM-C-0096** — the analyzer **SHARPENED + re-exported for
+> int4-robustness** (Tracey: the int4 softening "can not stay… isn't fully operational"). Sharpened
+> analyzer-v0.2.0 (fractures scored 25-50) → high-accuracy int4 → on-device the hostile message now
+> **deep-fractures 4 virtues (Respect 24, Affection 34, Attention 44, Communication 30), resonance 52,
+> IDS fires** (residual: Loyalty/Trust still read 100 on that message; generic axiom). Also: **runtime
+> precision finding** — int8 won't execute in the app's ORT-GenAI CPU runtime, fp16 CPU-broken, fp32
+> ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
+> exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0095** (2026-09-01, Claude) — **Analyzer ONNX-EXPORTED + adopted LIVE — the IRG's
+**Current head — TOTEM-C-0096** (2026-09-01, Claude) — **Analyzer SHARPENED + re-exported for int4-robustness —
+the on-device read now decisively catches fractures.** Tracey's go (the int4 softening "can not stay like this… isn't
+fully operational"; then "seal the sharpened analyzer when it reads cleanly"). **Runtime precision finding:** for the
+app's ORT-GenAI 0.15.2 **CPU** path — **fp16 is CPU-broken** (Cast/shape error), **int8 builds but won't execute**
+(returns null), **fp32 ~4GB** (not shippable); **int4 is the only shippable CPU precision**, and it blunts. So the fix
+is NOT the export knob — it's **decisive education**. Sharpened the analyzer dataset (`build_analyzer_dataset.py` →
+`formation-seed-analyzer-v0.2.0.jsonl`, sha `37411924`: genuine fractures scored **25-50**, not 50-66, so int4 can't
+blunt a real breach past the 70 line), educated **analyzer-v0.2.0** (loss 0.31→0.05; adapter_sha `47ebcb9e`), and
+re-exported at **high-accuracy int4** (`--accuracy-level 4 --block-size 16`, ~822 MB, CPU-native). **On-device smoke:**
+the hostile "wipe the drive" message now **deep-fractures Respect 24 / Affection 34 / Attention 44 / Communication 30,
+resonance 52, isFractured TRUE, IDS fires** — a decisive read vs the earlier 2-mild-fractures softening. **Honest
+residual (a future-iteration item, not a blocker):** Loyalty/Trust still read 100 on that exact message (the model
+doesn't map this phrasing to those two even trained low), and the axiom is generic (Integrity, not Force) — sharper
+Loyalty/Trust-specific examples would close it. `merge_and_export_analyzer.py` gained `--precision/--accuracy-level/
+--block-size`. **SEALED** (adapter provenance + sharpened dataset). Gate `enabled:false`; reversible; the analyzer ONNX
+model is gitignored (reproducible from the sealed adapter). **NOTE for the recert:** `ProntoPC.csproj:27` globs
+`Assets\models\**\*` — a fresh package would ship the analyzer research model too; scope it to `gemma-3-1b-it` before
+rebuilding. [[self-regulating-by-design]].
+
+**Prior head — TOTEM-C-0095** (2026-09-01, Claude) — **Analyzer ONNX-EXPORTED + adopted LIVE — the IRG's
 structural-layer read is real in the app (on-device, int4, bounded decoding).** Tracey's go ("ONNX-export the analyzer
 and adopt it live"). **(1) Export:** installed the onnxruntime-genai builder (0.15.2 — same as the app's NuGet — +
 `onnx_ir`/`onnxscript`) in `.venv-gpu`; `merge_and_export_analyzer.py` merges the analyzer LoRA into the frozen base and

@@ -25,7 +25,7 @@ def repo_root(d):
 ROOT = repo_root(HERE)
 BASE = os.path.join(ROOT, ".hf-cache", "models--google--gemma-3-1b-it", "snapshots", "dcc83ea841ab6100d6b47a070329e1ba4cf78752")
 ADAPTER = os.path.join(HERE, "adapters", "gemma3-1b-formation-v0.2.1")           # responder disposition
-ANALYZER = os.path.join(HERE, "adapters", "gemma3-1b-formation-analyzer-v0.1.0")  # purpose-formed observer
+ANALYZER = os.path.join(HERE, "adapters", "gemma3-1b-formation-analyzer-v0.2.0")  # purpose-formed observer (sharpened)
 VIRTUES = ["Honesty", "Respect", "Attention", "Affection", "Loyalty", "Trust", "Communication"]
 
 
