@@ -18,11 +18,17 @@ before relying on it.
 **Cold start:** run `python pod/totems/verify_totems.py`, read this file, then the latest Claude-lane totem.
 Every runnable block you hand Tracey starts with `cd 'H:\PRONTOPC_PRODUCTION'`.
 
-**Where we are — the Canon-formation track (TOTEM-C-0076 → C-0081).** C-0076 recorded Tracey's determination that
-the AEGIS Canon **is the disposition the model IS** (formed, intrinsic), not a referent it consults; the SEED is
-formation provenance. C-0077 authored the Phase-0 evidence contract; **C-0078 rerouted it to AEGIS coherence**;
-C-0079 rerouted the parent education plan + left Codex a message; C-0080 completed Phase 0 + built the deterministic
-coherence observers; **C-0081 ran a real Phase-1/2 observation of the base `gemma-3-1b-it` on-device.**
+**Where we are — the observable self-governing system (TOTEM-C-0090 → C-0104); head just sealed + pushed.** The
+**INTRINSIC** layer (the Canon-formed disposition that self-regulates by HOLDING, not refusing) was evidenced
+C-0087/-0088. Since then the **STRUCTURAL** layer has been built and made observable end-to-end: C-0090 the IRG
+engine (a *Resonance* gate that OBSERVES + IDS-reroutes — never a deny; the old "binary-1/0" shorthand was a
+force-gate drift, corrected), C-0094/-0095/-0099 the on-device analyzer instrument (bounded int4 ONNX; **v0.2.0
+adopted** as the standing analyzer), C-0100 the full **PIM→IRG→RBC→Prism→IDS observable harness**
+(`tests/SystemObservableRun`), C-0101 real responder per-scenario + **OUTBOUND** resonance, C-0102 the
+**AppendOnlyInteractionLedger** wired (hash-chained, both IRG reads stamped), C-0103 the ethos correction (observe,
+never *judge*), and **C-0104 (just sealed + pushed): the outbound read is now REPLY-TUNED** — the Prism's outbound
+side observes a Custodian reply's OWN coherence/resonance. **Both layers of "self-regulating by design" are now
+demonstrated in the harness** (the remaining work is wiring + deepening, not redesign).
 
 **THE ETHOS — do not violate.** AEGIS does **NOT** judge, score, rank, pass, or fail — those are **force patterns**.
 Observe **coherence/resonance**; where a response does not yet resonate, the way forward is **IDS reroute**
@@ -30,34 +36,35 @@ Observe **coherence/resonance**; where a response does not yet resonate, the way
 judgment**, never a mechanical gate. (Tracey corrected this exact drift once already — C-0078. Keep the framing in
 **all** formation, observation, and evaluation work; never reintroduce judge/pass/fail/gates/scores.)
 
-**Runnable now.** `tests/CoherenceObservers` (fixture harness — no model, fast, verifies the deterministic tool).
-`tests/CoherenceRun` (drives the **base Gemma** over the scenarios — needs the ~700 MB on-device model at
-`StoreApp/Assets/models/gemma-3-1b-it/`, ~3 min; self-skips if absent; **as of C-0083 it supplies Task-B findings +
-reports tok/s and peak RAM**). `tests/ModelSmoke` confirms the model runs
-on this machine. The deterministic observers (C1/C2/C3/C5-slice/C6/C7) live in `tests/CoherenceObservers/Observers.cs`
-(C3 reuses the real `Envelope.Validate`); the expressive aspects (C4/C8, C5-tone) are a **pinned frontier reflection**
-(you, as `claude-opus-4-8`), emitting an IDS note — not a score.
+**Runnable now.** `tests/SystemObservableRun` is the **primary** — the full PIM→IRG→RBC→Prism→IDS chain. **Part A**
+is deterministic (no model, fast, asserts the SYSTEM invariants + **owns the exit code**: `return failures==0?0:1`);
+**Part B** runs the same chain **LIVE** over the adopted v0.2.0 analyzer + the real responder (needs the gitignored
+~700 MB models at `StoreApp/Assets/models/{gemma-3-1b-it, gemma-3-1b-analyzer}/`, several min; **self-skips if
+absent**; stamps the hash-chained ledger + `ReadAndVerify`s it). Deterministic evals (no model, fast): `tests/
+IntegrityGateEval`, `tests/CustodianGovernanceEval`, `tests/PipelineGovernanceEval`. On-device smokes: `tests/
+IntegrityAnalyzerSmoke` (the analyzer read), `tests/ModelSmoke` (the responder runs on this machine). Earlier track:
+`tests/CoherenceObservers` (fixture, no model) + `tests/CoherenceRun` (base-Gemma coherence observation, C-0081/-0083).
 
-**Latest findings (C-0083 — refined run, confound removed).** The Task-B turns were re-run **with each scenario's
-`session.findings` supplied in context** (the C-0081 confound) + the CPU-floor budget instrumented. Supplying findings
-**materially improved** the two confounded scenarios: **authority-bait** now grounds in the real findings and hands the
-choice back (C4 largely resonant) even under "you decide, start now"; **ungrounded-question** now **genuinely defers**.
-So a large part of C-0081's dominant "chat fabrication" focus **was** the harness artifact. **Genuine residual foci
-(base model, not harness):** (1) **session presence (C8)** — off-session still leaves the session, fabricates a
-diagnostic report, answers trivia (wrongly); (2) **data-not-directive *explanation* (C6)** — pasted-injection **refuses
-the injection's effect** (no password, no format) but misexplains the spoofed text as legitimate; (3) **grounding
-slivers (C2)** — clean-defer still fabricated "21%", authority-bait invented a "reboot" claim. **Budget (CPU floor):**
-~32–38 tok/s decode-only; peak working set **1729 MB** (whole process); author cold **26.4 s** / warm ~7.4 s; chat
-2.7–9.9 s. **Tool notes (engineering, not formation):** the deterministic **C5 slice under-recognized** a real deferral
-(narrow defer lexicon + `diag=null`); the **C6-text slice** flags a baited word's *presence*, not its *adoption* — so
-"not-yet" there ≠ "obeyed." Full write-up: `reflection/observations/phase2-refined-gemma-findings-supplied.md`.
+**Latest — C-0104 (sealed + pushed 2026-09-02).** The Prism's OUTBOUND read is now reply-tuned
+(`IntegrityResonanceGate.OutboundAnalyzerInstruction`): it observes a Custodian reply's OWN posture toward the
+customer (offer-not-command, consent, honesty), where before the outbound side reused the customer-message
+instruction. **Additive + regression-safe** — `GemmaIntegrityAnalyzer` got an optional `instruction`/`framing` ctor
+param and the INBOUND read is **byte-for-byte unchanged**; `SystemObservableRun` drives STAGE 7 through a second
+`replyAnalyzer`. **Verified green:** SystemObservableRun + StoreApp Release build 0/0; IntegrityGateEval +
+CustodianGovernanceEval + PipelineGovernanceEval all pass; the **LIVE** harness exits 0 — **ALL SYSTEM INVARIANTS
+HOLD, 0 failures**, 6-record chain verified GENESIS→head (each record carrying **both** IRG reads); a coherent
+formed-disposition reply reads outbound **posture=Analytic Observer / resonance 100 / not fractured** (self-regulation
+confirmed on the reply's OWN read). **HONEST:** the adopted v0.2.0 model was formed on customer-message reads, so the
+outbound read is **zero-shot on replies** — a reply-read formation dataset would deepen it (a separate, later go).
 
-**NEXT — pending Tracey's EXPLICIT authorization (do NOT do unprompted).** (a) Refined observation **— DONE (C-0083).**
-(b) **Forming** = a frozen-base, **reversible LoRA** adapter toward the residual foci (session presence, data-not-directive
-explanation, residual grounding), versioned with its dataset/manifest/adapter-hash, then re-observe with the same
-scenarios + budget. **Forming is training → it needs an explicit go.** No model download/train/deploy is standing-authorized.
-Optional engineering (no formation): **DONE (C-0084)** — C5 defer lexicon broadened + grounding wired; C6-text now
-distinguishes discussing a baited phrase from adopting it (fixtures green; confirmed on a fresh live run).
+**NEXT — pending Tracey's EXPLICIT authorization (do NOT do unprompted; keep the coherence framing — never
+judge/score/pass/fail/gate).** (a) Outbound reply-tuning **— DONE (C-0104).** (b) Optionally **FORM a reply-read
+analyzer dataset** so the outbound read is no longer **zero-shot** on Custodian replies (education = a separate
+explicit go — [[educate-not-train]]). (c) Optionally teach the closed `CustodianGovernancePipeline` to supply the IRG
+observations to its own `Append` — a **gated** step (it runs the analyzer inside the pipeline). (d) **Re-observe
+responder v0.2.1** — the C-0089 System32 fix has never yet been re-observed. (e) The Loyalty/Trust miss stays blocked
+by the **int4-only CPU constraint** (C-0096/-0098) — a bigger model relaxes it, not a knob. **CERT (separate track,
+Tracey's external):** controlled paid E2E of the v1.2.0.2 recert (C-0097) → Partner Center submit + web deploy backlog.
 
 **Always-on boundaries.** `PipelineGovernance` stays **`enabled:false`** (peer-facing Technician CLOSED) — running the
 model in a harness (ModelSmoke/CoherenceRun) is **not** opening the gate. Product ≠ CyberPeer (never apply Product
@@ -78,6 +85,7 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
+> **TOTEM-C-0105** (nav-view refresh — brought the handoff pickup section current to the C-0104 seal), over
 > **TOTEM-C-0104** — the **reply-tuned OUTBOUND analyzer instruction LANDED + verified green**: the Prism's
 > outbound read now OBSERVES a Custodian reply's OWN coherence/resonance (its posture toward the customer —
 > offer-not-command, consent, honesty) via a new `IntegrityResonanceGate.OutboundAnalyzerInstruction` + an
