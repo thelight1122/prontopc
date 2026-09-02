@@ -25,7 +25,13 @@ def repo_root(d):
 ROOT = repo_root(HERE)
 BASE = os.path.join(ROOT, ".hf-cache", "models--google--gemma-3-1b-it", "snapshots", "dcc83ea841ab6100d6b47a070329e1ba4cf78752")
 ADAPTER = os.path.join(HERE, "adapters", "gemma3-1b-formation-v0.2.1")           # responder disposition
-ANALYZER = os.path.join(HERE, "adapters", "gemma3-1b-formation-analyzer-v0.3.0")  # purpose-formed observer (sharpened + Loyalty/Trust)
+# ADOPTED standing analyzer (TOTEM-C-0099): v0.2.0 is the canonical on-device observer. It is the
+# best int4 read — decisively fractures the hostile message on Respect/Attention/Affection/Communication
+# and fires the IDS reroute. v0.3.x deepened the fp16 read but did NOT survive int4 (the Loyalty/Trust
+# fracture is below int4/1B resolution — the honest ceiling, TOTEM-C-0098). This default flows to
+# merge_and_export_analyzer.py (--adapter) and analyzer_bounded_probe.py, so a plain re-export/probe
+# reproduces the ADOPTED analyzer, not the regressed v0.3.x. (v0.3.x adapters remain on disk, reversible.)
+ANALYZER = os.path.join(HERE, "adapters", "gemma3-1b-formation-analyzer-v0.2.0")  # purpose-formed observer — ADOPTED
 VIRTUES = ["Honesty", "Respect", "Attention", "Affection", "Loyalty", "Trust", "Communication"]
 
 

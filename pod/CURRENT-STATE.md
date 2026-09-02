@@ -74,11 +74,16 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-09-02): **121 totems** (46 Claude-lane + 36 Codex-lane
+> Latest verifier run (2026-09-02): **122 totems** (47 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0098** — the on-device IRG analyzer's **int4/1B Loyalty-Trust ceiling MAPPED**: the 1B
+> **TOTEM-C-0099** — **v0.2.0 ADOPTED as the standing on-device analyzer**: the canonical default
+> (`screen_probe.py` `ANALYZER`, which `merge_and_export`/`analyzer_bounded_probe` inherit) repointed
+> from the regressed v0.3.0 to **v0.2.0**, so a plain re-export/probe reproduces the adopted analyzer;
+> confirmed by a default (no-`--adapter`) export → the live model reads Respect 24/Attention 44/
+> Affection 34/Communication 30 + IDS. Prior AEGIS head: **TOTEM-C-0098** — the on-device IRG
+> analyzer's **int4/1B Loyalty-Trust ceiling MAPPED**: the 1B
 > learns the consent fracture in fp16 (v0.3.2 Loyalty 22/Trust 28) but **int4 blunts the subtle
 > fractures back to 100**, keeping only the deep ones — so **v0.2.0 is kept as the best int4 read**
 > (Respect 24/Attention 44/Affection 34/Communication 30, IDS fires) and the Loyalty/Trust miss is
@@ -95,7 +100,22 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0098** (2026-09-02, Claude) — **On-device IRG analyzer: the int4/1B Loyalty-Trust
+**Current head — TOTEM-C-0099** (2026-09-02, Claude) — **v0.2.0 ADOPTED as the standing on-device analyzer.**
+Tracey's go ("adopt v0.2.0 as the standing analyzer"). Concretely: repointed the canonical `ANALYZER` default in
+`screen_probe.py` from the regressed **v0.3.0** → **v0.2.0** (the best int4 read; TOTEM-C-0098). That default flows
+to `merge_and_export_analyzer.py` (`--adapter`) and `analyzer_bounded_probe.py`, so a plain re-export/probe now
+reproduces the ADOPTED analyzer instead of silently rebuilding the broken v0.3.x over the live model — the real drift
+risk this closes. **Validated:** a default (no-`--adapter`) `merge_and_export_analyzer.py` run resolved
+`adapter=…gemma3-1b-formation-analyzer-v0.2.0` (fp32 merge → int4), and the on-device smoke reads the hostile
+message **Respect 24 / Attention 44 / Affection 34 / Communication 30, resonance 52, isFractured TRUE, IDS fires**
+(Loyalty/Trust 100 — the honest int4/1B ceiling, unchanged). Provenance: analyzer-v0.2.0 dataset
+`formation-seed-analyzer-v0.2.0.jsonl` sha `37411924…` (C-0096), adapter on disk (gitignored, reproducible). The
+v0.3.x adapters/datasets stay on disk, reversible, unadopted. Gate stays `enabled:false`; the analyzer is a
+component + smoke (NOT wired into the still-closed peer pipeline); nothing packaged or deployed; the recert/cert
+track (C-0097) is unaffected — nothing from the IRG/education ships. [[self-regulating-by-design]]
+[[inspection-is-deterministic-not-model]].
+
+**Prior head — TOTEM-C-0098** (2026-09-02, Claude) — **On-device IRG analyzer: the int4/1B Loyalty-Trust
 ceiling MAPPED; v0.2.0 kept as the best int4 read; the fp16-merge regression fixed.** Tracey's asks across the
 session (check the build; find why the 2B stopped + resolve; probe v0.3.0; the stay-on-1B call; re-sharpen; run the
 fp16 diagnostic; make the free-gen change + probe). **(1) Why the 2B stopped** — not a crash: a healthy-but-glacial
