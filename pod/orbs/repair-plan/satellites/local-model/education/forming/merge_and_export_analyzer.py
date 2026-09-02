@@ -28,19 +28,34 @@ def main():
     ap.add_argument("--precision", default="int4", choices=["int4", "int8", "fp16", "fp32", "bf16"])
     ap.add_argument("--accuracy-level", default="4", help="int4 only: 0-4 (4 = fp32 accumulation, sharpest)")
     ap.add_argument("--block-size", default="16", help="int4 only: 16/32/64/... (smaller = finer/more accurate)")
+    ap.add_argument("--base-dir", default=sp.BASE, help="HF snapshot of the base (default: the 1B)")
+    ap.add_argument("--adapter", default=sp.ANALYZER, help="LoRA adapter dir to merge")
+    ap.add_argument("--out-name", default="gemma-3-1b-analyzer", help="Assets/models/<out-name> ONNX dir")
+    ap.add_argument("--merge-dtype", default="fp32", choices=["fp32", "fp16"],
+                    help="precision the LoRA is merged in. fp32 = the PROVEN-SHARP path for the 1B "
+                         "analyzer (TOTEM-C-0095/-0096): the small fracture delta is applied precisely, "
+                         "THEN .half()'d, THEN int4-quantized. fp16 = RAM-safe for a bigger base, but it "
+                         "rounds the base AND the delta to fp16 before the merge, blunting the fracture "
+                         "signal ahead of int4 (TOTEM-C-0098 finding: fp16-merge collapsed the on-device "
+                         "read to all-100). Keep fp32 for the 1B; use fp16 only when the base won't fit fp32.")
     args = ap.parse_args()
     precision = args.precision
-    print(f"[export] precision={precision} accuracy_level={args.accuracy_level} block_size={args.block_size}", flush=True)
-    print("[merge] loading base + analyzer adapter (fp32, CPU)...", flush=True)
-    base = AutoModelForCausalLM.from_pretrained(sp.BASE, torch_dtype=torch.float32, local_files_only=True)
-    model = PeftModel.from_pretrained(base, sp.ANALYZER)
+    merge_dtype = torch.float32 if args.merge_dtype == "fp32" else torch.float16
+    OUT = os.path.join(sp.ROOT, "StoreApp", "Assets", "models", args.out_name)
+    print(f"[export] precision={precision} accuracy_level={args.accuracy_level} block_size={args.block_size} "
+          f"merge_dtype={args.merge_dtype} base={args.base_dir} adapter={args.adapter} out={args.out_name}", flush=True)
+    print(f"[merge] loading base + adapter ({args.merge_dtype}, CPU)...", flush=True)
+    base = AutoModelForCausalLM.from_pretrained(args.base_dir, torch_dtype=merge_dtype, local_files_only=True)
+    model = PeftModel.from_pretrained(base, args.adapter)
     print("[merge] merging LoRA into the base weights (merge_and_unload)...", flush=True)
-    merged = model.merge_and_unload().half()
+    merged = model.merge_and_unload()
+    if merge_dtype == torch.float32:
+        merged = merged.half()  # fp32-precise merge, then fp16 on disk for the int4 builder (v0.2.0 path)
     if os.path.isdir(MERGED):
         shutil.rmtree(MERGED, ignore_errors=True)
     os.makedirs(MERGED, exist_ok=True)
     merged.save_pretrained(MERGED)
-    AutoTokenizer.from_pretrained(sp.BASE, local_files_only=True).save_pretrained(MERGED)
+    AutoTokenizer.from_pretrained(args.base_dir, local_files_only=True).save_pretrained(MERGED)
     print("[merge] merged HF model saved ->", MERGED, flush=True)
 
     if os.path.isdir(OUT):

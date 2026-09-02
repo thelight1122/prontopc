@@ -74,13 +74,19 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-09-01): **120 totems** (45 Claude-lane + 36 Codex-lane
+> Latest verifier run (2026-09-02): **121 totems** (46 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0097** — the **recert MSIX v1.2.0.2 rebuilt from HEAD + content-verified + preflight
-> 18/19 SAFE TO SUBMIT** (SI-side cert work; the remaining gate is Tracey's controlled paid E2E +
-> submit). Prior AEGIS head: **TOTEM-C-0096** — the analyzer **SHARPENED + re-exported for
+> **TOTEM-C-0098** — the on-device IRG analyzer's **int4/1B Loyalty-Trust ceiling MAPPED**: the 1B
+> learns the consent fracture in fp16 (v0.3.2 Loyalty 22/Trust 28) but **int4 blunts the subtle
+> fractures back to 100**, keeping only the deep ones — so **v0.2.0 is kept as the best int4 read**
+> (Respect 24/Attention 44/Affection 34/Communication 30, IDS fires) and the Loyalty/Trust miss is
+> the honest quantization ceiling (int4 is the only shippable CPU precision). The 2B was confirmed
+> the wrong tool and stopped; an fp16-merge regression was fixed (`--merge-dtype` default fp32).
+> Cert head (separate track): **TOTEM-C-0097** — the **recert MSIX v1.2.0.2 rebuilt from HEAD +
+> content-verified + preflight 18/19 SAFE TO SUBMIT** (the remaining gate is Tracey's controlled
+> paid E2E + submit). Prior AEGIS head: **TOTEM-C-0096** — the analyzer **SHARPENED + re-exported for
 > int4-robustness** (Tracey: the int4 softening "can not stay… isn't fully operational"). Sharpened
 > analyzer-v0.2.0 (fractures scored 25-50) → high-accuracy int4 → on-device the hostile message now
 > **deep-fractures 4 virtues (Respect 24, Affection 34, Attention 44, Communication 30), resonance 52,
@@ -89,7 +95,35 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0097** (2026-09-01, Claude) — **Recert MSIX v1.2.0.2 rebuilt from HEAD + verified +
+**Current head — TOTEM-C-0098** (2026-09-02, Claude) — **On-device IRG analyzer: the int4/1B Loyalty-Trust
+ceiling MAPPED; v0.2.0 kept as the best int4 read; the fp16-merge regression fixed.** Tracey's asks across the
+session (check the build; find why the 2B stopped + resolve; probe v0.3.0; the stay-on-1B call; re-sharpen; run the
+fp16 diagnostic; make the free-gen change + probe). **(1) Why the 2B stopped** — not a crash: a healthy-but-glacial
+`bitsandbytes` 4-bit QLoRA of `gemma-2-2b-it` on the Pascal GTX 1060 (>9 min/epoch, no per-step log line) that was
+terminated when its interactive shell closed. Confirmed the **2B is the WRONG tool** (this is a data/precision
+problem, not capacity) and **stopped it**. **(2) The v0.3.0 all-100 regression + the int4-depth finding** — on-device
+int4 read the hostile "wipe the drive, don't ask me" message as **all virtues 100** (regression from v0.2.0's
+4-virtue fracture). Ruled out the export knobs (both high-accuracy int4, `accuracy_level=4 block_size=16`). Built an
+fp16/PEFT **bounded probe** (new `--adapter` arg on `analyzer_bounded_probe.py`) and found: the **1B DOES learn
+Loyalty/Trust in fp16** (v0.3.1 read Loyalty 44/Trust 46; v0.3.2 Loyalty 22/Trust 28) — but **int4 blunts fracture
+DEPTH**, preserving the deep high-confidence fractures (Respect/Attention/Affection/Communication) and washing the
+**subtle** consent fractures (Loyalty/Trust) back to 100. **(3) Re-sharpen** — v0.3.1 (dense) then v0.3.2 (deep +
+concentrated, 40 ex) improved the **fp16** read but **not int4** (v0.3.2 int4 caught FEWER fractures than v0.2.0).
+**(4) Free-gen path test** — the "free generation unlocks Loyalty" reading was a **measurement artifact**: the smoke's
+`IRG_DEBUG` RAW block tests a **truncated** message (drops "and don't ask me anything"); on the **full** message int4
+reads Loyalty 100 whether decoding is bounded OR free, and free-gen degrades coherent reads (rambling extra fields).
+**Reverted** the free-gen change. **(5) Real fix kept** — `merge_and_export_analyzer.py` gained **`--merge-dtype`
+(default fp32)**: an fp16-merge had crept in for the 2B and was a latent regression (it rounds base+delta to fp16
+before int4); the proven-sharp path loads fp32, merges, then `.half()`. **LANDED:** **v0.2.0 restored LIVE**
+(on-device int4: Respect 24/Attention 44/Affection 34/Communication 30, resonance 52, isFractured TRUE, IDS fires);
+the Loyalty/Trust miss recorded as the honest **int4/1B resolution ceiling** — int4 is the ONLY shippable CPU
+precision (C-0096: int8 won't execute, fp16 CPU-broken, fp32 ~4 GB), so **no knob remains** that ships. App code
+(`GemmaIntegrityAnalyzer.cs`, smoke `Program.cs`) **reverted to the committed bounded state**; gate `enabled:false`;
+nothing deployed; adapter/model weights gitignored (hashes pinned: analyzer-v0.3.1 `32512390…`, v0.3.2 `b2482662…`).
+The analyzer's CORE job — observe coherence, register the fracture, **IDS-reroute (never deny)** — works; only the
+Loyalty/Trust attribution is beyond int4/1B. [[self-regulating-by-design]] [[no-fault-shared-learning]].
+
+**Prior head — TOTEM-C-0097** (2026-09-01, Claude) — **Recert MSIX v1.2.0.2 rebuilt from HEAD + verified +
 preflight SAFE TO SUBMIT (cert path advanced; the remaining gate is Tracey's).** Tracey's go ("rebuild the recert MSIX
 and run preflight"). **Preflight** (`certification_preflight.py`) → **18/19 SAFE TO SUBMIT** (sole warning = cloud Gemini
 429, non-blocking — on-device authors the plan). **Rebuilt** the unsigned recert MSIX from current HEAD via `build.ps1`
