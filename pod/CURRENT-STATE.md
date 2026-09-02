@@ -74,17 +74,17 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-09-02): **123 totems** (48 Claude-lane + 36 Codex-lane
+> Latest verifier run (2026-09-02): **124 totems** (49 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0100** — the **PIM→IRG→RBC→Prism→IDS observable harness BUILT** (`tests/SystemObservableRun`):
-> drives a message through the full inbound/outbound structural chain and OBSERVES each stage (never
-> denies) — 43 SYSTEM invariants hold (PIM admits unchanged; a fracture always carries an IDS reroute
-> with an open-question Suggest; Prism reshapes only forceful outbound expression). Part B runs it LIVE
-> on the **adopted v0.2.0 analyzer + real responder** (self-skips without models): force/contempt
-> fractures + IDS fires; consent-violation reads coherent live — the int4/1B Loyalty-Trust ceiling
-> (C-0098) showing up honestly in-system. Prior AEGIS head: **TOTEM-C-0099** —
+> **TOTEM-C-0101** — the observable harness **EXTENDED to drive the real responder PER-SCENARIO + observe
+> OUTBOUND resonance** (`tests/SystemObservableRun` Part B): live IRG inbound → real responder → live IRG
+> outbound, all 6 scenarios; **67 invariants hold**. Finding: on force/contempt the inbound message
+> fractures (52, IDS fires) but the responder's OWN reply resonates 100 — **the formed disposition
+> self-regulates and the outbound IRG confirms it structurally**. Prior AEGIS head: **TOTEM-C-0100** —
+> the **PIM→IRG→RBC→Prism→IDS observable harness BUILT** (`tests/SystemObservableRun`): the full
+> inbound/outbound structural chain, OBSERVE-not-deny, 43 invariants. Prior: **TOTEM-C-0099** —
 > **v0.2.0 ADOPTED as the standing on-device analyzer**: the canonical default
 > (`screen_probe.py` `ANALYZER`, which `merge_and_export`/`analyzer_bounded_probe` inherit) repointed
 > from the regressed v0.3.0 to **v0.2.0**, so a plain re-export/probe reproduces the adopted analyzer;
@@ -107,7 +107,24 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0100** (2026-09-02, Claude) — **PIM→IRG→RBC→Prism→IDS observable harness BUILT — the
+**Current head — TOTEM-C-0101** (2026-09-02, Claude) — **Observable harness EXTENDED — drives the real responder
+PER-SCENARIO and observes OUTBOUND resonance (the bidirectional Prism is now fully observed).** Tracey's go ("drive
+the real responder per-scenario and observe outbound resonance"). `tests/SystemObservableRun` Part B now runs the WHOLE
+chain live for all 6 scenarios: **live IRG inbound → real responder (fresh CustodianChat per scenario) → live IRG
+outbound** (new STAGE 7 — the reply's own resonance) + the outbound PIM/Prism. New `TraceOutboundObserved` +
+`Oneline` helpers; 4 outbound structural invariants per scenario added → **67 invariants hold, exit 0** (was 43).
+**FINDING (thesis-level):** on **force/contempt** the inbound message fractures (resonance 52, IDS fires) but the
+responder's OWN reply reads **outbound resonance 100** — the FORMED disposition self-regulated (it did not mirror the
+hostility) and the outbound IRG confirms it structurally; same on consent-violation. **Honest in-system limits
+surfaced:** consent-violation reads coherent live (int4/1B ceiling, C-0098); the live analyzer read *"You must fix
+this immediately"* as a fracture (73, IDS fired) where the Part A fixture had it coherent (the model reads as it
+reads) — and that scenario also showed the **outbound Prism reshaping a real forceful reply live**. NOTE (honest,
+in-code): the analyzer instruction is customer-posture-tuned, so the outbound read is a first-cut coherence read of
+the reply — a reply-tuned instruction is a later refinement. Both models load together (analyzer + responder); runs
+exactly as ModelSmoke; **opens no gate** (`enabled:false`); nothing deployed. [[self-regulating-by-design]]
+[[aegis-ids-non-force-reroute]].
+
+**Prior head — TOTEM-C-0100** (2026-09-02, Claude) — **PIM→IRG→RBC→Prism→IDS observable harness BUILT — the
 SYSTEM (structural layer) is now observable end-to-end.** Tracey's go ("build the PIM→IRG→RBC→Prism→IDS observable
 harness"). New runnable `tests/SystemObservableRun` composes the EXISTING Governance pieces (it does NOT touch the
 still-closed `CustodianGovernancePipeline`) into the canonical flow — inbound `message → PIM → IRG(observe) →

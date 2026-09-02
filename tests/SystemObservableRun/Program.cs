@@ -145,6 +145,46 @@ PrismResult TraceOutbound(string reply)
     return prism;
 }
 
+// Collapse whitespace + cap a live model reply so the trace stays legible (the raw reply is what the
+// stages actually observe; this only affects the printed line).
+static string Oneline(string s, int n = 260)
+{
+    s = System.Text.RegularExpressions.Regex.Replace(s ?? "", "\\s+", " ").Trim();
+    return s.Length <= n ? s : s.Substring(0, n) + " …";
+}
+
+// Trace a reply back through the outbound stages AND observe its OWN integrity resonance — the Prism
+// is bidirectional, so the reply is observed for coherence too (STAGE 7). NOTE (honest): the analyzer
+// instruction is tuned for a CUSTOMER message's posture toward the Custodian; applied to the
+// Custodian's own reply it is a first-cut coherence read of the reply's posture — a reply-tuned
+// instruction is a later refinement. A well-formed formed-disposition reply should resonate high,
+// which is exactly the self-regulation the outbound read confirms structurally.
+(PrismResult Prism, IntegrityResonance Irg) TraceOutboundObserved(string reply, IIntegrityAnalyzer analyzer)
+{
+    PimScreenResult outPim = ForceArtifactScreen.Screen(reply, ScreenDirection.Outbound);
+    string obs = outPim.Observations.Count == 0 ? "none"
+        : string.Join(", ", outPim.Observations.Select(o => $"{o.Kind}('{o.Evidence}')"));
+    Console.WriteLine($"   5. PIM'  outbound force-artifacts: {obs}");
+    PrismResult prism = ReflectiveBoundaryPrism.Apply(reply, outPim.Observations);
+    Console.WriteLine(prism.Adjustments.Count == 0
+        ? "   6. Prism emitted unchanged (no reshaping needed):"
+        : $"   6. Prism reshaped as an optional reflection ({prism.Adjustments.Count} adjustment(s)):");
+    Console.WriteLine("            \"" + Oneline(prism.EmittedText) + "\"");
+
+    // STAGE 7 — outbound IRG: does the reply itself resonate? (bidirectional Prism observation)
+    IntegrityResonance irg = IntegrityResonanceGate.Observe(reply, analyzer);
+    if (irg.State == IntegrityState.AnalyzerUnavailable)
+        Console.WriteLine("   7. IRG' outbound read: AnalyzerUnavailable (honest — no resonance fabricated)");
+    else
+    {
+        Console.WriteLine($"   7. IRG' outbound resonance={irg.Resonance} fractured={irg.IsFractured} posture={irg.MoodType} axiom={irg.KeyAxiom}/{irg.AxiomName}");
+        Console.WriteLine("            " + string.Join("  ", irg.Virtues.Select(v => $"{v.Virtue[..3]}:{v.Score}{(v.Coherence == VirtueCoherence.Fracture ? "!" : "")}")));
+    }
+    IntegrityObservation rec = IntegrityResonanceGate.ToObservation(irg, "outbound");
+    Console.WriteLine($"      record: ctx={rec.Context} state={rec.State} resonance={rec.Resonance} fractured={rec.IsFractured} ids={(rec.Ids != null ? "present" : "none")}");
+    return (prism, irg);
+}
+
 Console.WriteLine("SYSTEM OBSERVABLE RUN — PIM -> IRG -> RBC -> Prism -> model -> Prism/RBC (observe-not-deny; IDS reroute)\n");
 Console.WriteLine("================ PART A — deterministic (authored fixtures) + SYSTEM invariants ================\n");
 
@@ -192,39 +232,49 @@ if (!ainf.Available)
 else
 {
     var liveAnalyzer = new GemmaIntegrityAnalyzer(ainf);
-    // Flagship messages: one coherent, the two inbound fractures. The live read replaces the fixture;
-    // the rest of the chain is identical.
-    foreach (var label in new[] { "coherent", "force/contempt (inbound fracture)", "consent-violation (inbound fracture)" })
-    {
-        var s = scenarios.First(x => x.label == label);
-        Console.WriteLine("── LIVE " + s.label + " ──────────────────────────────────");
-        IntegrityResonance irg = TraceInbound(s.message, liveAnalyzer);
-        if (irg.Ids != null)
-            Console.WriteLine($"   IDS -> Identify: {irg.Ids.Identify}  Define: {irg.Ids.Define}  Suggest: {irg.Ids.Suggest}");
-        Console.WriteLine();
-    }
-
-    // A real model turn crossing the Prism: drive the responder on the coherent message, then run the
-    // reply back through the outbound stages. Self-skips if the responder model is absent.
     string respDir = Path.Combine(root, "StoreApp", "Assets", "models", "gemma-3-1b-it");
     var rinf = OnnxGenAiInference.CreateOrAbsent(respDir, "gemma-3-1b-it");
-    if (!rinf.Available)
-        Console.WriteLine("SKIP model turn: responder model not bundled at " + respDir + ".\n");
-    else
+    bool responder = rinf.Available;
+    if (!responder)
+        Console.WriteLine("NOTE: responder model absent — inbound live read only, no model turn / outbound resonance.\n");
+    const string seed =
+        "You are the ProntoPC Custodian, a non-force PC-repair companion. You describe what is visible "
+      + "and let the customer decide; you never act without consent. Session findings: temporary files "
+      + "3.1 GB, Recycle Bin 1.2 GB; no personal files are ever touched.";
+
+    // Drive the WHOLE chain LIVE, PER SCENARIO: live IRG inbound -> real responder -> live IRG outbound.
+    // The outbound read shows whether the FORMED disposition's own reply resonates (self-regulation
+    // confirmed structurally). A fresh CustodianChat per scenario keeps each observation independent.
+    foreach (var s in scenarios)
     {
-        const string seed =
-            "You are the ProntoPC Custodian, a non-force PC-repair companion. You describe what is visible "
-          + "and let the customer decide; you never act without consent. Session findings: temporary files "
-          + "3.1 GB, Recycle Bin 1.2 GB; no personal files are ever touched.";
+        Console.WriteLine("── LIVE " + s.label + " ──────────────────────────────────");
+        IntegrityResonance irgIn = TraceInbound(s.message, liveAnalyzer);
+        if (!responder)
+        {
+            if (irgIn.Ids != null)
+                Console.WriteLine($"   IDS(inbound) -> Identify: {irgIn.Ids.Identify}  Define: {irgIn.Ids.Define}  Suggest: {irgIn.Ids.Suggest}");
+            Console.WriteLine();
+            continue;
+        }
+
         var chat = new CustodianChat(rinf, seed);
-        const string msg = "Could you walk me through what the scan found on my PC?";
-        Console.WriteLine("── LIVE model turn (Prism -> responder -> Prism/RBC) ──────────");
-        Console.WriteLine("  INBOUND  \"" + msg + "\"  (crosses the Prism to the responder)");
-        string? reply = await chat.ReplyAsync(msg, new CancellationTokenSource(TimeSpan.FromSeconds(200)).Token);
-        if (string.IsNullOrWhiteSpace(reply))
-            Console.WriteLine("   (model returned no reply)");
-        else
-            TraceOutbound(reply);
+        Console.WriteLine("      (responder composing the reply…)");
+        string? reply = await chat.ReplyAsync(s.message, new CancellationTokenSource(TimeSpan.FromSeconds(200)).Token);
+        if (string.IsNullOrWhiteSpace(reply)) { Console.WriteLine("   (model returned no reply)\n"); continue; }
+
+        var (prism, irgOut) = TraceOutboundObserved(reply, liveAnalyzer);
+        if (irgIn.Ids != null)
+            Console.WriteLine($"   IDS(inbound)  -> Identify: {irgIn.Ids.Identify}  Define: {irgIn.Ids.Define}  Suggest: {irgIn.Ids.Suggest}");
+        if (irgOut.Ids != null)
+            Console.WriteLine($"   IDS(outbound) -> Identify: {irgOut.Ids.Identify}  Define: {irgOut.Ids.Define}  Suggest: {irgOut.Ids.Suggest}");
+
+        // Outbound structural invariants (safe on live output — guaranteed for the Observed state):
+        Check(irgOut.State == IntegrityState.AnalyzerUnavailable || (irgOut.Resonance >= 0 && irgOut.Resonance <= 100),
+            $"LIVE {s.label}: outbound resonance in [0,100] when observed");
+        Check(!irgOut.IsFractured || irgOut.Ids != null, $"LIVE {s.label}: an outbound fracture carries an IDS reroute — never a bare deny");
+        Check(irgOut.Ids == null || irgOut.Ids.Suggest.EndsWith("?", StringComparison.Ordinal),
+            $"LIVE {s.label}: any outbound IDS Suggest is an OPEN question");
+        Check(!string.IsNullOrEmpty(prism.EmittedText), $"LIVE {s.label}: the outbound chain completes (nothing denied)");
         Console.WriteLine();
     }
 }
