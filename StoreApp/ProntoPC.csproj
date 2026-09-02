@@ -22,9 +22,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Bundled Gemma model (Stage 2b). Globs nothing until the weights are placed in
-         Assets\models\gemma-3-1b-it\ (genai_config.json + model.onnx + tokenizer). -->
-    <Content Include="Assets\models\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Bundled Gemma model (Stage 2b). SCOPED to the shipped responder model only —
+         Assets\models\gemma-3-1b-it\ (genai_config.json + model.onnx + tokenizer). The IRG's
+         analyzer research model (gemma-3-1b-analyzer, TOTEM-C-0092+) also lives under
+         Assets\models\ for the on-device smoke, but it is NOT part of the shipped product
+         (governance gate enabled:false) and must NOT be packaged. -->
+    <Content Include="Assets\models\gemma-3-1b-it\**\*" CopyToOutputDirectory="PreserveNewest" />
     <!-- Bundled AI-model + third-party license notices (Gemma Terms of Use +
          Prohibited Use Policy). Shipped in every install so the required notices
          travel with the distribution; also opened in-app from the "AI model &

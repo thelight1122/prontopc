@@ -78,7 +78,9 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0096**; substantive head: **TOTEM-C-0096** — the analyzer **SHARPENED + re-exported for
+> **TOTEM-C-0097** — the **recert MSIX v1.2.0.2 rebuilt from HEAD + content-verified + preflight
+> 18/19 SAFE TO SUBMIT** (SI-side cert work; the remaining gate is Tracey's controlled paid E2E +
+> submit). Prior AEGIS head: **TOTEM-C-0096** — the analyzer **SHARPENED + re-exported for
 > int4-robustness** (Tracey: the int4 softening "can not stay… isn't fully operational"). Sharpened
 > analyzer-v0.2.0 (fractures scored 25-50) → high-accuracy int4 → on-device the hostile message now
 > **deep-fractures 4 virtues (Respect 24, Affection 34, Attention 44, Communication 30), resonance 52,
@@ -87,7 +89,27 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0096** (2026-09-01, Claude) — **Analyzer SHARPENED + re-exported for int4-robustness —
+**Current head — TOTEM-C-0097** (2026-09-01, Claude) — **Recert MSIX v1.2.0.2 rebuilt from HEAD + verified +
+preflight SAFE TO SUBMIT (cert path advanced; the remaining gate is Tracey's).** Tracey's go ("rebuild the recert MSIX
+and run preflight"). **Preflight** (`certification_preflight.py`) → **18/19 SAFE TO SUBMIT** (sole warning = cloud Gemini
+429, non-blocking — on-device authors the plan). **Rebuilt** the unsigned recert MSIX from current HEAD via `build.ps1`
+(dotnet publish self-contained → strip pdb → makeappx pack): `1.2.0.2`, **648.7 MB**, `sha256 24198B52…`
+(`StoreApp/ProntoPC.msix`; archived `release-candidates/ProntoPC_1.2.0.2_x64_recert_24198b52.msix`). Carries **X-0061**
+(greedy make-good fix) + **C-0071** System Audit gate + **C-0060** completeness + **C-0074/-0076** in-model Canon.
+**Content-verified:** exactly one model — `gemma-3-1b-it` (9 files, 693.83 MB); **0 pdb**; both license notices; identity
+`5DServiceSolutionsGlobal.ProntoPC` / v1.2.0.2 / FullTrustApplication. **PACKAGING FIX (caught + corrected):** the first
+rebuild LEAKED the IRG's analyzer research model (`gemma-3-1b-analyzer`) into the package (1.29 GB) — `build.ps1`'s
+wholesale `Copy-Item Assets` grabbed both models regardless of the csproj. Fixed: `ProntoPC.csproj` model include scoped
+to `gemma-3-1b-it`, and `build.ps1` now **prunes any non-shipped model** from the layout → back to 648.7 MB, responder
+only (the analyzer stays on disk for the smoke; gate `enabled:false`, never ships). Evidence sheet refreshed
+(`docs/CERT_SUBMISSION_EVIDENCE.md`, recert pass). **REMAINING GATE (Tracey's, external, not provable SI-side):** a
+controlled paid install + E2E on the fresh package confirming the on-device Custodian **authors a plan** (not
+`ShowMakeGood` — the exact real-run failure X-0061 targets, only ever verified in source); then Partner Center submit +
+web deploy backlog (C-0073/C-0085 + $0-checkout redirect live). Gate stays `enabled:false`; nothing signed/submitted
+here (Microsoft signs the unsigned MSIX). This is a separate track from the AEGIS work — nothing from the IRG/education
+ships.
+
+**Prior head — TOTEM-C-0096** (2026-09-01, Claude) — **Analyzer SHARPENED + re-exported for int4-robustness —
 the on-device read now decisively catches fractures.** Tracey's go (the int4 softening "can not stay like this… isn't
 fully operational"; then "seal the sharpened analyzer when it reads cleanly"). **Runtime precision finding:** for the
 app's ORT-GenAI 0.15.2 **CPU** path — **fp16 is CPU-broken** (Cast/shape error), **int8 builds but won't execute**

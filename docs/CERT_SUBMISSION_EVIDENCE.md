@@ -78,3 +78,38 @@ cert path. A Microsoft "PASS" is issued **after** submission and is not producib
 
 *Governance boundary for cert: `PipelineGovernance` ships `enabled:false`; opening the Technician (§8)
 is a deliberately separate, post-cert decision.*
+
+---
+
+## Recert rebuild pass — 2026-09-01 (TOTEM-C-0097)
+
+Fresh recert package rebuilt from current HEAD so it carries every post-`X-0055`-freeze fix — most
+importantly **X-0061** (greedy `do_sample:false` on the plan path = the make-good fix), plus the
+**C-0071** System Audit gate, **C-0060** completeness backstop, and **C-0074/-0076** in-model Canon.
+
+| Field | Value |
+| --- | --- |
+| Package version | `1.2.0.2` (unsigned MSIX — Partner Center signs) |
+| Uploadable file | `StoreApp/ProntoPC.msix` (archived: `release-candidates/ProntoPC_1.2.0.2_x64_recert_24198b52.msix`) |
+| SHA-256 | `24198B52919AF474394C6FA533C8F0C3E7B52B800C9FF363013C70C017CC3175` |
+| Size | 648.7 MB |
+| Built from | `main` @ `fec8b1a` (TOTEM-C-0096) + packaging fixes (this totem) |
+| Identity | `5DServiceSolutionsGlobal.ProntoPC`, Publisher CN `D4266722-…`, EntryPoint `Windows.FullTrustApplication` |
+
+**Content-verified (SI-side):** exactly one model shipped — `gemma-3-1b-it` (9 files, `model.onnx.data`
+693.83 MB); **0 `.pdb`**; both license notices (`GEMMA-NOTICE.txt`, `THIRD-PARTY-NOTICES.txt`);
+version/identity/entrypoint correct. **Packaging fix this pass:** `ProntoPC.csproj` model include
+scoped to `gemma-3-1b-it`, and `build.ps1` now prunes any non-shipped model from the layout — so the
+IRG's **analyzer research model** (`gemma-3-1b-analyzer`, gate `enabled:false`, not in the product
+flow) does **not** leak into the package (caught a 1.29 GB leak; corrected to 648.7 MB).
+
+**Preflight:** `certification_preflight.py` → **18/19, "Safe to submit."** Sole warning is the cloud
+Gemini **429** (credits depleted) — **non-blocking**: the on-device model authors the plan; cloud is
+fallback-only, and its absence routes to the honest make-good, never a non-AI substitute.
+
+**REMAINING GATE (Tracey's, external):** the one thing not provable SI-side — a **controlled paid
+install + E2E run** on the freshly-installed package confirming the on-device Custodian **authors a
+plan locally** (`provenance=local-model`), NOT `ShowMakeGood` (the exact real-run failure X-0061
+targets, which has only ever been verified in source). Then: Partner Center submit (this MSIX +
+`MICROSOFT_STORE_CERT_NOTES.md`), and the web deploy backlog (C-0073/C-0085 + confirm the $0-checkout
+redirect fix is live). Governance gate stays `enabled:false`.

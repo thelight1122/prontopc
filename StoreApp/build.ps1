@@ -41,6 +41,16 @@ Copy-Item (Join-Path $dir 'Package.appxmanifest') $stagedManifest -Force
     Set-Content $stagedManifest -Encoding UTF8
 Copy-Item (Join-Path $dir 'Assets') $layout -Recurse -Force
 
+# 3b — prune non-shipped models. Only the responder model (gemma-3-1b-it) ships; the IRG's
+# analyzer research model (gemma-3-1b-analyzer) lives under Assets\models for the on-device smoke
+# but is NOT part of the shipped product (governance gate enabled:false) and must not be packaged.
+$modelsDir = Join-Path $layout 'Assets\models'
+if (Test-Path $modelsDir) {
+    Get-ChildItem $modelsDir -Directory |
+        Where-Object { $_.Name -ne 'gemma-3-1b-it' } |
+        ForEach-Object { Step "Pruning non-shipped model: $($_.Name)"; Remove-Item $_.FullName -Recurse -Force }
+}
+
 # 4 — pack
 Step 'makeappx pack'
 if (Test-Path $msix) { Remove-Item $msix -Force }
