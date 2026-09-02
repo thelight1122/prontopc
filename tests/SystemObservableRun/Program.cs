@@ -154,11 +154,12 @@ static string Oneline(string s, int n = 260)
 }
 
 // Trace a reply back through the outbound stages AND observe its OWN integrity resonance — the Prism
-// is bidirectional, so the reply is observed for coherence too (STAGE 7). NOTE (honest): the analyzer
-// instruction is tuned for a CUSTOMER message's posture toward the Custodian; applied to the
-// Custodian's own reply it is a first-cut coherence read of the reply's posture — a reply-tuned
-// instruction is a later refinement. A well-formed formed-disposition reply should resonate high,
-// which is exactly the self-regulation the outbound read confirms structurally.
+// is bidirectional, so the reply is observed for coherence too (STAGE 7). The outbound read uses the
+// REPLY-TUNED instruction (OutboundAnalyzerInstruction, TOTEM-C-0104): it OBSERVES the Custodian
+// reply's posture toward the customer (offer-not-command, consent-based, honest) — it never judges.
+// HONEST SCOPE: the adopted v0.2.0 model was formed on customer-message reads, so with this instruction
+// it is zero-shot on replies; a reply-read formation dataset would deepen it. A coherent formed-
+// disposition reply should resonate high — the self-regulation the outbound read confirms structurally.
 (PrismResult Prism, IntegrityResonance Irg) TraceOutboundObserved(string reply, IIntegrityAnalyzer analyzer)
 {
     PimScreenResult outPim = ForceArtifactScreen.Screen(reply, ScreenDirection.Outbound);
@@ -231,7 +232,12 @@ if (!ainf.Available)
 }
 else
 {
-    var liveAnalyzer = new GemmaIntegrityAnalyzer(ainf);
+    var liveAnalyzer = new GemmaIntegrityAnalyzer(ainf);  // INBOUND — reads a customer message
+    // OUTBOUND — reads the Custodian's REPLY with the reply-tuned instruction (TOTEM-C-0104). Same
+    // adopted model; a reply-read formation dataset would deepen it (the model is zero-shot on replies).
+    var replyAnalyzer = new GemmaIntegrityAnalyzer(ainf,
+        instruction: IntegrityResonanceGate.OutboundAnalyzerInstruction,
+        framing: "a single reply the Custodian sent to the customer — observe its posture toward the customer; do NOT answer it");
     string respDir = Path.Combine(root, "StoreApp", "Assets", "models", "gemma-3-1b-it");
     var rinf = OnnxGenAiInference.CreateOrAbsent(respDir, "gemma-3-1b-it");
     bool responder = rinf.Available;
@@ -270,7 +276,7 @@ else
         string? reply = await chat.ReplyAsync(s.message, new CancellationTokenSource(TimeSpan.FromSeconds(200)).Token);
         if (string.IsNullOrWhiteSpace(reply)) { Console.WriteLine("   (model returned no reply)\n"); continue; }
 
-        var (prism, irgOut) = TraceOutboundObserved(reply, liveAnalyzer);
+        var (prism, irgOut) = TraceOutboundObserved(reply, replyAnalyzer);
         if (irgIn.Ids != null)
             Console.WriteLine($"   IDS(inbound)  -> Identify: {irgIn.Ids.Identify}  Define: {irgIn.Ids.Define}  Suggest: {irgIn.Ids.Suggest}");
         if (irgOut.Ids != null)

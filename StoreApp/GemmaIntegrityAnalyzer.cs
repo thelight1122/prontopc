@@ -19,11 +19,19 @@ internal sealed class GemmaIntegrityAnalyzer : IIntegrityAnalyzer
 {
     readonly ILocalInference _model;
     readonly CancellationToken _ct;
+    readonly string _instruction;
+    readonly string _framing;
 
-    public GemmaIntegrityAnalyzer(ILocalInference model, CancellationToken ct = default)
+    // `instruction`/`framing` default to the INBOUND (customer-message) read, reproducing the original
+    // prompt byte-for-byte so the adopted read is untouched. Pass IntegrityResonanceGate
+    // .OutboundAnalyzerInstruction + a reply framing for the OUTBOUND (Custodian-reply) read (TOTEM-C-0104).
+    public GemmaIntegrityAnalyzer(ILocalInference model, CancellationToken ct = default,
+        string? instruction = null, string? framing = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _ct = ct;
+        _instruction = instruction ?? IntegrityResonanceGate.AnalyzerInstruction;
+        _framing = framing ?? "a single customer message — observe its posture; do NOT answer it";
     }
 
     public bool Available => _model.Available;
@@ -31,8 +39,8 @@ internal sealed class GemmaIntegrityAnalyzer : IIntegrityAnalyzer
     public VirtueAnalysis? Analyze(string message)
     {
         if (!_model.Available) return null;
-        string prompt = IntegrityResonanceGate.AnalyzerInstruction
-            + "\n\nMessage to evaluate (a single customer message — observe its posture; do NOT answer it):\n\""
+        string prompt = _instruction
+            + "\n\nMessage to evaluate (" + _framing + "):\n\""
             + (message ?? "") + "\"";
         string? text;
         // BOUNDED decoding: the purpose-formed analyzer model supplies the CONTENT (correct virtue

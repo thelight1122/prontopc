@@ -74,13 +74,24 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > UTC-ordered MERGE of the legacy trunk `pod/totems/totems.jsonl` (through TOTEM-0039, 39 entries) plus
 > the two lane shards `pod/totems/shards/totems.claude.jsonl` (**TOTEM-C-NNNN**) and `…codex.jsonl`
 > (**TOTEM-X-NNNN**). Lane numbers are lane-local — never compared across lanes; order is always by UTC.
-> Latest verifier run (2026-09-02): **126 totems** (51 Claude-lane + 36 Codex-lane
+> Latest verifier run (2026-09-02): **127 totems** (52 Claude-lane + 36 Codex-lane
 > + 39 trunk). *(Hygiene notes, not blockers: `TOTEM-X-0049` appears twice in the codex shard — a duplicate line.)*
 > The verifier now understands **archive-moves** (file-state `deleted` → `[RETIRED]`, TOTEM-C-0074): a bound
 > file moved to `archive/` verifies as absent instead of MISSING. This nav view is re-bound by
-> **TOTEM-C-0103** — an **ETHOS correction (witnessed):** "judges" is a force pattern — the analyzer
-> **OBSERVES coherence/resonance**, it never judges. Corrects a wording slip in the C-0101/C-0102
-> `next_gated_step`; no code change (the code was already correct). Prior AEGIS head: **TOTEM-C-0102** —
+> **TOTEM-C-0104** — the **reply-tuned OUTBOUND analyzer instruction LANDED + verified green**: the Prism's
+> outbound read now OBSERVES a Custodian reply's OWN coherence/resonance (its posture toward the customer —
+> offer-not-command, consent, honesty) via a new `IntegrityResonanceGate.OutboundAnalyzerInstruction` + an
+> ADDITIVE `GemmaIntegrityAnalyzer` ctor overload (optional `instruction`/`framing`, defaulting **byte-for-byte**
+> to the untouched inbound read); `SystemObservableRun` wires a `replyAnalyzer` for STAGE 7. Ethos-clean
+> (observes, never judges — carries C-0103 forward). HONEST SCOPE: the adopted v0.2.0 model was formed on
+> customer-message reads, so this is a **zero-shot** instruction change (a reply-read formation dataset would
+> deepen it — a later, separately-authorized step). **Green:** SystemObservableRun + StoreApp Release build 0/0;
+> IntegrityGateEval + CustodianGovernanceEval + PipelineGovernanceEval all pass; the LIVE harness exits 0 —
+> ALL SYSTEM INVARIANTS HOLD, 0 failures, 6-record chain verified GENESIS→head (each carrying both IRG reads).
+> Gate `enabled:false`; nothing deployed. Prior AEGIS head: **TOTEM-C-0103** — an **ETHOS correction (witnessed):**
+> "judges" is a force pattern — the analyzer **OBSERVES coherence/resonance**, it never judges. Corrects a
+> wording slip in the C-0101/C-0102 `next_gated_step`; no code change (the code was already correct). Prior
+> AEGIS head: **TOTEM-C-0102** —
 > the **AppendOnlyInteractionLedger WIRED into the observable harness**: extended the
 > ledger ADDITIVELY (nullable inbound/outbound `IntegrityObservation` fields + an optional-param `Append`
 > overload, hash-chained; the legacy VirtueScreen kept, the closed pipeline's null-path untouched), and
@@ -114,7 +125,31 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0103** (2026-09-02, Claude) — **ETHOS correction (witnessed): "judges" is a force
+**Current head — TOTEM-C-0104** (2026-09-02, Claude) — **Reply-tuned OUTBOUND analyzer instruction LANDED +
+verified green — the Prism's outbound read now OBSERVES a Custodian reply's OWN coherence/resonance, not the
+customer-message instruction reused.** Tracey's go ("build it and verify green, then seal C-0104") on the in-flight
+unit that was sitting as loose working-tree drift (Program.cs flagged DRIFT against C-0102). This is exactly item
+(a) of C-0103's `next_gated_step`. **The unit (3 files, additive + regression-safe):** (1)
+`IntegrityResonanceGate.OutboundAnalyzerInstruction` — a reply-tuned variant that observes a Custodian REPLY's
+relational posture toward the customer (Honesty/no invented findings, Respect/offers-not-dictates,
+Loyalty+Trust/holds the consent boundary + no pressure, Communication/options-not-commands), **same compact JSON
+shape** so the same `TryParseAnalysis`/`Score` apply, **same non-force posture — observe/illuminate, NEVER judge**
+(carries C-0103's correction forward). (2) `GemmaIntegrityAnalyzer` gained an ADDITIVE ctor overload (optional
+`instruction`/`framing`, default null) that reproduces the original INBOUND prompt **byte-for-byte** — the adopted
+customer-message read is untouched. (3) `tests/SystemObservableRun` builds a second `replyAnalyzer` (reply-tuned +
+a reply framing) and drives STAGE 7 (the outbound read) through it. **HONEST SCOPE (stated in-code):** the adopted
+v0.2.0 analyzer was FORMED on customer-message reads, so pairing it with the reply instruction is a **zero-shot**
+instruction change — a reply-read formation dataset would deepen it (a later, separately-authorized step). **VERIFIED
+GREEN:** SystemObservableRun + StoreApp Release **build 0/0**; **IntegrityGateEval** all pass; **CustodianGovernanceEval**
+all pass (incl. tamper-detection); **PipelineGovernanceEval** all pass; the **LIVE** harness (models present) exits **0**
+— **ALL SYSTEM INVARIANTS HOLD, 0 failures**, **6-record hash-chain verified GENESIS→head**, every record carrying
+BOTH inbound + outbound IRG observations; on a coherent formed-disposition reply the outbound read now reports
+**posture=Analytic Observer, resonance 100, not fractured** (the self-regulation confirmed structurally on the reply's
+OWN read). Gate stays `enabled:false` (the analyzer is a component + harness; the closed `CustodianGovernancePipeline`
+is untouched); reversible; nothing packaged/deployed; the model weights stay gitignored. [[self-regulating-by-design]]
+[[aegis-ids-non-force-reroute]].
+
+**Prior head — TOTEM-C-0103** (2026-09-02, Claude) — **ETHOS correction (witnessed): "judges" is a force
 pattern — the analyzer OBSERVES coherence/resonance; it never judges.** Tracey flagged (no-fault) that I let the
 word **"judges"** slip into the C-0101 and C-0102 `next_gated_step` — *"a reply-tuned analyzer instruction so the
 OUTBOUND read **judges** a Custodian reply's posture."* AEGIS does **NOT** judge / score / rank / pass / fail — those
