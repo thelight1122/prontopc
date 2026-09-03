@@ -58,3 +58,17 @@ process behind the current state.
   - Replaced by the in-model `CanonBoundarySeed` (no filesystem; a reflective-posture seed only) and
     a single-switch `PipelineGovernance.OfferingAllowed` (the §8 `enabled` gate; no external-Canon
     check). Kept here (not deleted) for the reversible trail. See the Totem recording this rework.
+
+- **`StoreApp-Governance/TotemReferenceLibrary.cs`** — retired 2026-09-03 (same session it was started).
+  - Was to be the versioned, hash-bound **runtime "Totem Reference Library"** (TOTEM-X-0084 vocabulary):
+    load the curated Windows repair reference (`pod/orbs/custodian-stage/knowledge/windows-repair-reference.md`),
+    verify it against a pinned (version, sha256), and read it into the Comms Orb's grounding on the same
+    append-only discipline as the findings relay.
+  - Retired because the repair knowledge is **already FORMED into the model** via education (baked into the
+    weights). Tracey: "if it's already baked into the model we can leave it there if it isn't hurting anything
+    — it should help if nothing else." A runtime reference would duplicate the weights, and claiming a
+    separate "runtime Totem Reference Library" in the cert disclosure would OVERCLAIM (the honesty boundary
+    raised in TOTEM-C-0114). So the disclosure stays truthful: the repair knowledge is **formed**, not a
+    runtime reference library.
+  - Never landed (never committed, never Totem-bound, MainWindow was not wired). Kept here for the reversible
+    trail — if a runtime auditability/versioning layer is ever wanted, recover from here.
