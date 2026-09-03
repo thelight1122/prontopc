@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "orb_id": "prontopc-loyalty",
+  "orb_version": "1.0.0",
+  "ability_name": "Post-service loyalty & make-good coupons",
+  "purpose": "Extend the relationship after a run with honest, real value - never pressure. Two single-use Stripe coupons: (1) the 50%-off NEXT-repair coupon presented at completion (relationship-building, the Custodian may present it personally rather than the page); (2) the 100%-off AI-unavailable make-good, minted for that customer + that machine when BOTH AI authors decline, so the app refunds honestly instead of ever showing a non-AI plan under the AI claim. Not required for full function; it never gates or blocks a run.",
+  "runtime": {
+    "language": "javascript",
+    "form": "http_service",
+    "entrypoint": "pronto-server-cloudrun.mjs:ensureNextRepairCoupon|createMakeGoodCoupon"
+  },
+  "capabilities": [
+    { "name": "next_repair_coupon", "function": "A reusable 50%-off Stripe coupon (COUPON_ID=NEXTREPAIR50) + a unique single-use promotion code minted per completed run; presented at completion." },
+    { "name": "make_good_coupon", "function": "A single-use 100%-off promotion code tagged with email+machine metadata, minted via /api/report-ai-unavailable when on-device AND cloud authors both decline; emailed to the customer + a Support incident raised." },
+    { "name": "honest_recourse", "function": "The make-good is the terminal state on AI failure - real value-for-value, never a rule-based plan dressed as the AI plan (Manifest I2 honesty)." }
+  ],
+  "demonstration": {
+    "input_fixture": "a completed run (next-repair) or a both-authors-declined event carrying token+machineId (make-good)",
+    "expected_outputs": [
+      "completion -> a single-use 50% next-repair code (or an honest no-op if Stripe keys absent: ok, couponCode null)",
+      "AI unavailable -> a single-use 100% make-good code tagged email+machine, emailed, Support notified",
+      "no coupon path ever blocks, gates, or pressures the run"
+    ],
+    "observable_events": [
+      "coupon.presented { code, kind: next_repair }",
+      "makegood.issued { code, email, machine }"
+    ]
+  },
+  "umbilicals": ["umbilical.json"],
+  "evidence": {
+    "created_utc": "2026-09-03T00:00:00Z",
+    "source": "Placed from pronto-server-cloudrun.mjs (NEXTREPAIR50 next-repair coupon + the 100% AI-unavailable make-good stack, TOTEM-0013). Closes the C-0119 gap where this Orb dir was empty and its umbilical reference dangled. required_for_full_function=false; trust_state=provisional matches the manifest attachment.",
+    "trust_state": "provisional"
+  }
+}

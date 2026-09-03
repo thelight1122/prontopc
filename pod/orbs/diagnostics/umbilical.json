@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "umbilical_id": "prontopc-diagnostics-umbilical",
+  "pod_id": "prontopc-pod",
+  "orb_id": "prontopc-diagnostics",
+  "attachment_point": "orchestrator",
+  "runtime": { "language": "csharp", "form": "library" },
+  "invocation": {
+    "entrypoint": "ProntoPC.Diagnostics.Collect",
+    "orb_version": "1.0.0"
+  },
+  "input_contract": {
+    "description": "No input. The Orb reads the live machine read-only; the Orchestrator invokes it once at the scan phase."
+  },
+  "output_contract": {
+    "description": "The $diag dictionary - 25 read-only collector sections - then validated into a SystemAudit before anything downstream may use it.",
+    "diagnostics": "object (25 top-level sections; each an observed reading)",
+    "audit": "SystemAudit { IsValid: bool, EvidenceHash: string } - only IsValid==true may reach the model/plan/consent/repair"
+  },
+  "observation_contract": {
+    "description": "The grounding referent for the whole run. The repair-plan Orb authors ONLY over these observations; the Communications & Governance Orb grounds the Custodian ONLY on the findings derived from them (via the relay). Nothing downstream may assert a machine fact this Orb did not observe.",
+    "events": [
+      "scan.completed { section_count: 25 }",
+      "audit.validated { is_valid, evidence_hash }"
+    ]
+  },
+  "evidence_contract": {
+    "description": "The SystemAudit EvidenceHash is the after-the-fact proof that a specific completed scan grounded this run; it binds the Technician->Communications findings relay record (StoreApp/FindingsRelayIntegration.cs, TOTEM-C-0112)."
+  },
+  "working_parameters": {
+    "status": "provisional",
+    "outside_parameters_behavior": "An incomplete or failed scan yields SystemAudit.IsValid==false and is declined at the audit gate with no model invocation - never a partial scan presented as complete."
+  }
+}

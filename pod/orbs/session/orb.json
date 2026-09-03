@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "orb_id": "prontopc-session",
+  "orb_version": "1.0.0",
+  "ability_name": "Paid-run session lifecycle",
+  "purpose": "Bind one paid repair run together as a token-keyed state machine, enforced server-side so payment gates the service - the exact coupling whose earlier breakage sank prior submissions. A token names a live PAID session (created only after a fulfilled Stripe checkout, incl. a 100%-off comp) and advances created -> diagnosed -> (consent) -> repaired -> complete with a 3-day TTL. A repair plan is authored and recorded ONLY for a token naming a live paid session; an unknown/expired token is refused (402), no session created, no plan.",
+  "runtime": {
+    "language": "javascript",
+    "form": "http_service",
+    "entrypoint": "pronto-server-cloudrun.mjs:createSession|getSession|transitionState"
+  },
+  "capabilities": [
+    { "name": "create", "function": "createSession(stripeSessionId, email, clientRef): mint a token bound to a fulfilled checkout; store createdAt + expiresAt (SESSION_TTL_MS = 3 days)." },
+    { "name": "read", "function": "getSession(token): return the live session or null; expire past the 3-day TTL." },
+    { "name": "advance", "function": "transitionState(token, newState): move created->diagnosed->consented->repaired->complete under an optimistic-concurrency write; reject an out-of-order or post-TTL transition." },
+    { "name": "pay_gate", "function": "handleNativePlan records a plan only for a token naming a live PAID session (single atomic read+conditional write, TOTEM-X-0065); unknown/expired -> 402, no session, no plan." }
+  ],
+  "demonstration": {
+    "input_fixture": "a fulfilled Stripe checkout session id (live) or a forged token (negative case)",
+    "expected_outputs": [
+      "paid checkout -> token minted -> plan recordable in state diagnosed",
+      "forged/unknown token -> 402 unpaid, sessions stay 0, no plan authored",
+      "a concurrent consent/state change returns 409 rather than being clobbered"
+    ],
+    "observable_events": [
+      "session.created { token, expiresAt }",
+      "session.state_changed { token, from, to }"
+    ]
+  },
+  "umbilicals": ["umbilical.json"],
+  "evidence": {
+    "created_utc": "2026-09-03T00:00:00Z",
+    "source": "Placed from pronto-server-cloudrun.mjs (createSession/getSession/transitionState/handleNativePlan; SESSION_TTL_MS; server-side pay gate proven fail-closed, TOTEM-X-0065/X-0034). Closes the C-0119 gap where this Orb dir was empty and its umbilical reference dangled. trust_state=provisional matches the manifest attachment.",
+    "trust_state": "provisional"
+  }
+}

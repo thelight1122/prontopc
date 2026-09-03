@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "orb_id": "prontopc-diagnostics",
+  "orb_version": "1.0.0",
+  "ability_name": "Read-only PC inspection",
+  "purpose": "Collect the read-only diagnostic picture of the customer's PC - the fixed inspection the whole run is grounded on. Deterministic by design: the collectors are settled code, not a model decision (inspection-is-deterministic-not-model), so the count is one honest number - exactly 25 Section collectors in StoreApp/Diagnostics.cs (os..battery), presented to the customer as six headline areas (system, storage & disk health, security, network, performance, overall integrity). It only READS; nothing on the PC is changed. Its output is the referent every later sign is bound to: the model explains and relates these observations, it never invents them.",
+  "runtime": {
+    "language": "csharp",
+    "form": "library",
+    "entrypoint": "ProntoPC.Diagnostics.Collect"
+  },
+  "capabilities": [
+    { "name": "collect", "function": "Run 25 read-only Section collectors (os, uptime, cpu, memory, disk, smart_health, temp_files, browser_caches, recycle_bin, windows_update_cache, delivery_optimization, dns_cache, network, startup, power, battery, ... ) into one $diag dictionary. No system change." },
+    { "name": "six_headline_areas", "function": "The 25 collectors present to the customer as six areas: system, storage & disk health, security, network, performance, overall integrity." },
+    { "name": "audit_gate", "function": "A completed Collect() is validated by StoreApp/SystemAudit.cs (SystemAuditor.Assess -> SystemAudit.IsValid + EvidenceHash): only a valid, completed audit may reach the model / plan / consent / repair." }
+  ],
+  "demonstration": {
+    "input_fixture": "none - reads the live machine (no input); the downstream envelope is exercised by pod/fixtures/eval.json",
+    "expected_outputs": [
+      "a $diag dictionary with exactly 25 top-level collector sections",
+      "every value is observed telemetry, never a model-authored fact",
+      "a SystemAudit that reports IsValid + a stable EvidenceHash over the completed scan"
+    ],
+    "observable_events": [
+      "SystemAudit completed + validated (25/25 sections) - asserted in tests/ModelSmoke",
+      "the EvidenceHash that binds the findings relay record (TOTEM-C-0112)"
+    ]
+  },
+  "umbilicals": ["umbilical.json"],
+  "evidence": {
+    "created_utc": "2026-09-03T00:00:00Z",
+    "source": "Placed from StoreApp/Diagnostics.cs (25 Section collectors, verified count) + StoreApp/SystemAudit.cs (the completeness gate). Closes the C-0119 gap where this Orb dir was empty and its umbilical reference dangled. trust_state=provisional matches the manifest attachment.",
+    "trust_state": "provisional"
+  }
+}

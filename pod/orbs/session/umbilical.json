@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "umbilical_id": "prontopc-session-umbilical",
+  "pod_id": "prontopc-pod",
+  "orb_id": "prontopc-session",
+  "attachment_point": "cloudrun-portal",
+  "runtime": { "language": "javascript", "form": "http_service" },
+  "invocation": {
+    "entrypoint": "pronto-server-cloudrun.mjs:createSession|getSession|transitionState",
+    "orb_version": "1.0.0"
+  },
+  "input_contract": {
+    "description": "A token that must name a live PAID session, plus the requested transition. The token arrives with the app (from prontopc://run?token= or the await-payment poll) and is re-verified server-side.",
+    "token": "string (names a paid session)",
+    "requested_transition": "created | diagnosed | consented | repaired | complete"
+  },
+  "output_contract": {
+    "description": "The authoritative session state, or a fail-closed refusal. A plan is recordable only in state created|diagnosed for a live paid session.",
+    "ok": "boolean",
+    "state": "created | diagnosed | consented | repaired | complete",
+    "refusal": "402 unpaid (unknown/expired token) | 409 conflict (concurrent state change) | 400 (bad request)"
+  },
+  "observation_contract": {
+    "description": "The session is the spine every other Orb hangs a run on: diagnostics/plan/consent/repair each act only within a live paid session, and the findings relay is keyed to the session id (a caller may read only the session it holds). The session never authors a plan or a repair - it only gates and records state.",
+    "events": [
+      "session.created { token, expiresAt }",
+      "session.state_changed { token, from, to }"
+    ]
+  },
+  "evidence_contract": {
+    "description": "Session state lives in Firestore (paidSessions), keyed by token; a session exists ONLY post-verifyStripeSession, so a token that names a live session IS the proof of a paid (or 100%-off comped) run. Writes use optimistic concurrency (lastUpdateTime) so a delayed plan upload cannot overwrite a concurrent consent/state change."
+  },
+  "working_parameters": {
+    "status": "provisional",
+    "outside_parameters_behavior": "Unknown/expired token -> 402 unpaid, no session created, no plan authored (fail-closed). Out-of-order or post-TTL transition -> refused; a concurrent write -> 409, the app re-reads the authoritative state."
+  }
+}
