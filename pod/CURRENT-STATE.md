@@ -40,8 +40,10 @@ auto-retry ×3, a Retry screen, restored per-phase art, a refund button) need a 
 screenshots were a stale build); **backend `POST /api/request-refund` needs a Cloud Run deploy** — it moves money
 (automatic full refund per Tracey), deploy only on Tracey's OK.
 
-**OPEN ITEMS (Tracey-confirmed, for the next instance):** (1) **Refund XOR coupon** — void the make-good coupon +
-clear `session.makeGoodCouponCode` when a refund issues, so nobody keeps both (not implemented). (2) **Tag actions
+**OPEN ITEMS (Tracey-confirmed, for the next instance):** (1) **Refund XOR coupon — DONE (C-0153, code landed; needs
+the Cloud Run deploy to go live):** `/api/request-refund` now voids the make-good promotion code (Stripe `active=false`)
+and clears `session.makeGoodCouponCode` on refund, `report-ai-unavailable` won't mint a coupon after a refund, and the
+mint captures the promotion id for a reliable void. (2) **Tag actions
 maintenance-vs-repair** in the report/evidence so the 30-day guarantee scopes to true repairs (not implemented).
 (3) **PII tidy** — `handleReportAiUnavailable` should use the hashed `machineId`, not the raw Windows hostname (not
 implemented). (4) **Deploy** — app rebuild+reinstall + backend Cloud Run deploy, on Tracey's OK.
@@ -214,7 +216,7 @@ NEW backend `POST /api/request-refund` refunding the **actual amount charged** v
 is NOT refundable (guarantee applies instead), idempotent, persisting anonymized evidence. `dotnet build`
 Release/Debug **0/0**; server `node --check` OK. Website auto-deploys (Vercel Git integration connected this session).
 Gate **enabled:true** (§8 open, C-0144); SEED cert-candidate only. Open items: refund-XOR-coupon · action tagging ·
-PII tidy · deploy. [[aegis-append-only-invariant]] [[self-regulating-by-design]].
+PII tidy · deploy (refund-XOR-coupon DONE C-0153, pending deploy). [[aegis-append-only-invariant]] [[self-regulating-by-design]].
 
 **Prior heads — condensed chain C-0150 → C-0129 (read the totems for detail):**
 - **C-0150** — UI sizing pass: window 640×920 resizable + a prominent bordered chat panel; v1.2.0.5 built/signed/reinstalled.

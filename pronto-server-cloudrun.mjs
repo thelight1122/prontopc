@@ -1307,7 +1307,7 @@ async function createMakeGoodCoupon(session, machineId, machineName) {
         signal: AbortSignal.timeout(10_000),
       });
       const pc = await resp.json();
-      if (!pc.error) return { code: pc.code, expiresAt: expiresAt * 1000 };
+      if (!pc.error) return { code: pc.code, promotionId: pc.id, expiresAt: expiresAt * 1000 };
       if (!/already exists/i.test(pc.error.message || "")) {
         console.error("[makegood] Stripe error:", pc.error.message);
         return null;
@@ -1318,6 +1318,53 @@ async function createMakeGoodCoupon(session, machineId, machineName) {
     console.error("[makegood] Error:", e.message);
     return null;
   }
+}
+
+// Deactivate this session's make-good promotion code and clear it off the session, so a
+// refunded customer cannot ALSO keep a free-repair coupon (refund XOR coupon — Tracey's
+// rule: "they don't get a coupon AND a refund"). Best-effort + idempotent: resolves the
+// promotion_code id from the session, else by looking it up by code; deactivating an
+// already-spent single-use code is harmless. Returns a small audit summary (never throws).
+async function voidMakeGoodCoupon(session, why) {
+  const code = session && session.makeGoodCouponCode;
+  if (!code) return { voided: false, hadCoupon: false };
+  let promotionId = session.makeGoodPromotionId || null;
+  try {
+    if (STRIPE_SECRET_KEY) {
+      // Resolve the promotion_code id if it wasn't captured at mint time (older sessions).
+      if (!promotionId) {
+        const qs = new URLSearchParams({ code, limit: "1" });
+        const look = await fetch(`https://api.stripe.com/v1/promotion_codes?${qs.toString()}`, {
+          headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}` },
+          signal: AbortSignal.timeout(10_000),
+        });
+        const data = await look.json();
+        if (look.ok && Array.isArray(data.data) && data.data[0]) promotionId = data.data[0].id;
+      }
+      if (promotionId) {
+        const resp = await fetch(`https://api.stripe.com/v1/promotion_codes/${promotionId}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+          body: "active=false",
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}));
+          console.error(`[makegood] void failed for ${promotionId}:`, err?.error?.message || resp.status);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("[makegood] void error:", e.message);
+  }
+  // Clear the coupon off the session regardless of the Stripe outcome — the customer took
+  // the refund, so the code must not be presented as usable. Record an anonymized audit note.
+  session.makeGoodVoided = { at: Date.now(), promotionId: promotionId || null, reason: why || "refunded" };
+  session.makeGoodCouponCode = null;
+  session.makeGoodCouponExpiresAt = null;
+  session.makeGoodPromotionId = null;
+  console.log(`[makegood] voided make-good code for a ${why || "refunded"} session (promo ${promotionId || "unresolved"})`);
+  return { voided: true, hadCoupon: true, promotionId: promotionId || null };
 }
 
 // Email the 100% make-good code + an honest apology to the customer via Resend.
@@ -1424,11 +1471,15 @@ async function handleReportAiUnavailable(req, res) {
   // Support is still notified so it can be resolved by hand.)
   let couponCode = (session && session.makeGoodCouponCode) || null;
   let couponExpiresAt = (session && session.makeGoodCouponExpiresAt) || null;
-  if (session && session.email && !couponCode) {
+  // Refund XOR coupon: if this session was already refunded, do NOT mint a make-good coupon
+  // — the customer already chose the refund (Tracey: not both). Support is still notified.
+  const alreadyRefunded = !!(session && session.refund && session.refund.refundId);
+  if (session && session.email && !couponCode && !alreadyRefunded) {
     const coupon = await createMakeGoodCoupon(session, machineId, machineName);
     if (coupon) {
       session.makeGoodCouponCode = couponCode = coupon.code;
       session.makeGoodCouponExpiresAt = couponExpiresAt = coupon.expiresAt;
+      session.makeGoodPromotionId = coupon.promotionId || null;
       await saveSession(session);
       await sendMakeGoodEmail(session);
     }
@@ -1559,6 +1610,10 @@ async function handleRequestRefund(req, res) {
     return json(res, req, 502, { ok: false, error: "The refund couldn't be completed just now. Please contact support@prontopc.online and we'll finish it." });
   }
 
+  // Refund XOR coupon: the customer chose the refund, so void any outstanding make-good
+  // coupon on this session (Tracey: not both). Best-effort; clears the code off the session.
+  const voided = await voidMakeGoodCoupon(session, "refunded");
+
   // Persist an ANONYMIZED refund evidence record (no email / hostname / diagnostics / detail).
   session.refund = {
     refundId: refund.id,
@@ -1571,14 +1626,18 @@ async function handleRequestRefund(req, res) {
     sessionState: session.state,
     repairResultSummary: (session.repairResults || []).map(r => ({ action: r && r.action, status: r && r.status })),
     aiUnavailableReason: session.aiUnavailableReason || null,
+    makeGoodCouponVoided: voided.hadCoupon,   // true if a free-repair code was deactivated in favor of the refund
   };
   await saveSession(session);
 
-  console.log(`[request-refund] Session ${token.substring(0, 8)}… refunded ${refund.amount} ${refund.currency} (${refund.status})`);
+  console.log(`[request-refund] Session ${token.substring(0, 8)}… refunded ${refund.amount} ${refund.currency} (${refund.status})${voided.hadCoupon ? " — make-good coupon voided" : ""}`);
   return json(res, req, 200, {
     ok: true, refundInitiated: true,
     refundId: refund.id, amount: refund.amount, currency: refund.currency, status: refund.status,
-    message: "Your refund is on its way to the card you paid with. It typically appears within 5–10 business days.",
+    couponVoided: voided.hadCoupon,
+    message: voided.hadCoupon
+      ? "Your refund is on its way to the card you paid with (typically 5–10 business days). Because you chose the refund, your free-repair coupon has been deactivated — a refund or a free repair, not both."
+      : "Your refund is on its way to the card you paid with. It typically appears within 5–10 business days.",
   });
 }
 
