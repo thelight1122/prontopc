@@ -103,13 +103,16 @@ Root cause fixed - durably:
   100%-off comped) checkout, so a poll hit is proof of payment.
 
 ## Pre-submission checklist (ours, not for the reviewer)
-- [ ] The .msixupload BUNDLES the on-device model at
-      Assets/models/gemma-3-1b-it/ (genai_config.json + weights). Without it the
-      app cannot author a repair plan and can only present honest make-good. This
-      is the single most important packaging check.
+- [ ] The .msixupload BUNDLES the Canon-formed on-device model at
+      Assets/models/gemma-3-1b-it-formed-v0.2.1/ (genai_config.json + weights; base
+      and analyzer models pruned). Without it the app cannot author a repair plan
+      and can only present honest make-good. This is the single most important
+      packaging check.
 - [ ] Confirm in the Stripe Dashboard (LIVE mode) that promotion code MSCERT2026
       still exists and is 100% off, and that the $29 Payment Link's after-payment
-      redirect points at the success page (success.html?session={CHECKOUT_SESSION_ID}).
+      redirect points at the STORE continuation page
+      (success-store?session={CHECKOUT_SESSION_ID}) — NOT success.html, which is the
+      legacy paste-command page and must not be the post-payment landing.
 - [ ] The backend (pronto-server-cloudrun.mjs) with /api/await-payment +
       /api/verify-token is deployed to Cloud Run.
 - [ ] `python certification_preflight.py` reports safe to submit.
