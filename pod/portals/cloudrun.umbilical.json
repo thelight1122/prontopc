@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "umbilical_id": "prontopc-cloudrun-portal-umbilical",
+  "pod_id": "prontopc-pod",
+  "orb_id": "prontopc-cloudrun-portal",
+  "attachment_point": "app-backend",
+  "runtime": { "language": "javascript", "form": "http_service" },
+  "invocation": {
+    "entrypoint": "pronto-server-cloudrun.mjs (HTTP service; Google Cloud Run: pronto-pc, us-central1)",
+    "orb_version": "1.0.0"
+  },
+  "input_contract": {
+    "description": "The outward broker host - the deployed HTTP service the WPF app talks to. It exposes the run's API surface: /api/verify-payment, /api/await-payment, /api/verify-token, /api/native-plan, /api/session/{token}/status, /api/session/{token}/report, /api/report-ai-unavailable, /api/submit-repair-results.",
+    "request": "an HTTPS call to https://pronto-pc-108655745293.us-central1.run.app/api/*"
+  },
+  "output_contract": {
+    "description": "JSON responses that carry session state, the recorded native plan's admissible action ids, coupons, and reports. It BROKERS and records; it never authors the plan (the on-device model does) and never runs a repair (the app's engine does under consent).",
+    "response": "object (per route)"
+  },
+  "observation_contract": {
+    "description": "The single outward service the Pod owns as a deployment (C2). It hosts the session Orb + stripe/loyalty logic and the native-plan recorder, but holds no diagnostic or repair intelligence: the Model authors on-device, the engine repairs on-device, the backend only gates payment and records evidence.",
+    "events": [
+      "request.received { route }",
+      "response.sent { route, status }"
+    ]
+  },
+  "evidence_contract": {
+    "description": "Deployed revisions are the evidence of what is live (e.g. pronto-pc-00076-hf5 carried the await-payment/verify-token routes, TOTEM-X-0034). certification_preflight.py checks the live backend is responding as part of the reviewer path."
+  },
+  "working_parameters": {
+    "status": "provisional",
+    "outside_parameters_behavior": "A route acts only within a live paid session (the session Orb's gate); an unknown/expired token -> 402. The backend records evidence and gates payment; it authors nothing and repairs nothing."
+  }
+}

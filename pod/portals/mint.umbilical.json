@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "umbilical_id": "prontopc-mint-portal-umbilical",
+  "pod_id": "prontopc-pod",
+  "orb_id": "prontopc-mint-portal",
+  "attachment_point": "asset-pipeline",
+  "runtime": { "language": "javascript", "form": "http_service" },
+  "invocation": {
+    "entrypoint": "Mint MCP asset pipeline (three.js / model + material generation) - NOT wired into the shipping product",
+    "orb_version": "1.0.0"
+  },
+  "input_contract": {
+    "description": "HONEST STATUS: declared, not wired. The Mint asset-generation pipeline (3D models / materials / animated assets) is an OPTIONAL outward tool (required_for_full_function:false); the shipping Custodian is a pure-vector, ZERO-ASSET Actuator (StoreApp/Custodian.xaml, TOTEM-0035), so no generated asset is on the product path today.",
+    "asset_request": "object (a generation brief) - not issued by the shipping app"
+  },
+  "output_contract": {
+    "description": "Generated visual assets, if ever used. Currently unused: the product ships no Mint-generated asset.",
+    "asset": "binary/reference - not consumed by the shipping product"
+  },
+  "observation_contract": {
+    "description": "Kept as a declared capability so the manifest reference resolves, marked honestly as unwired. If the product ever moves from the zero-asset Actuator to generated art, this Portal is where that outward dependency attaches - added by attaching an Orb, not by changing the Model.",
+    "events": []
+  },
+  "evidence_contract": {
+    "description": "No shipping evidence: the Release build bundles no Mint-generated asset (the Custodian is pure-vector). This umbilical records intent + the attachment point, not an active dependency."
+  },
+  "working_parameters": {
+    "status": "draft",
+    "outside_parameters_behavior": "Not invoked by the shipping product. The Custodian renders as a zero-asset vector Actuator; nothing depends on this Portal today."
+  }
+}

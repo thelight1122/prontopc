@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0.0",
+  "umbilical_id": "prontopc-llm-portal-umbilical",
+  "pod_id": "prontopc-pod",
+  "orb_id": "prontopc-llm-portal",
+  "attachment_point": "cloudrun-portal",
+  "runtime": { "language": "javascript", "form": "http_service" },
+  "invocation": {
+    "entrypoint": "pronto-server-cloudrun.mjs (Azure OpenAI primary / Gemini fallback) - RETIRED from the shipping author path",
+    "orb_version": "1.0.0"
+  },
+  "input_contract": {
+    "description": "HONEST STATUS: this outward cloud-LLM author is RETIRED from the shipping path (2026-09-02). The on-device formed model (gemma-3-1b-it-formed-v0.2.1) is now the SOLE repair-plan author, with no cloud fallback - the durable kill for the 10.1.2.10 dual-provider-outage rejection (C3/I3). The Azure OpenAI + Gemini code remains in the backend but the shipping app never calls it to author a plan.",
+    "diagnostics": "object (was posted to the cloud author; the shipping app no longer does this for plan authoring)"
+  },
+  "output_contract": {
+    "description": "When it was active: {status:ok, plan, provenance:{provider,model}} | {status:unavailable, reason}. In the shipping product this Portal is not on the author path; if on-device cannot author, the terminal state is the honest make-good (loyalty Orb), never a cloud or rule-based substitute.",
+    "status": "ok | unavailable (legacy; not on the shipping author path)"
+  },
+  "observation_contract": {
+    "description": "Retained as an append-only record of a superseded outward dependency (aegis-append-only-invariant): the cloud author is not erased, it is retired and marked. The manifest still lists this Portal required_for_full_function:true with C3/I3 - now STALE, since on-device authoring made the cloud author non-required; flagged for a manifest reconciliation, not silently flipped here.",
+    "events": []
+  },
+  "evidence_contract": {
+    "description": "The retirement is evidenced by certification_preflight.py (cloud fallback RETIRED 2026-09-02; on-device authoring proven by tests/ModelSmoke) and by the Orchestrator provider order having a single local author with no cloud fallback."
+  },
+  "working_parameters": {
+    "status": "draft",
+    "outside_parameters_behavior": "Not invoked by the shipping app for plan authoring. On-device authors the plan; if it cannot, the app issues the 100% make-good (honest recourse), never a cloud/rule-based plan under the AI claim."
+  }
+}
