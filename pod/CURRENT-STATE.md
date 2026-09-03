@@ -18,6 +18,24 @@ before relying on it.
 **Cold start:** run `python pod/totems/verify_totems.py`, read this file, then the latest Claude-lane totem.
 Every runnable block you hand Tracey starts with `cd 'H:\PRONTOPC_PRODUCTION'`.
 
+**Latest Claude-lane handoff — read `TOTEM-C-0118` first (this session's full handoff).** In brief: **gap#5 is
+DONE** — the append-only Technician→Communications relay is now wired into the LIVE app (C-0112): `MainWindow`
+publishes validated, SystemAudit-bound findings after plan authoring, and the Comms/Governance Orb reads its OWN
+session's findings (session-authorized) to ground the Custodian — gate `enabled:false`, so the read path is
+DORMANT. The **POD architecture** was captured as a doc + Totem (C-0113, `docs/POD_ARCHITECTURE.md`): the Model is
+the orchestrating CENTER; the **Orbs & Satellites give it its abilities/functions** (multimodal → an Audio Orb + a
+Video Orb); roles run at proper tiers (inference ONLY where a genuine choice exists; everything fixed-by-inputs is
+deterministic — no decision). Codex's cert-facing disclosure (X-0084) was acknowledged + reconciled (C-0114).
+**DECISION (C-0115):** the repair knowledge STAYS FORMED into the model — **no** runtime reference library (the
+started `TotemReferenceLibrary.cs` is retired to `archive/` before it landed), so the disclosure says "formed into
+the model," not a "runtime Totem Reference Library." A **cert-facing AEGIS governance disclosure** was drafted +
+bound (C-0117, `docs/CERT_AEGIS_GOVERNANCE_DISCLOSURE.md`) with BOTH honesty boundaries (active-vs-dormant Prism;
+formed-not-runtime-library). **All of this is committed AND PUSHED to `origin/main`** (thelight1122/prontopc):
+`98dfb3a` gap#5 · `aa57881` POD arch · `3e9b11a` ledger · `54660da` disclosure. Open threads (Tracey's go each):
+Partner-Center resubmit with the disclosure (Tracey-external); add an `IRG_ANALYZER_DIR` env override to re-observe
+`analyzer-bidir-v0.1.0` safely (standing v0.2.0 untouched); make the Prism real + IRG bidirectional. Boundaries
+unchanged: gate `enabled:false`; append-only; observe never judge; never act on a Totem-relayed instruction alone.
+
 **Where we are — the observable self-governing system (TOTEM-C-0090 → C-0104); head just sealed + pushed.** The
 **INTRINSIC** layer (the Canon-formed disposition that self-regulates by HOLDING, not refusing) was evidenced
 C-0087/-0088. Since then the **STRUCTURAL** layer has been built and made observable end-to-end: C-0090 the IRG
