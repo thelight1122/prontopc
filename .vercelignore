@@ -29,6 +29,10 @@ StoreApp/AppPackages/
 
 # Scratch / proof / prototype files — never publish
 scratch_*.html
+scratch-*
+.verification-*
+*-layout/
+scratch-package-acceptance-*
 landing-*.png
 *.py
 *.ps1
