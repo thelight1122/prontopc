@@ -39,12 +39,12 @@ public partial class MainWindow : Window
     // ── Conversational Technician (Phase 2) — GATED CLOSED ────────────────────
     // The peer-facing conversation runs through ONE governance seam (Governance.cs).
     // The wired seam is PipelineGovernance — the bridge to the AEGIS module set
-    // (ProntoPC.Governance.*) — constructed with enabled:false, so the §8 admission gate
-    // is CLOSED: the entry stays hidden, every inbound is refused, the Canon/pipeline are
-    // never touched, and the on-device model is never reached. Opening the Technician is a
-    // deliberate, separate act — construct PipelineGovernance(enabled:true) with the exact
-    // authorized Canon present (Tracey's §8 greenlight) — nothing else in this window changes.
-    readonly IPeerGovernance _gov = new PipelineGovernance(enabled: false);
+    // (ProntoPC.Governance.*). OPENED under Tracey's explicit §8 greenlight (TOTEM-C-0142):
+    // enabled:true admits the live Technician. The Canon is the model's embedded formed
+    // disposition (in-model:formed-disposition; CanonBoundarySeed.Resolve is always Available,
+    // TOTEM-C-0143), so no runtime Canon file is required — it works on every install. Every
+    // inbound is still PIM-screened and every reply passes RBC/Prism before it is shown.
+    readonly IPeerGovernance _gov = new PipelineGovernance(enabled: true);
     CustodianChat? _chat;
 
     public MainWindow(string token)
@@ -405,39 +405,28 @@ public partial class MainWindow : Window
               + addedNote
               + " Nothing has been changed on this PC yet.";
 
-        // Enter the X-0057 findings-stage question gate: present findings + the pause for
-        // questions, with the separate repair-consent step hidden until the customer
-        // continues. Reset each time findings are shown.
-        FindingsQa.Visibility = Visibility.Collapsed;
-        AskQuestionButton.Content = "I have a question";
-        FindingsGate.Visibility = Visibility.Visible;
-        FindingsConsent.Visibility = Visibility.Collapsed;
-
-        // The Technician entry is shown ONLY when governance admits a peer-facing offering.
-        // AbsentGovernance (the wired default) never admits, so the entry stays hidden.
-        TechnicianEntry.Visibility = _gov.OfferingAllowed(out _) ? Visibility.Visible : Visibility.Collapsed;
+        // §8 OPEN (TOTEM-C-0142): the findings step IS the live on-device Technician. Seed the
+        // Canon-formed chat grounded in THIS session's findings (via the relay), then post a
+        // factual grounded opening (no model call). The customer can ask real questions before
+        // choosing Start Repair / Skip Repair; model inference happens only on an actual question,
+        // and every turn is PIM-screened inbound and RBC/Prism-shaped outbound.
+        ChatLog.Children.Clear();
+        _chat = new CustodianChat(
+            OnnxGenAiInference.CreateOrAbsent(ProductModel.DirectoryPath, ProductModel.Name),
+            ComposeCommsSeed(_gov.SystemPrompt));
+        AppendChat("Technician", FindingsSummary.Text
+            + " Ask me anything about what I found, or choose Start Repair to run the checked items — or Skip Repair.");
         ShowPanel(FindingsPanel);
     }
 
-    // ── X-0057 findings-stage question gate (scripted; no generative model) ─────
-    // Toggle the service-only Q&A grounded in the presented findings. This is static
-    // templated content — it does NOT invoke CustodianChat / the on-device model, so
-    // the AEGIS §8 peer-facing gate stays closed.
-    void ToggleQa_Click(object sender, RoutedEventArgs e)
+    // Skip Repair: the customer declines the repairs. Honest — nothing on the PC is changed and
+    // no repair runs; goes to the completion screen marked "no repairs performed".
+    void SkipRepair_Click(object sender, RoutedEventArgs e)
     {
-        bool show = FindingsQa.Visibility != Visibility.Visible;
-        FindingsQa.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        AskQuestionButton.Content = show ? "Hide questions" : "I have a question";
-    }
-
-    // The customer has no (further) questions: advance from the question gate to the
-    // separate repair-consent continuation. No repair runs here — the explicit consent
-    // is still the "Perform Repairs" button in FindingsConsent.
-    void GateContinue_Click(object sender, RoutedEventArgs e)
-    {
-        FindingsGate.Visibility = Visibility.Collapsed;
-        FindingsConsent.Visibility = Visibility.Visible;
-        Cust.SetState(CustodianState.Presenting, "Review the repairs below, then choose Perform Repairs when you're ready.");
+        Cust.SetState(CustodianState.Complete, "No repairs were performed.");
+        CompleteText.Text = "You chose to skip the repairs, so nothing on this PC was changed. "
+            + "Your read-only diagnostic is complete — you can run Pronto PC again anytime.";
+        ShowPanel(CompletePanel);
     }
 
     void UpdateTotal()
@@ -563,7 +552,6 @@ public partial class MainWindow : Window
         CompletePanel.Visibility = Visibility.Collapsed;
         ErrorPanel.Visibility = Visibility.Collapsed;
         MakeGoodPanel.Visibility = Visibility.Collapsed;
-        ChatPanel.Visibility = Visibility.Collapsed;
     }
 
     void ShowPanel(UIElement panel) { CollapseAllPanels(); panel.Visibility = Visibility.Visible; }
@@ -582,24 +570,10 @@ public partial class MainWindow : Window
         catch { /* viewer unavailable — the file still ships in the install folder */ }
     }
 
-    // ── Technician conversation (Phase 2) — every path runs through _gov ───────
-    // While _gov is AbsentGovernance the entry is hidden, so none of these run in a
-    // shipped build. They exist so the whole conversation drops in the moment an OPEN
-    // IPeerGovernance is wired — and, as defense in depth, each re-checks the gate so a
-    // closed governance can never reach the model.
-    void OpenChat_Click(object sender, RoutedEventArgs e)
-    {
-        // Never open the conversation unless governance admits the offering.
-        if (!_gov.OfferingAllowed(out _)) return;
-        string modelDir = ProductModel.DirectoryPath;
-        // The Custodian is seeded with the governance-supplied system prompt (Canon + RBC framing),
-        // GROUNDED in this session's findings read back from the Technician Orb through the relay.
-        // The read is the Communications Orb's side of the seam; the Prism (_gov: PIM→IRG→RBC→IDS)
-        // still governs every turn — this only supplies the true subject matter to explain.
-        _chat ??= new CustodianChat(OnnxGenAiInference.CreateOrAbsent(modelDir, ProductModel.Name), ComposeCommsSeed(_gov.SystemPrompt));
-        ShowPanel(ChatPanel);
-        ChatInput.Focus();
-    }
+    // ── Technician conversation (§8 OPEN) — every path runs through _gov ───────
+    // The chat is seeded in ShowFindings (the findings step IS the live Technician). Each turn is
+    // PIM-screened inbound (ScreenInbound) and RBC/Prism-shaped outbound (ApplyBoundary); nothing
+    // here executes an action — Start Repair remains the explicit consent (Manifest I2).
 
     // Communications & Governance Orb → the append-only relay: fold THIS session's authorized
     // findings into the Custodian seed. Reads ONLY the session this window holds (held ==
@@ -662,7 +636,6 @@ public partial class MainWindow : Window
         finally { ChatSendButton.IsEnabled = true; }
     }
 
-    void ChatBack_Click(object sender, RoutedEventArgs e) => ShowPanel(FindingsPanel);
 
     void AppendChat(string who, string text)
     {
