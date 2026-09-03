@@ -29,6 +29,10 @@ tests
 deploy
 scratch_aegis_proof.html
 scratch_cube_stage.html
+scratch-*
+.verification-*
+release-candidates
+.playwright-cli
 *.msix
 *.cer
 *.ps1
