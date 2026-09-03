@@ -74,44 +74,11 @@ tailwind.config = {
         <span class="text-[#5be3a0] font-mono text-xs tracking-widest uppercase">Payment Confirmed</span>
       </div>
       <h1 class="text-3xl font-black text-[#eef1ff] leading-tight">
-        Your Repair AI Technician is ready.
+        Payment confirmed — your PC scan is ready.
       </h1>
-      <p class="text-[#c3c8e6] mt-2 text-sm">Before the scan starts, ask any question about the ProntoPC service.</p>
+      <p class="text-[#c3c8e6] mt-2 text-sm">Continue to run the read-only scan in the ProntoPC app. Your AI Technician lives in the app: after the scan you can ask it about your results before any repair.</p>
     </div>
 
-    <section class="technician-shell card !p-0 overflow-hidden grid md:grid-cols-[minmax(220px,.75fr)_minmax(0,1.25fr)]">
-      <aside class="relative overflow-hidden bg-gradient-to-b from-[#282257] via-[#171a3c] to-[#0d1027] min-h-[250px] flex flex-col items-center justify-end pt-8 px-5">
-        <div class="absolute inset-0 opacity-70" style="background:radial-gradient(circle at 50% 18%, rgba(139,107,255,.55), transparent 45%)"></div>
-        <p class="relative self-start font-mono text-[10px] tracking-[.22em] uppercase text-[#cfc9ff]">ProntoPC · service guide</p>
-        <img class="technician-art relative w-full max-w-[300px] mt-2" src="./assets/characters/repair-tech.png" alt="ProntoPC Repair AI Technician">
-      </aside>
-      <div class="flex flex-col min-h-[470px]">
-        <div class="px-5 py-4 border-b border-white/8 flex items-center gap-3">
-          <span class="material-symbols-outlined text-[#a78bfa]" style="font-variation-settings:'FILL' 1">support_agent</span>
-          <div>
-            <h2 class="font-bold text-[#eef1ff]">Ask before we start</h2>
-            <p class="text-[#c3c8e6] text-xs">Service questions only · no scan or repair starts from this chat</p>
-          </div>
-        </div>
-        <div id="service-chat-log" class="chat-scroll flex-1 overflow-y-auto space-y-3 p-5 max-h-[390px]" aria-live="polite">
-          <div class="chat-bubble bg-[#a78bfa]/15 border border-[#a78bfa]/25 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#eef1ff]">
-            Hi — I’m your Repair AI Technician. Before we begin, what would you like to know about the ProntoPC service?
-          </div>
-          <p class="text-[#c3c8e6]/70 text-xs">I can explain the scan, privacy, repair approval, the app, and what happens next.</p>
-        </div>
-        <div class="px-5 pb-3 flex flex-wrap gap-2" aria-label="Suggested service questions">
-          <button type="button" class="service-question" data-question="What does the scan do?">What does the scan do?</button>
-          <button type="button" class="service-question" data-question="Will anything change on my PC?">Will anything change?</button>
-          <button type="button" class="service-question" data-question="How do repairs work?">How do repairs work?</button>
-          <button type="button" class="service-question" data-question="What information is used?">What information is used?</button>
-        </div>
-        <form id="service-chat-form" class="p-4 pt-2 border-t border-white/8 flex gap-2">
-          <label class="sr-only" for="service-chat-input">Ask a question about the ProntoPC service</label>
-          <input id="service-chat-input" maxlength="500" autocomplete="off" placeholder="Ask about the ProntoPC service…" class="min-w-0 flex-1 bg-[#090c20] border border-white/10 rounded-xl px-3 py-3 text-sm text-[#eef1ff] placeholder:text-[#c3c8e6]/45 focus:outline-none focus:border-[#a78bfa]" />
-          <button type="submit" class="bg-[#a78bfa] text-white font-bold px-4 rounded-xl hover:opacity-90">Send</button>
-        </form>
-      </div>
-    </section>
 
     <div id="need-app" class="hidden card border-[#a78bfa]/20" style="border-color:rgba(139,107,255,0.2); background:rgba(139,107,255,0.04);">
       <div class="flex items-start gap-4"><span class="material-symbols-outlined text-[#a78bfa] text-2xl shrink-0">download</span><div><p class="font-bold text-[#eef1ff]">Install the ProntoPC app first</p><p class="text-[#c3c8e6] text-sm mt-1 mb-4">The free Microsoft Store app performs the scan securely on this PC.</p><a id="store-link" href="#" class="inline-flex items-center gap-2 bg-[#a78bfa] text-white font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"><span class="material-symbols-outlined text-base">store</span>Get ProntoPC from the Microsoft Store</a></div></div>
@@ -212,57 +179,6 @@ const STORE_PRODUCT_ID = "9P1K9QJXKND8";
 let scanToken = "";
 let pollTimer = null;
 
-const serviceOnlyReply = (question) => {
-  const text = question.toLowerCase();
-  const mentions = (...words) => words.some(word => text.includes(word));
-  if (mentions("scan", "check", "diagnostic", "diagnose", "include", "cover", "area", "look", "find"))
-    return "The read-only scan checks six areas of your PC: storage & disk health (drive space, SMART health, temp and cache files, Recycle Bin, large files), drivers & hardware, security, network (adapters, DNS, connectivity), performance (CPU, memory, startup programs, power plan, battery), and overall system integrity. It only reads — nothing on your PC is changed — and you see everything it found before any repair is considered.";
-  if (mentions("change", "modify", "alter", "repair", "fix", "approve", "consent"))
-    return "Nothing is repaired automatically. After the scan, ProntoPC shows the proposed repairs and you choose whether to approve them in the app. Windows asks for permission before repairs begin.";
-  if (mentions("personal file", "my file", "my document", "my photo", "delete", "touch", "lose", "erase", "wipe", "overwrite"))
-    return "No — your personal files are never touched. ProntoPC only cleans system files: temporary files, app and browser caches, the Recycle Bin, and Windows Update leftovers. Your documents, photos, music, and videos are never accessed, modified, or deleted; every action is reversible, and nothing runs until you approve it.";
-  if (mentions("privacy", "data", "information", "personal", "safe", "secure"))
-    return "Your personal files stay private and untouched — ProntoPC only reads system diagnostics to prepare the plan and only cleans system files you approve. See the Privacy page for the full data-handling details.";
-  if (mentions("install", "store", "app", "download"))
-    return "ProntoPC runs through its Microsoft Store app. If it is not installed when you continue, this page will show the Store link. The app is where scanning, results, approval, and any repair happen.";
-  if (mentions("price", "cost", "refund", "guarantee", "payment", "paid"))
-    return "Your payment has been confirmed for this service session. This chat can explain the service flow, while billing or account-specific help is available at support@prontopc.online.";
-  if (mentions("how long", "time", "long"))
-    return "The initial read-only scan usually takes about 30 seconds. The time for any later repair depends on the items you choose to approve.";
-  return "I can answer questions about the ProntoPC service: the read-only scan, privacy, installing the app, repair approval, payment, and what happens next. I can’t help with unrelated topics here.";
-};
-
-function appendServiceMessage(who, message) {
-  const log = document.getElementById("service-chat-log");
-  if (!log) return;
-  const bubble = document.createElement("div");
-  bubble.className = `chat-bubble rounded-2xl px-4 py-3 text-sm ${who === "You"
-    ? "ml-auto bg-[#5be3a0]/12 border border-[#5be3a0]/25 text-[#eef1ff] rounded-tr-sm"
-    : "bg-[#a78bfa]/15 border border-[#a78bfa]/25 text-[#eef1ff] rounded-tl-sm"}`;
-  bubble.textContent = message;
-  log.appendChild(bubble);
-  log.scrollTop = log.scrollHeight;
-}
-
-function answerServiceQuestion(question) {
-  const trimmed = question.trim();
-  if (!trimmed) return;
-  appendServiceMessage("You", trimmed);
-  appendServiceMessage("Technician", serviceOnlyReply(trimmed));
-}
-
-function initServiceChat() {
-  const form = document.getElementById("service-chat-form");
-  const input = document.getElementById("service-chat-input");
-  if (!form || !input) return;
-  form.addEventListener("submit", event => {
-    event.preventDefault();
-    answerServiceQuestion(input.value);
-    input.value = "";
-    input.focus();
-  });
-  document.querySelectorAll(".service-question").forEach(button => button.addEventListener("click", () => answerServiceQuestion(button.dataset.question || "")));
-}
 
 async function init() {
   const params = new URLSearchParams(window.location.search);
@@ -393,7 +309,6 @@ function showActiveApp() {
   el.classList.remove("hidden");
   el.style.display = "";
   document.getElementById("session-badge").textContent = "Session active";
-  initServiceChat();
 }
 
 function showError(msg) {
