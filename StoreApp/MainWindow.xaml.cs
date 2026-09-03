@@ -48,6 +48,12 @@ public partial class MainWindow : Window
     readonly IPeerGovernance _gov = new PipelineGovernance(enabled: true);
     CustodianChat? _chat;
 
+    // Remembered across a plan-authoring retry so the Retry screen can re-attempt WITHOUT
+    // re-running the multi-minute diagnostic, and so the make-good / refund routes keep context.
+    Dictionary<string, object?>? _lastDiag;
+    SystemAudit? _lastAudit;
+    string? _lastDecline;
+
     public MainWindow(string token)
     {
         InitializeComponent();
@@ -180,25 +186,44 @@ public partial class MainWindow : Window
         ShowWorkingArt("pronto-auditor.png");   // auditor present through scan + plan authoring
         var diag = await Task.Run(() => Diagnostics.Collect());
 
-        Cust.SetState(CustodianState.Thinking, "Building your personalized repair plan…");
-
         // System Audit precondition (TOTEM-X-0074): the application (not the model)
         // validates the read-only diagnostics into an immutable, evidence-hashed audit.
         // Only a completed, valid audit may reach the model / findings / consent / repair;
         // an incomplete or failed audit is declined here with no model invocation.
         var audit = SystemAuditor.Assess(diag);
 
-        // Plan phase: the bundled local model authors a plan from the validated audit and
-        // the Action Envelope validates it before it reaches consent. No cloud AI fallback.
-        var outcome = await _orch.AuthorPlanAsync(audit);
+        // Keep the validated audit + diagnostics so the customer can re-attempt plan authoring
+        // from the Retry screen WITHOUT re-running the multi-minute diagnostic.
+        _lastDiag = diag;
+        _lastAudit = audit;
+
+        await AuthorPlanAndProceed();
+    }
+
+    // Plan phase (retryable): the bundled local model authors a plan from the validated audit and
+    // the Action Envelope validates it before it reaches consent. No cloud AI fallback. Runs on the
+    // first pass and again when the customer taps "Try Again" on the Retry screen.
+    async Task AuthorPlanAndProceed()
+    {
+        if (_lastAudit is null || _lastDiag is null)
+        {
+            ShowError("Something went wrong before the plan step. Please run Pronto PC again.");
+            return;
+        }
+
+        Cust.SetState(CustodianState.Thinking, "Building your personalized repair plan…");
+        CollapseAllPanels();
+        ShowWorkingArt("pronto-auditor.png");
+
+        var outcome = await _orch.AuthorPlanAsync(_lastAudit);
         if (outcome.IsOk)
         {
             var plan = ToElement(outcome.Plan!);
-            if (await RecordNativePlanAsync(diag, plan, outcome))
+            if (await RecordNativePlanAsync(_lastDiag, plan, outcome))
             {
                 // Technician Orb → the append-only relay: post the validated findings ONCE for
                 // this session so the Communications Orb can later READ (never re-derive) them.
-                PublishFindingsToRelay(audit, plan, outcome);
+                PublishFindingsToRelay(_lastAudit, plan, outcome);
                 ShowFindings(plan);
                 return;
             }
@@ -206,7 +231,25 @@ public partial class MainWindow : Window
             return;
         }
 
-        await ReportAiUnavailable(diag, outcome.DeclineReason);
+        // The orchestrator already auto-retried the on-device author; a miss here is rarer.
+        // Offer an explicit Retry screen (with self-help tips) before the make-good / refund routes.
+        _lastDecline = outcome.DeclineReason;
+        ShowRetry();
+    }
+
+    void ShowRetry()
+    {
+        Cust.SetState(CustodianState.Blocked, "Your AI plan didn't build that time.");
+        ShowPanel(RetryPanel);
+    }
+
+    async void RetryAuthor_Click(object sender, RoutedEventArgs e) => await AuthorPlanAndProceed();
+
+    // "Still stuck?" — take the customer to honest recourse (free-repair coupon + refund route).
+    async void GiveUpToMakeGood_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lastDiag is null) { Close(); return; }
+        await ReportAiUnavailable(_lastDiag, _lastDecline);
     }
 
     static JsonElement ToElement(JsonNode node) => JsonSerializer.SerializeToElement(node);
@@ -555,6 +598,7 @@ public partial class MainWindow : Window
         CompletePanel.Visibility = Visibility.Collapsed;
         ErrorPanel.Visibility = Visibility.Collapsed;
         MakeGoodPanel.Visibility = Visibility.Collapsed;
+        RetryPanel.Visibility = Visibility.Collapsed;
         WorkingArt.Visibility = Visibility.Collapsed;
     }
 

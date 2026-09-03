@@ -173,6 +173,30 @@
         </StackPanel>
 
         <!-- MAKE-GOOD (AI unavailable — honest recourse, never a rule-based plan) -->
+        <!-- RETRY (transient AI miss — offer another attempt before make-good) -->
+        <StackPanel x:Name="RetryPanel" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" Width="460">
+          <TextBlock Text="Let's try that again." Foreground="#eef1ff" FontSize="21"
+                     FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap"/>
+          <TextBlock Text="Your AI plan didn't build that time — nothing on your PC has changed. This usually clears on another try."
+                     Foreground="#c3c8e6" FontSize="14" TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"/>
+          <Border Background="#12142c" CornerRadius="10" Padding="16,12" Margin="0,16,0,0">
+            <StackPanel>
+              <TextBlock Text="If it happens again, try one of these:" Foreground="#8b8fb0" FontSize="11"
+                         FontWeight="SemiBold" TextAlignment="Center" Margin="0,0,0,6"/>
+              <TextBlock Foreground="#c3c8e6" FontSize="12.5" TextAlignment="Center" TextWrapping="Wrap" LineHeight="20">
+                • Close other heavy apps (browsers, games) and try once more<LineBreak/>
+                • Restart your computer, then open Pronto PC and run it again
+              </TextBlock>
+            </StackPanel>
+          </Border>
+          <Button Content="Try Again" Click="RetryAuthor_Click" Height="46" Width="200" Margin="0,20,0,0"
+                  Foreground="#ffffff" Background="#7c5cff" Cursor="Hand" HorizontalAlignment="Center"/>
+          <TextBlock TextAlignment="Center" Margin="0,14,0,0" FontSize="12">
+            <Hyperlink Click="GiveUpToMakeGood_Click" Foreground="#8b8fb0" TextDecorations="Underline">Still stuck? Get your free-repair coupon</Hyperlink>
+          </TextBlock>
+        </StackPanel>
+
+        <!-- MAKE-GOOD (AI unavailable — honest recourse, never a rule-based plan) -->
         <StackPanel x:Name="MakeGoodPanel" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" Width="460">
           <TextBlock Text="Your AI plan didn't run this time." Foreground="#eef1ff" FontSize="21"
                      FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap"/>
