@@ -204,7 +204,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        ShowLocalPlanUnavailable(outcome.DeclineReason);
+        await ReportAiUnavailable(diag, outcome.DeclineReason);
     }
 
     static JsonElement ToElement(JsonNode node) => JsonSerializer.SerializeToElement(node);
@@ -249,16 +249,74 @@ public partial class MainWindow : Window
     // A local-model failure must not invoke a cloud AI provider, nor claim that one
     // did. The stable code is safe to show and lets support distinguish runtime,
     // parsing, and Envelope validation without exposing model text or exception data.
-    void ShowLocalPlanUnavailable(string reason)
+    // Terminal AI-unavailable recourse (coupon make-good restored, TOTEM-C-0137). After a validated
+    // audit, if the on-device author cannot produce a plan, ProntoPC never substitutes a non-AI plan
+    // under the AI claim: it reports the miss to the backend, which mints a single-use 100% make-good
+    // coupon for THIS customer + THIS machine and notifies support@prontopc.online, then shows an
+    // honest make-good screen with the code. Instant customer recourse AND the support incident still
+    // surfaces a genuine on-device model bug (so a broken local path is not silently masked).
+    async Task ReportAiUnavailable(Dictionary<string, object?> diag, string? declineReason)
     {
-        string safeReason = string.IsNullOrWhiteSpace(reason) ? "local_author_declined" : reason;
-        Cust.SetState(CustodianState.Blocked, "Your local AI plan needs attention.");
-        MakeGoodText.Text = "Pronto PC couldn't validate a plan from the on-device model. "
-            + "No diagnostics were sent to a cloud AI service, and no repairs have been run.\n\n"
-            + "Local diagnostic: " + safeReason + "\n\n"
-            + "Please contact support@prontopc.online with this code so we can correct the local model path.";
-        MakeGoodCodeBox.Visibility = Visibility.Collapsed;
+        var (machineId, machineName) = MachineFingerprint(diag);
+        // Single on-device author (no cloud fallback): the reason reflects why the local author declined.
+        string reason = !string.IsNullOrWhiteSpace(declineReason)
+            ? declineReason!
+            : (_modelPresent ? "local_author_declined" : "no_local_model");
+        string? coupon = null;
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            string payload = JsonSerializer.Serialize(new { token = _token, machineId, machineName, reason });
+            var resp = await http.PostAsync($"{CloudRun}/api/report-ai-unavailable",
+                new StringContent(payload, Encoding.UTF8, "application/json"));
+            string bodyText = await resp.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(bodyText);
+            if (doc.RootElement.TryGetProperty("couponCode", out var c) && c.ValueKind == JsonValueKind.String)
+                coupon = c.GetString();
+        }
+        catch { /* offline / backend unreachable — still show honest recourse below */ }
+
+        ShowMakeGood(coupon);
+    }
+
+    void ShowMakeGood(string? coupon)
+    {
+        Cust.SetState(CustodianState.Blocked, "Your AI plan didn't run this time.");
+        if (!string.IsNullOrWhiteSpace(coupon))
+        {
+            MakeGoodText.Text = "Your repair is AI-powered, and this time our AI couldn't build your plan. "
+                + "You paid for that and didn't get it — so this one's on us. We've emailed you a 100% coupon "
+                + "(a free repair on this PC) and flagged it to our team. Run Pronto PC again anytime with the code below.";
+            MakeGoodCode.Text = coupon;
+            MakeGoodCodeBox.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            MakeGoodText.Text = "Your repair is AI-powered, and this time our AI couldn't build your plan. "
+                + "You paid for that and didn't get the full benefit — so we'll make it right. We've flagged this to "
+                + "our team at support@prontopc.online, and you'll receive a 100% coupon for a free repair on this PC.";
+            MakeGoodCodeBox.Visibility = Visibility.Collapsed;
+        }
         ShowPanel(MakeGoodPanel);
+    }
+
+    // A stable, non-identifying fingerprint of THIS machine, so the make-good is scoped to the PC that
+    // missed its plan. Derived from already-collected diagnostics (no extra probing): hostname +
+    // processor + OS build, hashed.
+    static (string machineId, string machineName) MachineFingerprint(Dictionary<string, object?> diag)
+    {
+        string host = "", proc = "", build = "";
+        if (diag.TryGetValue("os", out var osv) && osv is Dictionary<string, object?> os)
+        {
+            host = os.GetValueOrDefault("hostname")?.ToString() ?? "";
+            proc = os.GetValueOrDefault("processor")?.ToString() ?? "";
+            build = os.GetValueOrDefault("build")?.ToString() ?? "";
+        }
+        string basis = $"{host}|{proc}|{build}";
+        string id;
+        using (var sha = System.Security.Cryptography.SHA256.Create())
+            id = Convert.ToHexString(sha.ComputeHash(Encoding.UTF8.GetBytes(basis))).Substring(0, 16);
+        return (id, string.IsNullOrWhiteSpace(host) ? "unknown-pc" : host);
     }
 
     // ── Findings ─────────────────────────────────────────────────────────────
