@@ -10,7 +10,7 @@
     "orb_version": "1.0.0"
   },
   "input_contract": {
-    "description": "HONEST STATUS: declared, not wired. The Mint asset-generation pipeline (3D models / materials / animated assets) is an OPTIONAL outward tool (required_for_full_function:false); the shipping Custodian is a pure-vector, ZERO-ASSET Actuator (StoreApp/Custodian.xaml, TOTEM-0035), so no generated asset is on the product path today.",
+    "description": "HONEST STATUS: RETIRED (TOTEM-C-0130). The Mint asset-generation pipeline (3D models / materials / animated assets) was an OPTIONAL outward tool; it is superseded by the shipping Custodian's pure-vector, ZERO-ASSET Actuator (StoreApp/Custodian.xaml, TOTEM-0035) and is not on the product path. Retained + marked, not erased (append-only); required_for_full_function:false, no active specs.",
     "asset_request": "object (a generation brief) - not issued by the shipping app"
   },
   "output_contract": {
@@ -18,7 +18,7 @@
     "asset": "binary/reference - not consumed by the shipping product"
   },
   "observation_contract": {
-    "description": "Kept as a declared capability so the manifest reference resolves, marked honestly as unwired. If the product ever moves from the zero-asset Actuator to generated art, this Portal is where that outward dependency attaches - added by attaching an Orb, not by changing the Model.",
+    "description": "RETIRED and marked, not erased (aegis-append-only-invariant): the Mint pipeline is superseded by the zero-asset vector Custodian and is not part of the product path. The manifest records it non-required with no active specs. If the product ever adds generated art, a NEW Orb/Portal is attached (append-only) rather than reviving this retired record.",
     "events": []
   },
   "evidence_contract": {
@@ -26,6 +26,6 @@
   },
   "working_parameters": {
     "status": "draft",
-    "outside_parameters_behavior": "Not invoked by the shipping product. The Custodian renders as a zero-asset vector Actuator; nothing depends on this Portal today."
+    "outside_parameters_behavior": "RETIRED: not invoked by the shipping product and not on the path. The Custodian renders as a zero-asset vector Actuator; nothing depends on this Portal. Retained as an append-only record of a superseded outward capability."
   }
 }
