@@ -40,9 +40,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Character AI presence: Auditor (scan/findings), Builder (repair complete) -->
+    <!-- Character AI presence: Auditor (scan/findings), Builder (repair complete),
+         Thumbs-up (completed screen — the AI Technician signing off) -->
     <Resource Include="Assets\auditor.png" />
     <Resource Include="Assets\builder.png" />
+    <Resource Include="Assets\pronto-thumbsup.png" />
   </ItemGroup>
 
   <ItemGroup>
