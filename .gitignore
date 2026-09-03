@@ -21,6 +21,9 @@ ProntoAgent/dist/
 # ~0.7GB — a build artifact, not source. Packaged into the MSIX from disk.)
 StoreApp/Assets/models/
 
+# Landing page before/after screenshots (local review artifacts)
+landing-*.png
+
 # Logs & local tooling
 *.log
 server.err
