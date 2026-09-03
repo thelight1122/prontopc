@@ -18,7 +18,7 @@
     "status": "ok | unavailable (legacy; not on the shipping author path)"
   },
   "observation_contract": {
-    "description": "Retained as an append-only record of a superseded outward dependency (aegis-append-only-invariant): the cloud author is not erased, it is retired and marked. The manifest still lists this Portal required_for_full_function:true with C3/I3 - now STALE, since on-device authoring made the cloud author non-required; flagged for a manifest reconciliation, not silently flipped here.",
+    "description": "Retained as an append-only record of a superseded outward dependency (aegis-append-only-invariant): the cloud author is not erased, it is retired and marked. The POD manifest now records this Portal as non-required with no active manifest specs; C3 is carried by the on-device repair-plan Orb, and legacy I3 provider resilience no longer applies to the retired cloud author.",
     "events": []
   },
   "evidence_contract": {
