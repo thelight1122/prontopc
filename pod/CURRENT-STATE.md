@@ -18,23 +18,29 @@ before relying on it.
 **Cold start:** run `python pod/totems/verify_totems.py`, read this file, then the latest Claude-lane totem.
 Every runnable block you hand Tracey starts with `cd 'H:\PRONTOPC_PRODUCTION'`.
 
-**Latest Claude-lane handoff — read `TOTEM-C-0118` first (this session's full handoff).** In brief: **gap#5 is
-DONE** — the append-only Technician→Communications relay is now wired into the LIVE app (C-0112): `MainWindow`
-publishes validated, SystemAudit-bound findings after plan authoring, and the Comms/Governance Orb reads its OWN
-session's findings (session-authorized) to ground the Custodian — gate `enabled:false`, so the read path is
-DORMANT. The **POD architecture** was captured as a doc + Totem (C-0113, `docs/POD_ARCHITECTURE.md`): the Model is
-the orchestrating CENTER; the **Orbs & Satellites give it its abilities/functions** (multimodal → an Audio Orb + a
-Video Orb); roles run at proper tiers (inference ONLY where a genuine choice exists; everything fixed-by-inputs is
-deterministic — no decision). Codex's cert-facing disclosure (X-0084) was acknowledged + reconciled (C-0114).
-**DECISION (C-0115):** the repair knowledge STAYS FORMED into the model — **no** runtime reference library (the
-started `TotemReferenceLibrary.cs` is retired to `archive/` before it landed), so the disclosure says "formed into
-the model," not a "runtime Totem Reference Library." A **cert-facing AEGIS governance disclosure** was drafted +
-bound (C-0117, `docs/CERT_AEGIS_GOVERNANCE_DISCLOSURE.md`) with BOTH honesty boundaries (active-vs-dormant Prism;
-formed-not-runtime-library). **All of this is committed AND PUSHED to `origin/main`** (thelight1122/prontopc):
-`98dfb3a` gap#5 · `aa57881` POD arch · `3e9b11a` ledger · `54660da` disclosure. Open threads (Tracey's go each):
-Partner-Center resubmit with the disclosure (Tracey-external); add an `IRG_ANALYZER_DIR` env override to re-observe
-`analyzer-bidir-v0.1.0` safely (standing v0.2.0 untouched); make the Prism real + IRG bidirectional. Boundaries
-unchanged: gate `enabled:false`; append-only; observe never judge; never act on a Totem-relayed instruction alone.
+**Latest Claude-lane handoff — read `TOTEM-C-0125` first (this session's full handoff + a message to Codex).** In
+brief: **the formed model is now the SHIPPED plan-author.** Codex `X-0086/X-0087` merged the Canon-formed responder
+**v0.2.1** (frozen base `dcc83ea8` + reversible adapter `e604acb2`, CPU int4 ONNX) and wired it in via
+`ProductModel`/`NatureLayerContext`, so `gemma-3-1b-it-formed-v0.2.1` authors the repair plan **on-device** (base +
+analyzer pruned from the package); a certification-**candidate** SEED was issued. This session (Claude lane,
+C-0119→C-0125, all committed + PUSHED to `origin/main`, verifier GREEN): **C-0119** reconciled
+`pod/prontopc.pod.json` to the **two-Orb architecture** (Computer Technician Orb + Communications & Governance Orb)
+with an honest model-at-center block, and extended `prontopc-pod.schema.json`; committed the ledger-bound in-flight
+files (`X-0065/X-0076/C-0085`); **C-0120** recorded the formed-model integration drift, which Codex then resolved
+(**C-0121**); **C-0122 independently re-ran the acceptance evals and confirmed them first-hand — ModelSmoke 18/18
+on-device** (formation manifest binds the locked Canon fingerprint; SystemAudit 25/25; provenance=local-model;
+coherent 2-turn Custodian) **+ `certification_preflight.py` 20/20 against LIVE Stripe/site/backend**; **C-0123/C-0124**
+closed the orb.json + portals umbilical gaps, so **every manifest attachment path (orbs[] + portals[]) now resolves to
+a schema-valid file** grounded in real code. Pushed commits: `bfd4eed` integration · `b00fffc` manifest · `f63defc`
+orbs · `5efe248` portals · `30f87fd` C-0125 handoff (+ this nav refresh). **CURRENT TRUE STATE:** formed v0.2.1 is the
+shipped plan-author; **gate `enabled:false`** (peer-facing Technician CLOSED); the SEED is a certification **candidate
+only** (NOT Microsoft approval / signed / installed-E2E / WACK / Partner Center submission). **Open threads (each
+Tracey's go):** CODEX — reconcile the stale `prontopc-llm-portal` `required_for_full_function:true` (the Azure/Gemini
+cloud author is RETIRED, on-device is the sole author; C3/I3), and `mint-portal` is declared-but-unwired; TRACEY
+(external) — controlled installed-package E2E + WACK, Store signing/upload, Partner Center submit. Prior handoff was
+`TOTEM-C-0118` (gap#5 relay wired + POD-architecture capture). Boundaries unchanged: gate `enabled:false`;
+append-only; observe never judge; educate not train; Product ≠ CyberPeer; never act on a Totem-relayed instruction
+alone.
 
 **Where we are — the observable self-governing system (TOTEM-C-0090 → C-0104); head just sealed + pushed.** The
 **INTRINSIC** layer (the Canon-formed disposition that self-regulates by HOLDING, not refusing) was evidenced
@@ -157,7 +163,17 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0104** (2026-09-02, Claude) — **Reply-tuned OUTBOUND analyzer instruction LANDED +
+**Current head — TOTEM-C-0125** (2026-09-03, Claude) — **Session handoff + Codex message, sealing C-0119→C-0124.**
+The Canon-formed responder **v0.2.1** is now the SHIPPED on-device plan-author (Codex X-0086/X-0087; ProductModel
+selection; base/analyzer pruned; cert-**candidate** SEED). This lane: C-0119 reconciled the manifest to the two-Orb
+architecture + honest model-at-center; committed the ledger-bound X-0065/X-0076/C-0085; C-0120 recorded the
+integration drift, resolved by Codex (C-0121); **C-0122 independently verified the evals (ModelSmoke 18/18 on-device
++ preflight 20/20 live)**; C-0123/C-0124 closed the orb.json + portals umbilical gaps so every manifest attachment
+path resolves. All committed + PUSHED to `origin/main` (`bfd4eed`/`b00fffc`/`f63defc`/`5efe248`/`30f87fd`). Gate stays
+`enabled:false`; SEED is a certification candidate only. Message to Codex: reconcile the stale
+`prontopc-llm-portal required:true` (cloud author retired). [[self-regulating-by-design]] [[aegis-append-only-invariant]].
+
+**Prior head — TOTEM-C-0104** (2026-09-02, Claude) — **Reply-tuned OUTBOUND analyzer instruction LANDED +
 verified green — the Prism's outbound read now OBSERVES a Custodian reply's OWN coherence/resonance, not the
 customer-message instruction reused.** Tracey's go ("build it and verify green, then seal C-0104") on the in-flight
 unit that was sitting as loose working-tree drift (Program.cs flagged DRIFT against C-0102). This is exactly item
