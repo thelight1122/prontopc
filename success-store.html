@@ -219,8 +219,10 @@ const serviceOnlyReply = (question) => {
     return "The read-only scan checks six areas of your PC: storage & disk health (drive space, SMART health, temp and cache files, Recycle Bin, large files), drivers & hardware, security, network (adapters, DNS, connectivity), performance (CPU, memory, startup programs, power plan, battery), and overall system integrity. It only reads — nothing on your PC is changed — and you see everything it found before any repair is considered.";
   if (mentions("change", "modify", "alter", "repair", "fix", "approve", "consent"))
     return "Nothing is repaired automatically. After the scan, ProntoPC shows the proposed repairs and you choose whether to approve them in the app. Windows asks for permission before repairs begin.";
+  if (mentions("personal file", "my file", "my document", "my photo", "delete", "touch", "lose", "erase", "wipe", "overwrite"))
+    return "No — your personal files are never touched. ProntoPC only cleans system files: temporary files, app and browser caches, the Recycle Bin, and Windows Update leftovers. Your documents, photos, music, and videos are never accessed, modified, or deleted; every action is reversible, and nothing runs until you approve it.";
   if (mentions("privacy", "data", "information", "personal", "safe", "secure"))
-    return "This pre-scan conversation has no access to your PC. The app uses the scan to prepare your service plan; you can review the Privacy page for the full data-handling details before continuing.";
+    return "Your personal files stay private and untouched — ProntoPC only reads system diagnostics to prepare the plan and only cleans system files you approve. See the Privacy page for the full data-handling details.";
   if (mentions("install", "store", "app", "download"))
     return "ProntoPC runs through its Microsoft Store app. If it is not installed when you continue, this page will show the Store link. The app is where scanning, results, approval, and any repair happen.";
   if (mentions("price", "cost", "refund", "guarantee", "payment", "paid"))

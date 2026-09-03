@@ -65,11 +65,11 @@ rejection was a Stripe $0-checkout redirect bug, since fixed - a 100%-off checko
 settles as "no_payment_required"/"complete", which /api/verify-payment now accepts.)
 
 Root cause fixed - durably:
-- The repair plan is now authored by an on-device AI model bundled in the app
-  (int4 google/gemma-3-1b-it via ONNX Runtime GenAI). The Orchestrator's provider
-  order is on-device first, cloud only as a fallback, so the plan is generated
-  locally with no network dependency. The prior cloud-outage failure mode cannot
-  recur during review: the reviewer's plan is authored on the device.
+- The repair plan is now authored on-device by an AI model bundled in the app
+  (int4 google/gemma-3-1b-it via ONNX Runtime GenAI). The Orchestrator has one
+  local author and no cloud fallback, so the plan is generated with no network
+  dependency. The prior cloud-outage failure mode cannot recur during review:
+  the reviewer's plan is authored on the device.
 - If, on some machine, the on-device author cannot produce a plan, the app never
   substitutes a non-AI (rule-based) plan under the AI claim. It shows honest
   recourse instead (a make-good). There is no code path that presents a heuristic
@@ -105,9 +105,8 @@ Root cause fixed - durably:
 ## Pre-submission checklist (ours, not for the reviewer)
 - [ ] The .msixupload BUNDLES the on-device model at
       Assets/models/gemma-3-1b-it/ (genai_config.json + weights). Without it the
-      app falls through to the cloud fallback, which reintroduces the exact
-      failure that caused the last rejection. This is the single most important
-      packaging check.
+      app cannot author a repair plan and can only present honest make-good. This
+      is the single most important packaging check.
 - [ ] Confirm in the Stripe Dashboard (LIVE mode) that promotion code MSCERT2026
       still exists and is 100% off, and that the $29 Payment Link's after-payment
       redirect points at the success page (success.html?session={CHECKOUT_SESSION_ID}).

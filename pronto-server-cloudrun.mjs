@@ -912,8 +912,22 @@ async function handleNativePlan(req, res) {
   if (!token || !diagnostics || !plan || !Array.isArray(plan.actions))
     return json(res, req, 400, { ok: false, error: "token, diagnostics, and plan.actions required" });
 
-  const session = await getSession(token);
-  if (!session) return json(res, req, 402, { ok: false, error: "No paid session for this token. Complete checkout first." });
+  // A native plan can be tens of kilobytes. Do not persist it and then advance
+  // the state in a separate Firestore transaction: the transaction can expire
+  // after the durable plan write, leaving an otherwise valid paid run unable to
+  // reach Findings. Read once and conditionally commit the plan and state in the
+  // same non-transactional Firestore write instead.
+  const sessionSnapshot = USE_MEMORY_SESSION_STORE
+    ? null
+    : await paidSessions.doc(token).get();
+  const session = USE_MEMORY_SESSION_STORE
+    ? await getSession(token)
+    : (sessionSnapshot?.exists ? sessionSnapshot.data() : null);
+  if (!session || Date.now() - session.createdAt > SESSION_TTL_MS) {
+    if (!USE_MEMORY_SESSION_STORE && sessionSnapshot?.exists)
+      await paidSessions.doc(token).delete();
+    return json(res, req, 402, { ok: false, error: "No paid session for this token. Complete checkout first." });
+  }
   if (session.state !== "created" && session.state !== "diagnosed")
     return json(res, req, 409, { ok: false, error: `Cannot record a plan in state: ${session.state}` });
 
@@ -930,15 +944,39 @@ async function handleNativePlan(req, res) {
   if (actions.length === 0)
     return json(res, req, 400, { ok: false, error: "No admissible repair actions in native plan" });
 
-  session.diagnostics = diagnostics;
-  session.hostname = diagnostics.os?.hostname || session.hostname || "Unknown PC";
-  session.repairPlan = { ...plan, actions };
-  session.planProvenance = typeof provenance === "object" && provenance ? provenance : { provider: "native" };
-  await saveSession(session);
-  if (session.state === "created" && !await transitionState(token, "diagnosed"))
-    return json(res, req, 409, { ok: false, error: "Could not advance session to diagnosed" });
+  const nextState = session.state === "created" ? "diagnosed" : session.state;
+  const persistedPlan = { ...plan, actions };
+  const planProvenance = typeof provenance === "object" && provenance ? provenance : { provider: "native" };
+  const updatedAt = Date.now();
 
-  return json(res, req, 200, { ok: true, actionIds: actions.map(a => a.id), state: (await getSession(token))?.state });
+  if (USE_MEMORY_SESSION_STORE) {
+    session.diagnostics = diagnostics;
+    session.hostname = diagnostics.os?.hostname || session.hostname || "Unknown PC";
+    session.repairPlan = persistedPlan;
+    session.planProvenance = planProvenance;
+    session.state = nextState;
+    session.updatedAt = updatedAt;
+    await saveSession(session);
+  } else {
+    try {
+      await paidSessions.doc(token).update({
+        diagnostics,
+        hostname: diagnostics.os?.hostname || session.hostname || "Unknown PC",
+        repairPlan: persistedPlan,
+        planProvenance,
+        state: nextState,
+        updatedAt,
+      }, { lastUpdateTime: sessionSnapshot.updateTime });
+    } catch (error) {
+      // A concurrent consent/state change must not be overwritten by this
+      // delayed upload. The desktop app can re-read the authoritative state.
+      if (error.code === 9 || error.code === "FAILED_PRECONDITION")
+        return json(res, req, 409, { ok: false, error: "Session changed while recording plan; retry from current session state." });
+      throw error;
+    }
+  }
+
+  return json(res, req, 200, { ok: true, actionIds: actions.map(a => a.id), state: nextState });
 }
 
 async function handleSessionStatus(req, res, token) {
