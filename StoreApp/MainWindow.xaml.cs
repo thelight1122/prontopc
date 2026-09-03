@@ -252,6 +252,45 @@ public partial class MainWindow : Window
         await ReportAiUnavailable(_lastDiag, _lastDecline);
     }
 
+    // "Prefer your money back?" — the app only REQUESTS the refund (token only, no PII); the
+    // backend enforces eligibility (refund only when no successful repair was recorded) and
+    // issues the actual amount paid via Stripe. The app just surfaces the outcome.
+    async void RequestRefund_Click(object sender, RoutedEventArgs e) => await RequestRefundAsync();
+
+    async Task RequestRefundAsync()
+    {
+        Cust.SetState(CustodianState.Blocked, "Requesting your refund…");
+        bool initiated = false;
+        string? message = null;
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            string payload = JsonSerializer.Serialize(new { token = _token });   // token only — anonymized
+            var resp = await http.PostAsync($"{CloudRun}/api/request-refund",
+                new StringContent(payload, Encoding.UTF8, "application/json"));
+            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            var root = doc.RootElement;
+            initiated = root.TryGetProperty("refundInitiated", out var ri) && ri.ValueKind == JsonValueKind.True;
+            if (root.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String) message = m.GetString();
+        }
+        catch { /* offline / backend unreachable — honest fallback below */ }
+
+        ShowRefundOutcome(initiated, message);
+    }
+
+    void ShowRefundOutcome(bool initiated, string? message)
+    {
+        RefundTitle.Text = initiated ? "Refund on its way." : "About your refund";
+        RefundText.Text = !string.IsNullOrWhiteSpace(message)
+            ? message!
+            : (initiated
+                ? "Your refund is on its way to the card you paid with. It typically appears within 5–10 business days."
+                : "We couldn't complete the refund automatically. Please contact support@prontopc.online and we'll take care of it.");
+        Cust.SetState(initiated ? CustodianState.Complete : CustodianState.Blocked,
+            initiated ? "Refund issued." : "Refund needs a hand.");
+        ShowPanel(RefundPanel);
+    }
+
     static JsonElement ToElement(JsonNode node) => JsonSerializer.SerializeToElement(node);
 
     // Technician Orb → the append-only relay. Publishes this session's findings ONCE: the
@@ -599,6 +638,7 @@ public partial class MainWindow : Window
         ErrorPanel.Visibility = Visibility.Collapsed;
         MakeGoodPanel.Visibility = Visibility.Collapsed;
         RetryPanel.Visibility = Visibility.Collapsed;
+        RefundPanel.Visibility = Visibility.Collapsed;
         WorkingArt.Visibility = Visibility.Collapsed;
     }
 

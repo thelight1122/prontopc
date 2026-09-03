@@ -213,11 +213,24 @@
                          FontSize="11" TextAlignment="Center" Margin="0,4,0,0"/>
             </StackPanel>
           </Border>
-          <Button Content="Close" Click="Close_Click" Height="44" Width="150" Margin="0,20,0,0"
+          <TextBlock TextAlignment="Center" Margin="0,14,0,0" FontSize="12.5">
+            <Hyperlink Click="RequestRefund_Click" Foreground="#a78bfa" TextDecorations="Underline">Prefer your money back? Request a refund</Hyperlink>
+          </TextBlock>
+          <Button Content="Close" Click="Close_Click" Height="44" Width="150" Margin="0,18,0,0"
                   Foreground="#eef1ff" Background="#12142c" Cursor="Hand" HorizontalAlignment="Center"/>
           <TextBlock TextAlignment="Center" Margin="0,10,0,0" FontSize="11">
             <Hyperlink Click="OpenLicenses_Click" Foreground="#8b8fb0" TextDecorations="Underline">AI model &amp; licenses</Hyperlink>
           </TextBlock>
+        </StackPanel>
+
+        <!-- REFUND OUTCOME (result of a self-service refund request) -->
+        <StackPanel x:Name="RefundPanel" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" Width="460">
+          <TextBlock x:Name="RefundTitle" Text="Refund" Foreground="#eef1ff" FontSize="21"
+                     FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap"/>
+          <TextBlock x:Name="RefundText" Foreground="#c3c8e6" FontSize="14" TextAlignment="Center"
+                     TextWrapping="Wrap" Margin="0,12,0,0"/>
+          <Button Content="Close" Click="Close_Click" Height="44" Width="150" Margin="0,22,0,0"
+                  Foreground="#eef1ff" Background="#12142c" Cursor="Hand" HorizontalAlignment="Center"/>
         </StackPanel>
 
 

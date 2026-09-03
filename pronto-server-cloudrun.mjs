@@ -1480,6 +1480,108 @@ async function handleSubmitRepairResults(req, res) {
   return json(res, req, 200, { ok: true, couponCode: session.couponCode || null, couponExpiresAt: session.couponExpiresAt || null });
 }
 
+// POST /api/request-refund — self-service refund for the case where the customer PAID
+// but received NO service (the on-device AI could not build a plan / no repair ran).
+// A successful repair is evidence of services received, so a completed session is NOT
+// refundable — it is covered by the 30-day repair guarantee instead. Refunds the ACTUAL
+// amount charged (Stripe default), so a 50%-off run refunds exactly what was paid and a
+// 100%-off comp has nothing to refund. Idempotent; the evidence record is anonymized.
+async function handleRequestRefund(req, res) {
+  let body;
+  try { body = await readBody(req); } catch { return json(res, req, 400, { ok: false, error: "Invalid body" }); }
+  const { token, reason } = body || {};
+  if (!token) return json(res, req, 400, { ok: false, error: "token required" });
+
+  const session = await getSession(token);
+  if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
+
+  // Idempotent: never refund the same session twice.
+  if (session.refund && session.refund.refundId) {
+    return json(res, req, 200, {
+      ok: true, refundInitiated: true, alreadyRefunded: true,
+      refundId: session.refund.refundId, amount: session.refund.amount, status: session.refund.status,
+      message: "Your refund was already issued to the card you paid with.",
+    });
+  }
+
+  // Eligibility: a successful repair (a "done" result, or a completed session) is evidence
+  // of services received — not refundable; steer to the 30-day repair guarantee instead.
+  const hadSuccess = session.state === "completed"
+    || (Array.isArray(session.repairResults) && session.repairResults.some(r => r && r.status === "done"));
+  if (hadSuccess) {
+    return json(res, req, 409, {
+      ok: false, refundable: false,
+      message: "This session completed a repair, so it isn't eligible for a refund. If a repaired problem comes back within 30 days, we'll fix it again free under the repair guarantee — contact support@prontopc.online with your report.",
+    });
+  }
+
+  // Recover the payment_intent + actual amount from the stored checkout session.
+  let stripeSession;
+  try { stripeSession = await verifyStripeSession(session.stripeSessionId); }
+  catch { return json(res, req, 502, { ok: false, error: "Could not reach the payment provider. Please try again, or contact support@prontopc.online." }); }
+
+  const paymentIntent = stripeSession.payment_intent;
+  if (stripeSession.payment_status === "no_payment_required" || !paymentIntent) {
+    return json(res, req, 409, {
+      ok: false, refundable: false, paidZero: true,
+      message: "This run was already free (a 100% coupon), so there's nothing to refund — your free-repair code still works and we've flagged the AI issue to our team.",
+    });
+  }
+
+  if (!STRIPE_SECRET_KEY) return json(res, req, 500, { ok: false, error: "Refunds are not configured. Please contact support@prontopc.online." });
+
+  // Full refund of the ACTUAL charge (omit `amount` → Stripe refunds amount_total, which
+  // already reflects any coupon the customer used).
+  let refund;
+  try {
+    const params = new URLSearchParams({
+      payment_intent: paymentIntent,
+      reason: "requested_by_customer",
+      "metadata[token]": token,
+      "metadata[source]": "self_service_refund",
+    });
+    const resp = await fetch("https://api.stripe.com/v1/refunds", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Idempotency-Key": `refund_${token}`,
+      },
+      body: params.toString(),
+      signal: AbortSignal.timeout(15_000),
+    });
+    refund = await resp.json();
+    if (!resp.ok) {
+      console.error(`[request-refund] Stripe error for ${token.substring(0, 8)}…:`, refund?.error?.message || resp.status);
+      return json(res, req, 502, { ok: false, error: "The refund couldn't be completed just now. Please contact support@prontopc.online and we'll finish it." });
+    }
+  } catch {
+    return json(res, req, 502, { ok: false, error: "The refund couldn't be completed just now. Please contact support@prontopc.online and we'll finish it." });
+  }
+
+  // Persist an ANONYMIZED refund evidence record (no email / hostname / diagnostics / detail).
+  session.refund = {
+    refundId: refund.id,
+    refundedAt: Date.now(),
+    amount: refund.amount,           // integer cents, straight from Stripe (what was paid)
+    currency: refund.currency,
+    status: refund.status,
+    reason: typeof reason === "string" ? reason.slice(0, 500) : "",
+    eligibility: "no_successful_repair",
+    sessionState: session.state,
+    repairResultSummary: (session.repairResults || []).map(r => ({ action: r && r.action, status: r && r.status })),
+    aiUnavailableReason: session.aiUnavailableReason || null,
+  };
+  await saveSession(session);
+
+  console.log(`[request-refund] Session ${token.substring(0, 8)}… refunded ${refund.amount} ${refund.currency} (${refund.status})`);
+  return json(res, req, 200, {
+    ok: true, refundInitiated: true,
+    refundId: refund.id, amount: refund.amount, currency: refund.currency, status: refund.status,
+    message: "Your refund is on its way to the card you paid with. It typically appears within 5–10 business days.",
+  });
+}
+
 async function handleSessionReport(req, res, token) {
   const session = await getSession(token);
   if (!session) return json(res, req, 404, { ok: false, error: "Session not found" });
@@ -2856,6 +2958,7 @@ const server = http.createServer(async (req, res) => {
     if (method === "POST" && pathname === "/api/native-plan") return await handleNativePlan(req, res);
     if (method === "POST" && pathname === "/api/submit-repair-results") return await handleSubmitRepairResults(req, res);
     if (method === "POST" && pathname === "/api/report-ai-unavailable") return await handleReportAiUnavailable(req, res);
+    if (method === "POST" && pathname === "/api/request-refund") return await handleRequestRefund(req, res);
     if (method === "POST" && pathname === "/api/verify-results") return await handleVerifyResults(req, res);
 
     // Session status/findings/consent/report
