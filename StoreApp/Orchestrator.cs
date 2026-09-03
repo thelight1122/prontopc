@@ -41,6 +41,17 @@ sealed class Orchestrator
     // The version this client build is keyed to (the Umbilical envelope_ref.version).
     const string KeyedEnvelopeVersion = "0.1.0";
 
+    // On-device generation is occasionally flaky — a decode can come back empty, unparseable,
+    // or (after envelope validation) with no admissible actions, yet the next attempt succeeds.
+    // Retry the local author this many times on TRANSIENT declines before make-good.
+    const int MaxAuthorAttempts = 3;
+
+    // Declines that a fresh attempt can plausibly fix. Deterministic declines (no model,
+    // no admissible actions) are NOT listed — retrying them just wastes the customer's time.
+    static bool IsTransientDecline(string reason) => reason is
+        "local_completion_empty" or "local_inference_failed" or "local_plan_json_invalid"
+        or "local_author_exception" or "local_plan_rejected_by_envelope";
+
     readonly Envelope? _env;
     readonly IReadOnlyList<IPlanAuthor> _authors;
 
@@ -77,16 +88,34 @@ sealed class Orchestrator
 
         foreach (var author in _authors)
         {
-            PlanResult? r;
-            try { r = await author.AuthorAsync(audit, admissible, ct); }
-            catch (OperationCanceledException) { return PlanOutcome.Unavailable("local_inference_cancelled"); }
-            catch { return PlanOutcome.Unavailable("local_author_exception"); }
-            if (r is null)
-                return PlanOutcome.Unavailable((author as IPlanAuthorDiagnostics)?.LastDeclineReason ?? "local_author_declined");
+            string lastDecline = "local_author_declined";
+            for (int attempt = 1; attempt <= MaxAuthorAttempts; attempt++)
+            {
+                PlanResult? r;
+                try { r = await author.AuthorAsync(audit, admissible, ct); }
+                catch (OperationCanceledException) { return PlanOutcome.Unavailable("local_inference_cancelled"); }
+                catch { r = null; lastDecline = "local_author_exception"; }
 
-            var (plan, dropped) = _env.Validate(r.Plan, diagEl);
-            if (ActionCount(plan) == 0) return PlanOutcome.Unavailable("local_plan_rejected_by_envelope");
-            return PlanOutcome.Ok(plan, r.Provider, r.Model, dropped);
+                if (r is not null)
+                {
+                    var (plan, dropped) = _env.Validate(r.Plan, diagEl);
+                    if (ActionCount(plan) > 0) return PlanOutcome.Ok(plan, r.Provider, r.Model, dropped);
+                    lastDecline = "local_plan_rejected_by_envelope";   // model replied but no admissible action survived
+                }
+                else
+                {
+                    lastDecline = (author as IPlanAuthorDiagnostics)?.LastDeclineReason ?? lastDecline;
+                    if (!IsTransientDecline(lastDecline)) break;       // deterministic — a retry cannot change it
+                }
+
+                // Brief settle before the next attempt (lets a warm-up / transient inference error clear).
+                if (attempt < MaxAuthorAttempts)
+                {
+                    try { await Task.Delay(200, ct); }
+                    catch (OperationCanceledException) { return PlanOutcome.Unavailable("local_inference_cancelled"); }
+                }
+            }
+            return PlanOutcome.Unavailable(lastDecline);
         }
         return PlanOutcome.Unavailable("local_author_not_configured");
     }
