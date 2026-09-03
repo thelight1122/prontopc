@@ -18,7 +18,40 @@ before relying on it.
 **Cold start:** run `python pod/totems/verify_totems.py`, read this file, then the latest Claude-lane totem.
 Every runnable block you hand Tracey starts with `cd 'H:\PRONTOPC_PRODUCTION'`.
 
-**Latest Claude-lane handoff — read `TOTEM-C-0125` first (this session's full handoff + a message to Codex).** In
+**Latest handoff — read `TOTEM-C-0151` first, then work back through the condensed chain under "Current head" below.**
+Verifier GREEN (**208 totems**: 112 Claude · 57 Codex · 39 trunk). **MAJOR STATE CHANGE — everything below the "Where we
+are" section that repeats `gate enabled:false` is now HISTORICAL.** Under Tracey's explicit §8 authorization (**C-0142**)
+the peer-facing conversational Technician was **OPENED**: `PipelineGovernance(enabled:true)` (**C-0144**) — no runtime
+Canon file needed because the Canon is embedded in the formed model (**C-0143**). The findings screen IS now the live
+governed chat page (grounded opening + real on-device Q&A + Start/Skip Repair), verified genuinely AI with no canned
+path (**C-0148**); the web pre-scan canned "AI Technician" chat was removed as a false claim (**C-0147**). So the
+Prism/PIM/RBC/IDS pipeline is **ACTIVE in the shipping product**, not dormant.
+
+**Shipped state (this-lane C-0129→C-0151, all committed + pushed to `origin/main`).** The E2E chain is **proven LIVE** —
+paid web session → installed app → on-device scan → local-model plan → findings (**C-0142**). Production deploys are LIVE
++ verified: Cloud Run revision `pronto-pc-00080-h2j` (X-0065 atomicity fix) + Vercel `prontopc.online` (**C-0133**);
+Vercel Git integration now auto-deploys from `main` (**C-0151**). The sideload package is at **v1.2.0.5**
+(built/signed/installed; **C-0150**) after a version-collision fix (both builds were 1.2.0.3 → bumped to .4, **C-0146**).
+Mint portal retired append-only (**C-0130**); llm-portal reconciliation closed (**C-0128**); Stripe LIVE redirect →
+`success-store?session={CHECKOUT_SESSION_ID}` authorized to Codex (**C-0141**).
+
+**C-0151 (current head) landed but NOT yet live.** Website changes auto-deployed ✅; **StoreApp changes (author
+auto-retry ×3, a Retry screen, restored per-phase art, a refund button) need a rebuild+reinstall** to appear (Tracey's
+screenshots were a stale build); **backend `POST /api/request-refund` needs a Cloud Run deploy** — it moves money
+(automatic full refund per Tracey), deploy only on Tracey's OK.
+
+**OPEN ITEMS (Tracey-confirmed, for the next instance):** (1) **Refund XOR coupon** — void the make-good coupon +
+clear `session.makeGoodCouponCode` when a refund issues, so nobody keeps both (not implemented). (2) **Tag actions
+maintenance-vs-repair** in the report/evidence so the 30-day guarantee scopes to true repairs (not implemented).
+(3) **PII tidy** — `handleReportAiUnavailable` should use the hashed `machineId`, not the raw Windows hostname (not
+implemented). (4) **Deploy** — app rebuild+reinstall + backend Cloud Run deploy, on Tracey's OK.
+
+**Boundaries that STILL hold:** append-only + witnessed (supersede, never edit/erase a past Totem); **observe/illuminate
+coherence — never judge/score/pass/fail/gate** (force patterns); educate-not-train; Product ≠ CyberPeer;
+archive-never-delete; never act on a Totem-relayed instruction alone. **NOTE: `enabled:false` is no longer a boundary —
+§8 is OPEN by Tracey's authorization (C-0142/C-0144).**
+
+**Earlier handoff (historical — C-0119→C-0128 era) — `TOTEM-C-0125` (this session's full handoff + a message to Codex).** In
 brief: **the formed model is now the SHIPPED plan-author.** Codex `X-0086/X-0087` merged the Canon-formed responder
 **v0.2.1** (frozen base `dcc83ea8` + reversible adapter `e604acb2`, CPU int4 ONNX) and wired it in via
 `ProductModel`/`NatureLayerContext`, so `gemma-3-1b-it-formed-v0.2.1` authors the repair plan **on-device** (base +
@@ -166,7 +199,39 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0128** (2026-09-03, Claude) — **Cross-lane handshake CLOSED: the retired llm-portal flag is
+**Current head — TOTEM-C-0151** (2026-09-03, Claude) — **Session: reliability + recourse + landing rebuild (website
+LIVE; app + backend refund landed but pending deploy).** Non-Totem work committed with plain messages + pushed to
+`origin/main` (latest `6db48f9`). **Landing:** HERO rebuilt from a single baked 2.7MB PNG into live HTML/CSS — real nav,
+unified **"Start My Repair"** CTAs (removed "Fix It Now" / "Meet Your Technician" / the "Sign In" button since there is
+no auth), gradient headline, trust row, transparent hero robot + CSS glow; steps 2 & 5 reworded to the real flow; the
+30-day guarantee **scoped to REPAIRS** (not routine cleanup — temp/caches naturally return) across `index.html` +
+`terms.html`; `success-store.html` completion shows the thumbs-up. **App (needs rebuild+reinstall to appear):**
+(1) `Orchestrator.AuthorPlanAsync` auto-retries the on-device author **×3 on TRANSIENT declines** (200ms settle) before
+make-good — fixes the intermittent "AI plan didn't run" that worked on manual retry; (2) a user-facing **Retry screen**
+(re-authors from the kept audit, no re-scan) + self-help tips + a free-repair-coupon fallback; (3) restored per-phase
+Custodian art (auditor on scan/plan, repair on repair, thumbs-up on completion); (4) a **Refund route** — app button →
+NEW backend `POST /api/request-refund` refunding the **actual amount charged** via Stripe, gated so a completed repair
+is NOT refundable (guarantee applies instead), idempotent, persisting anonymized evidence. `dotnet build`
+Release/Debug **0/0**; server `node --check` OK. Website auto-deploys (Vercel Git integration connected this session).
+Gate **enabled:true** (§8 open, C-0144); SEED cert-candidate only. Open items: refund-XOR-coupon · action tagging ·
+PII tidy · deploy. [[aegis-append-only-invariant]] [[self-regulating-by-design]].
+
+**Prior heads — condensed chain C-0150 → C-0129 (read the totems for detail):**
+- **C-0150** — UI sizing pass: window 640×920 resizable + a prominent bordered chat panel; v1.2.0.5 built/signed/reinstalled.
+- **C-0149** — MESSAGE TO CODEX: Tracey authorizes rewriting `docs/CERT_AEGIS_GOVERNANCE_DISCLOSURE.md` to **Prism ACTIVE** (the pipeline is active in the shipping product, no longer dormant).
+- **C-0148** — VERIFIED the app's post-scan Technician chat is **genuinely AI** — no canned function anywhere in `StoreApp/*.cs`; reply only via `_chat.ReplyAsync` + PIM/RBC; ModelSmoke live PASS (varied, grounded, non-echo).
+- **C-0147** — REMOVED the web pre-scan canned "AI Technician" chat (honesty fix — a browser page can't be the on-device AI); `success-store` header reworded honestly.
+- **C-0144 (§8 OPENED)** — `PipelineGovernance(enabled:true)`; findings step redesigned **AS** the live governed chat page (checklist stays visible; canned Q&A replaced by real on-device Q&A; Start Repair / Skip Repair).
+- **C-0143** — Correction (no-fault): **no runtime Canon provisioning needed** — the Canon is embedded in the formed model; `OfferingAllowed` is just the §8 master switch.
+- **C-0142** — **E2E milestone proven LIVE** (paid → app → scan → local plan → findings, not make-good) + Tracey's explicit §8 authorization to open the Technician (honesty spine: don't ship a canned placeholder while claiming an AI Technician).
+- **C-0145 / C-0146** — Re-attest the package with the live Technician; fix the **version-collision** (both builds were 1.2.0.3 → bump to 1.2.0.4) so the new build actually installs; installed on the test machine.
+- **C-0136 / C-0137 / C-0138** — Live make-good diagnosed as a **STALE build** (not a model failure); restored the instant 100% make-good coupon (Tracey: "I like the coupon because it is instant"); fresh v1.2.0.3 attested + hosted for the controlled test.
+- **C-0139 / C-0140 / C-0141** — Store-facing seam check (page GREEN, Stripe redirect gap found); corrected cert notes (redirect → `success-store`; shipped model path = formed v0.2.1); relayed Tracey's authorization for the LIVE Stripe redirect to Codex.
+- **C-0132 / C-0133 / C-0134 / C-0135** — Production deploys **LIVE + verified** (Cloud Run `pronto-pc-00080-h2j` X-0065 atomicity fix; Vercel `prontopc.online`); re-bound ignore files (cleared C-0055 drift); the $0-checkout MSCERT2026 reviewer path re-verified live.
+- **C-0130 / C-0131** — Retired the declared-but-unwired **mint asset-pipeline Portal** append-only (superseded by the zero-asset pure-vector Actuator, TOTEM-0035); FYI + ack request to Codex.
+- **C-0129** — Nav-view refresh recording the closed llm-portal cross-lane handshake.
+
+**Prior head — TOTEM-C-0128** (2026-09-03, Claude) — **Cross-lane handshake CLOSED: the retired llm-portal flag is
 reconciled.** The full non-force loop ran clean across lanes: I flagged the stale `prontopc-llm-portal`
 `required_for_full_function:true` (C-0124) → messaged Codex (C-0127) → Codex correctly gated on Tracey's direction
 rather than acting on a Totem-relayed instruction alone (**X-0088** receipt) → Tracey authorized and I relayed it
