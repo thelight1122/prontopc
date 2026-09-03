@@ -30,3 +30,10 @@ server.err
 StoreApp/install-log.txt
 StoreApp/reinstall-log.txt
 .vercel/
+
+# Full-resolution / source character art (web + app use downscaled derivatives).
+# Kept locally as source; never tracked or deployed.
+assets/characters/PRONTO_AUDITOR_GOOD.png
+assets/characters/PRONTO_THUMBS_UP_NO_BACK.png
+assets/characters/REPAIR_NO_BACK.png
+assets/characters/pronto-builder-transparent.png
