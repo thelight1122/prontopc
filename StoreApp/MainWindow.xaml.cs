@@ -26,6 +26,16 @@ public partial class MainWindow : Window
     readonly Orchestrator _orch;
     readonly bool _modelPresent;
 
+    // ── Technician → Communications relay seam (append-only, hash-bound) ───────
+    // The inter-Orb seam made an APPEND-ONLY message rather than a mutable call. The
+    // Computer Technician Orb PUBLISHES its validated, SystemAudit-bound findings here
+    // ONCE (after AuthorPlanAsync); the Communications & Governance Orb — the Prism side —
+    // READS only its own session's findings to explain what is already true. This opens no
+    // gate and executes nothing (Manifest I2). Null only when the Action Envelope can't be
+    // keyed — in which case the plan phase itself is already degraded, so there is nothing
+    // valid to relay.
+    readonly FindingsRelayIntegration? _findingsRelay;
+
     // ── Conversational Technician (Phase 2) — GATED CLOSED ────────────────────
     // The peer-facing conversation runs through ONE governance seam (Governance.cs).
     // The wired seam is PipelineGovernance — the bridge to the AEGIS module set
@@ -51,7 +61,30 @@ public partial class MainWindow : Window
         {
             new GemmaLocalPlanner(OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it")),
         });
+        _findingsRelay = BuildFindingsRelay();
         Loaded += async (_, __) => await Start();
+    }
+
+    // Compose the Technician→Communications relay. The relay file (Local app data) and its
+    // head anchor (Roaming app data) sit in SEPARATE failure domains, so tail-truncation or
+    // whole-file replacement is illuminated rather than silent (TOTEM-C-0110). Both are
+    // per-user, admin-free paths. Returns null if the Action Envelope can't be loaded — the
+    // app still runs; there is simply no relay, never one bound to a mismatched envelope.
+    static FindingsRelayIntegration? BuildFindingsRelay()
+    {
+        try
+        {
+            var envelope = Envelope.Load();
+            string relayPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ProntoPC", "relay", "findings.jsonl");
+            string anchorPath = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "ProntoPC", "relay-anchor", "findings.head.json");
+            var relay = new ProntoPC.Governance.AppendOnlyFindingsRelay(relayPath, clock: null, anchorPath: anchorPath);
+            return new FindingsRelayIntegration(relay, envelope);
+        }
+        catch { return null; }
     }
 
     // Entry: the pay-per-run gate stands in front of the scan. A run is unlocked only
@@ -159,7 +192,14 @@ public partial class MainWindow : Window
         if (outcome.IsOk)
         {
             var plan = ToElement(outcome.Plan!);
-            if (await RecordNativePlanAsync(diag, plan, outcome)) { ShowFindings(plan); return; }
+            if (await RecordNativePlanAsync(diag, plan, outcome))
+            {
+                // Technician Orb → the append-only relay: post the validated findings ONCE for
+                // this session so the Communications Orb can later READ (never re-derive) them.
+                PublishFindingsToRelay(audit, plan, outcome);
+                ShowFindings(plan);
+                return;
+            }
             ShowError("We couldn't securely record this repair plan. No repairs have been run — please try again.");
             return;
         }
@@ -168,6 +208,18 @@ public partial class MainWindow : Window
     }
 
     static JsonElement ToElement(JsonNode node) => JsonSerializer.SerializeToElement(node);
+
+    // Technician Orb → the append-only relay. Publishes this session's findings ONCE: the
+    // integration relays nothing unless the SystemAudit is valid and each action is Action-
+    // Envelope admissible, and binds the record to the audit's own EvidenceHash. Best-effort by
+    // design — the relay is a record for the peer-facing Communications Orb, which stays gated
+    // CLOSED in shipped builds, so a relay hiccup (or a pre-existing tamper throw) must never
+    // block the customer's already-paid repair flow. Opens no gate; executes nothing.
+    void PublishFindingsToRelay(SystemAudit audit, JsonElement plan, PlanOutcome outcome)
+    {
+        try { _findingsRelay?.PublishFindings(_token, audit, plan, outcome.Provider, outcome.Model); }
+        catch { /* append-only record for the gated Communications Orb — never disrupt the paid flow */ }
+    }
 
     // A local model may author the plan, but the paid session is the source of truth
     // for consent, completion, browser confirmation, and the report.  Do not offer
@@ -482,10 +534,38 @@ public partial class MainWindow : Window
         // Never open the conversation unless governance admits the offering.
         if (!_gov.OfferingAllowed(out _)) return;
         string modelDir = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "models", "gemma-3-1b-it");
-        // The Custodian is seeded with the governance-supplied system prompt (Canon + RBC framing).
-        _chat ??= new CustodianChat(OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it"), _gov.SystemPrompt);
+        // The Custodian is seeded with the governance-supplied system prompt (Canon + RBC framing),
+        // GROUNDED in this session's findings read back from the Technician Orb through the relay.
+        // The read is the Communications Orb's side of the seam; the Prism (_gov: PIM→IRG→RBC→IDS)
+        // still governs every turn — this only supplies the true subject matter to explain.
+        _chat ??= new CustodianChat(OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it"), ComposeCommsSeed(_gov.SystemPrompt));
         ShowPanel(ChatPanel);
         ChatInput.Focus();
+    }
+
+    // Communications & Governance Orb → the append-only relay: fold THIS session's authorized
+    // findings into the Custodian seed. Reads ONLY the session this window holds (held ==
+    // requested == _token — the session-boundary authorization); a mismatch or an absent/
+    // unverifiable record yields the ungrounded seed. Read-only, executes nothing, opens no gate.
+    string ComposeCommsSeed(string systemPrompt)
+    {
+        try
+        {
+            var findings = _findingsRelay?.ReadAuthorizedFindings(_token, _token);
+            if (findings is null) return systemPrompt;
+            var sb = new StringBuilder();
+            sb.Append("Findings already established by the read-only diagnostic (explain only these; invent nothing further): ");
+            sb.Append(findings.PlanSummary);
+            if (findings.Actions.Length > 0)
+            {
+                sb.Append(" Recommended repairs: ");
+                sb.Append(string.Join("; ", findings.Actions.Select(a => a.Title)));
+                sb.Append('.');
+            }
+            string grounded = sb.ToString();
+            return string.IsNullOrWhiteSpace(systemPrompt) ? grounded : systemPrompt + "\n\n" + grounded;
+        }
+        catch { return systemPrompt; }
     }
 
     void ChatInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
