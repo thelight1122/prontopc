@@ -124,3 +124,23 @@ mistake the snapshot for the current tree:
 X-0086/X-0087 are Codex-attested (the verifier confirms the files match their Totems, not
 the eval results); external cert gates (installed E2E, WACK, signing, Partner Center) remain
 Tracey's track.
+
+### Independent confirmation (2026-09-03, TOTEM-C-0122)
+
+The Codex-attested pass counts above were **re-run and independently confirmed** this
+session (Claude lane), upgrading them from *attested* to *verified*:
+
+- **ModelSmoke: 18/18 PASS**, exit 0 — real on-device int4 inference against
+  `gemma-3-1b-it-formed-v0.2.1`: formation manifest binds the locked Canon fingerprint,
+  Product Nature Layer present, SystemAudit 25/25, on-device author returns a plan with
+  `provenance.provider == local-model` + ≥1 admissible action + a diagnostic-grounded
+  summary, and a two-turn Custodian answers coherently (non-echo, read-only grounded, no
+  invented effects). The formed non-force posture shows in the replies themselves
+  (*"…I won't invent a fact to fill that sentence."*).
+- **`certification_preflight.py`: 20/20 PASS** against live systems — Stripe `MSCERT2026`
+  (100% off, 9 redemptions left), `prontopc.online` 200, backend responding, formed model
+  + formation manifest + Nature Layer all present, cert notes match the on-device product.
+
+The eval *results* are now first-hand, not just the file/Totem match. Boundaries
+unchanged: `enabled:false`; cert **candidate** only (no MS approval / signed / installed
+E2E / WACK / submission).
