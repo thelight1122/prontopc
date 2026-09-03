@@ -30,7 +30,7 @@ verification before submission, tied to the exact tree state it attests to.
 | ModelSmoke (real int4 model) | **PASS** | on-device plan (`provenance=local-model`, ≥1 admissible action, non-empty summary) + 2-turn no-echo chat |
 | Backend live | health **200**, `verify-token` fail-closed (`paid:false`) | Cloud Run rev `pronto-pc-00076-hf5` (`…run.app/health`) |
 | MSCERT2026 promo (reviewer code) | live, **14 redemptions left**, not expired | preflight `[1]` |
-| Governance gate | **`enabled:false` (CLOSED)** | `MainWindow.xaml.cs` wires `new PipelineGovernance(enabled:false)` |
+| Governance gate | **Historical snapshot: `enabled:false` (closed)** | This 2026-08-30 record predates the active post-scan Technician |
 
 **The one non-blocking warning:** cloud fallback (Gemini) returns HTTP **429** (prepay credits depleted).
 Not a cert blocker — the reviewer's repair plan is authored **on-device**, so the cloud path is never
@@ -43,10 +43,10 @@ durably removed by on-device authoring.
   dependency). This is the "AI-powered repair plan" claim, proven present by ModelSmoke.
 - **Custodian actuator** — an on-screen vector figure that reflects the current step; a visual status
   indicator only, generates no text.
-- **Conversational Technician** — present in the build but **gated closed** (`PipelineGovernance
-  enabled:false`): the chat entry stays hidden, no inbound reaches the model, no peer-facing AI
-  generation occurs. The certified build exposes **no ungoverned AI conversation**. (See
-  `docs/PRONTOPC_AEGIS_INTEGRATION_CONTRACT.md` §14.)
+- **Conversational Technician** — active on the post-scan Findings screen. Every inbound turn is
+  PIM-screened; every model reply passes the integrity/RBC/PRISM boundary and is recorded in the
+  hash-chained interaction ledger. It is grounded in the session findings and cannot execute or
+  authorize repair; **Start Repair** remains the explicit consent path.
 
 ## 3. Backing Totems (auditable lineage)
 
@@ -72,12 +72,14 @@ cert path. A Microsoft "PASS" is issued **after** submission and is not producib
 3. **Build the signed `.msixupload` v1.2.0.0** in Visual Studio — model bundled (confirmed above),
    identity `9P1K9QJXKND8`.
 4. **Controlled end-to-end** on an admin test machine (repairs change system state — use no
-   irreplaceable data); confirm the Technician entry stays **hidden**. Run **WACK**.
+   irreplaceable data); confirm the post-scan Technician gives a grounded on-device reply and that
+   repair remains unavailable until explicit consent. Run **WACK**.
 5. **Submit in Partner Center** with `MICROSOFT_STORE_CERT_NOTES.md` in "Notes for certification."
 6. **On cert PASS** — promote `prontopc-repair-plan` provisional → verified (a Totem).
 
-*Governance boundary for cert: `PipelineGovernance` ships `enabled:false`; opening the Technician (§8)
-is a deliberately separate, post-cert decision.*
+*Current governance boundary for cert: `PipelineGovernance` is enabled for the governed,
+post-scan Technician. It remains on-device, findings-grounded, and non-executing; explicit consent
+and the admissible-action envelope remain the only repair path.*
 
 ---
 
@@ -112,7 +114,7 @@ install + E2E run** on the freshly-installed package confirming the on-device Cu
 plan locally** (`provenance=local-model`), NOT `ShowMakeGood` (the exact real-run failure X-0061
 targets, which has only ever been verified in source). Then: Partner Center submit (this MSIX +
 `MICROSOFT_STORE_CERT_NOTES.md`), and the web deploy backlog (C-0073/C-0085 + confirm the $0-checkout
-redirect fix is live). Governance gate stays `enabled:false`.
+redirect fix is live). At this historical recert snapshot, the governance gate stayed `enabled:false`.
 
 ---
 
@@ -123,7 +125,8 @@ certification candidate**. It selects the Canon-formed CPU responder
 `gemma-3-1b-it-formed-v0.2.1`; its formation manifest binds the frozen base, responder adapter,
 locked Canon fingerprint, and the bounded Product Nature Layer. The Nature Layer supplies only
 evidence-domain context alongside the validated SystemAudit. It never supplies facts or execution
-authority. The peer-facing conversational governance gate remains `enabled:false`.
+authority. At this formed-model candidate snapshot, the peer-facing conversational governance gate
+remained `enabled:false`; the current active state is recorded in the addendum below.
 
 | Field | Value |
 | --- | --- |
@@ -141,6 +144,13 @@ packaged Product Nature Layer, and two on-device Custodian turns.
 **SEED evidence:** the formal SEED is issued for this certification candidate after the acceptance
 suite passed against the exact extracted MSIX payload and verified its model, configuration, Nature
 Layer, and formation-manifest hashes. This is Product provenance evidence, not a Microsoft approval.
+
+**Current-state addendum — active conversational governance (2026-09-03):** the later v1.2.0.4
+candidate supersedes the earlier closed-gate snapshot above. The post-scan Technician is active:
+PIM screens inbound turns; integrity/RBC/PRISM shapes outbound replies; the append-only interaction
+ledger records completed turns. The embedded Canon-formed local model explains session findings but
+never executes a repair. The controlled installed-package E2E will exercise a live grounded question
+before the separate Start Repair / Skip Repair consent choice.
 
 **Remaining external gates:** controlled installed-package E2E and WACK, Store signing/upload
 workflow, and Partner Center submission.

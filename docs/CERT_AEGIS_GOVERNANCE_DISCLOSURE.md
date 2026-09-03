@@ -4,10 +4,9 @@
 
 *Purpose of this document.* A plain, accurate statement of the AEGIS governance the ProntoPC
 product actually uses, written for certification review. It is deliberately bounded to **verified
-Product behavior in the shipped build** — it distinguishes what is *active* in this release from
-what is *implemented architecture but not active*, and it makes no claim beyond what the product
-does. (Origin: proposed by the Codex lane in TOTEM-X-0084; reconciled and drafted here per
-TOTEM-C-0114 / C-0115. This document changes no product behavior.)
+Product behavior in the shipping certification candidate** — it distinguishes active behavior from
+historical or development-only components and makes no claim beyond what the product does. This
+document changes no product behavior.
 
 ---
 
@@ -21,7 +20,7 @@ ProntoPC applies **AEGIS as Product-level architecture** in three areas:
 2. **Deterministic evidence controls** — the diagnostic, the audit, the admissible-action
    catalogue, explicit consent, and append-only evidence, none of which are decided by the model.
 3. **A bidirectional communication-governance pipeline** (PIM → IRG → RBC → PRISM → IDS) —
-   implemented as Product architecture (see §4 for its status in this release).
+   active for the post-scan Technician conversation described in §4.
 
 These are **auditable Product controls** supporting coherence, transparency, continuity, and
 non-force. They are **not** a claim of infallibility, jailbreak-proofing, hack-proofing, autonomous
@@ -49,6 +48,11 @@ The controls below are present and operative in the certified application:
   approval; the app executes only the server-authorized action set the customer acknowledged.
 - **Append-only evidence.** Interaction and findings records are written as hash-chained,
   append-only entries (tamper-evident, inspectable), never overwritten.
+- **Governed post-scan conversation.** After validated findings are presented, the customer may ask
+  the on-device Technician about those findings before choosing **Start Repair** or **Skip Repair**.
+  Each inbound turn is PIM-screened before it reaches the model; each generated reply is passed
+  through the integrity/RBC/PRISM boundary before display and is written with its inbound context
+  to the hash-chained interaction ledger.
 
 **Repair actions are therefore tied to validated system evidence, the admissible action envelope,
 explicit user consent, and append-only evidence** — in every shipped run.
@@ -81,26 +85,27 @@ This pathway is **bidirectional**: it applies to inbound (customer → model) an
 
 ---
 
-## 4. Boundary B — the communication-governance pipeline is implemented architecture, DISABLED in this release
+## 4. Boundary B — the communication-governance pipeline is ACTIVE in this release
 
-The PIM → IRG → RBC → PRISM → IDS pipeline described in §3 is implemented as Product architecture,
-but **the peer-facing conversational path is disabled in this release**:
+The PIM → IRG → RBC → PRISM → IDS pipeline described in §3 is active on the Findings screen. The
+post-scan Technician is a genuine on-device model conversation, not canned web copy and not a
+cloud conversation:
 
-- The governance seam ships **closed** (the peer-facing conversation gate is set to *disabled*), so
-  the pipeline does **not** actively govern any shipped user communication — because **no
-  conversational feature is active in this build**. The shipped, active AI behavior is the on-device
-  **repair-plan authoring** described in §2, whose output reaches the customer as deterministic,
-  templated findings, not as free-form conversation.
-- The on-device analyzer that would instrument the IRG read is a **development component** and is
-  **not bundled** in the certified package (this package bundles only the plan-authoring model).
-- The append-only findings record exists and is written, but it is read only by that (currently
-  disabled) conversational path.
+- **Inbound:** every customer message is screened by PIM before model invocation. The current
+  Product behavior observes and retains the message context rather than silently discarding it.
+- **Grounding:** the Technician is seeded from the session-bound, append-only findings relay. It is
+  directed to explain those established findings and not invent additional diagnostic facts.
+- **Outbound:** each model reply traverses the integrity/RBC/PRISM boundary before it is shown, and
+  the completed turn is recorded atomically in the hash-chained interaction ledger. IDS supplies
+  the Product's reroute form where clarification or re-grounding is needed; it is not a punitive
+  denial mechanism.
+- **Scope:** the bundle contains the Canon-formed plan-authoring model. The experimental analyzer
+  is not shipped as a separate runtime model. The Canon is the model's embedded formed disposition,
+  not a runtime Canon file.
 
-Accordingly, a certification statement should describe the communication-governance pipeline as
-**implemented Product architecture**, and say plainly that **in this release the conversational path
-is disabled**, so the shipped active controls are the **on-device formation of §2 plus the
-deterministic evidence / envelope / consent / append-only rails.** Enabling the conversational path
-is a deliberate, separate, future act — not part of this submission.
+The conversation explains the already-established findings and repair choices. It does **not**
+execute, authorize, or silently add a repair. **Start Repair** remains the only path to the
+separate explicit-consent and deterministic envelope checks of §2.
 
 ---
 
@@ -120,7 +125,9 @@ non-force.** They are **not**, and this disclosure does not assert:
 - infallibility or guaranteed correctness of any diagnosis, plan, or repair;
 - jailbreak-proofing or hack-proofing of the model or the application;
 - autonomous execution (see §5 — every repair is user-consented and envelope-bound);
-- that the communication-governance pipeline is active in this release (see §4 — it is not).
+- guaranteed factual accuracy in every conversational detail. The model is grounded by the
+  session findings relay and formed toward non-force expression, while the PRISM boundary addresses
+  interaction form and tone rather than serving as a guarantee of diagnostic truth.
 
 ---
 

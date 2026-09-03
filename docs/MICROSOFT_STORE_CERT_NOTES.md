@@ -35,8 +35,10 @@ HOW TO TEST (full functionality):
    phase is read-only; nothing on the PC is changed.
 7. The bundled on-device AI builds a personalized repair plan (no internet connection
    is needed for this step). The app then shows "Here's what we found." with a list of
-   recommended repairs.
-8. Uncheck any item you would rather skip, then click "Perform Repairs." Repairs run
+   recommended repairs and a live on-device Technician you can ask about those findings.
+8. Ask the Technician a question if helpful, or uncheck any item you would rather skip,
+   then click "Perform Repairs." The conversation explains findings only; it cannot perform a
+   repair. Repairs run
    immediately (permission was already granted by the UAC prompt in step 2).
 9. When finished, the app shows "Your PC has been serviced."
 
@@ -81,14 +83,11 @@ Root cause fixed - durably:
   thinking, presenting, repairing, complete) driven only by true events - never a timer -
   and marks each real repair action as it completes. It is observation-only: it shows the
   work, it does not generate any user-facing language.
-- The build also contains a conversational AI "Technician," but it is DELIBERATELY GATED
-  CLOSED in this certified build (its governance seam is wired to PipelineGovernance with
-  enabled:false), pending an internal AEGIS self-governance review. With the gate closed
-  the chat entry point stays hidden, no message can reach the model, and no AI-generated
-  conversation is reachable by the user. The certified build therefore exposes NO
-  ungoverned peer-facing AI generation; the only on-device AI the reviewer exercises is
-  the repair-plan author (above). This feature will not be opened to users until that
-  review is complete and is not part of what is exercised during certification.
+- The conversational AI "Technician" is active on the post-scan Findings screen. It runs entirely
+  on-device: every inbound turn is PIM-screened, every outbound reply passes the integrity/RBC/PRISM
+  boundary, and complete turns are retained in a hash-chained interaction ledger. It is grounded in
+  the session findings and explains them; it never executes or authorizes a repair. **Perform
+  Repairs** remains the separate explicit-consent path the reviewer exercises.
 
 ## Payment wiring (pay-per-run, for our records)
 - Gate: the app runs nothing until a fulfilled checkout exists. On launch it either
