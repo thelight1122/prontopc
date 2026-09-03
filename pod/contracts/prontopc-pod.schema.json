@@ -44,6 +44,79 @@
         "trust_state": { "type": "string", "enum": ["draft", "provisional", "verified"] }
       },
       "additionalProperties": false
+    },
+    "model": {
+      "type": "object",
+      "description": "The Educated Model at the orchestrating center of the POD (docs/POD_ARCHITECTURE.md sec1). Honest provenance - what SHIPS vs. what is research-only. The Canon is the model's formed disposition (intrinsic, education-time); the Nature Layer is runtime-supplied, not educated in.",
+      "properties": {
+        "role": { "type": "string" },
+        "bundled_shipping": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "kind", "provenance", "formed"],
+            "properties": {
+              "name": { "type": "string" },
+              "kind": { "type": "string" },
+              "provenance": { "type": "string" },
+              "formed": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "canon_layer": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string" },
+            "artifact": { "type": "string" },
+            "note": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "nature_layer": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string" },
+            "note": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "seed": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string" },
+            "note": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "architecture": {
+      "type": "object",
+      "description": "The two-Orb POD architecture (docs/POD_ARCHITECTURE.md, TOTEM-C-0113): the Model is the orchestrating center; Orbs & Satellites give it its abilities. This block is the authoritative mapping of the flat orbs[] list onto the two product Orbs and the append-only relay seam that joins them.",
+      "properties": {
+        "ref": { "type": "string" },
+        "summary": { "type": "string" },
+        "orbs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["orb_id", "purpose", "client_channel", "relay", "composed_of"],
+            "properties": {
+              "orb_id": { "type": "string" },
+              "purpose": { "type": "string" },
+              "client_channel": { "type": "boolean" },
+              "relay": { "type": "string", "enum": ["publishes", "reads", "none"] },
+              "composed_of": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": false
+          }
+        },
+        "relay_seam": { "type": "string" },
+        "gate": { "type": "string" }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false,
@@ -61,7 +134,11 @@
           "type": "array",
           "description": "The Manifest-of-Completion spec IDs whose PASS (with Auditor evidence) promotes this attachment to verified. This is the trust gate: an Orb is verified only when its specs pass.",
           "items": { "type": "string" }
-        }
+        },
+        "role": { "type": "string", "description": "Architecture-level grouping (docs/POD_ARCHITECTURE.md): which product Orb this component belongs to — 'computer-technician', 'communications-governance', 'infrastructure', or 'capability'." },
+        "client_channel": { "type": "boolean", "description": "Whether this component has a direct customer channel. The Computer Technician Orb has none; only the Communications & Governance Orb is the front door." },
+        "relay": { "type": "string", "enum": ["publishes", "reads", "none"], "description": "Role on the append-only Technician->Communications findings relay seam (TOTEM-C-0112)." },
+        "composed_of": { "type": "array", "items": { "type": "string" }, "description": "For an architecture-level Orb attachment, the component orb_ids that give it its function." }
       },
       "additionalProperties": false
     }

@@ -7,16 +7,67 @@
     "implementation": "WPF self-contained Store client (canonical) + Cloud Run broker portal"
   },
   "orchestrator": {
-    "purpose": "Sequence the repair experience by invoking attached Orbs across their Umbilicals. Owns phase/session state only; holds no diagnostic or repair logic of its own.",
+    "purpose": "The Model is the orchestrating center of the POD (docs/POD_ARCHITECTURE.md sec1): it takes the Prism-screened input, decides what the situation needs, reads the Orbs' records for grounding, and coordinates the response. StoreApp/Orchestrator.cs is NOT that intelligence - it is the deterministic execution boundary (sec6): the rails the Model orchestrates within. It owns phase/session state and the safety preconditions (valid SystemAudit before anything reaches the model/consent/repair; Action-Envelope admissibility; consent-before-repair) and holds no diagnostic or repair logic of its own. It HOLDS the action envelope (owned/authored by the Computer Technician Orb) and KEYS the repair-plan Umbilical to it: at scan->plan it compiles the per-machine admissible action set (preconditions x diagnostics) and hands it to the model author; at plan->consent the keyed envelope is the guard; at consent it renders risk / requires_restart / estimated_mb from the envelope, not from model output - so every sign the user approves has a real referent.",
     "phases": ["greet", "scan", "plan", "consent", "repair", "verify", "complete"],
-    "holds_contracts": [
+    "status": "built: deterministic execution boundary (StoreApp/Orchestrator.cs); the coordinating role belongs to the Model per docs/POD_ARCHITECTURE.md"
+  },
+  "model": {
+    "role": "orchestrating-center",
+    "bundled_shipping": [
       {
-        "contract": "prontopc-action-envelope",
-        "path": "orbs/repair-engine/action-envelope.json",
-        "role": "The Orchestrator HOLDS the action envelope (owned/authored by the repair-engine Orb) and KEYS the repair-plan Umbilical to it. Holding a declarative admissibility contract and enforcing the keying is orchestration, NOT repair logic: the Orchestrator never decides what to repair, only that any plan crossing the Umbilical satisfies the envelope. At scan->plan it compiles the per-machine admissible action set (preconditions x diagnostics) and hands it to the attached author; at plan->consent the keyed envelope is the guard on the transition; at consent it renders risk / requires_restart / estimated_mb from the envelope, not from model output — so every sign the user approves has a real referent."
+        "name": "gemma-3-1b-it",
+        "kind": "plan-author",
+        "provenance": "BASE google/gemma-3-1b-it (snapshot dcc83ea841ab6100d6b47a070329e1ba4cf78752), int4 ONNX Runtime GenAI CPU. No formation adapter is merged into the shipped model.",
+        "formed": false
+      },
+      {
+        "name": "gemma-3-1b-analyzer",
+        "kind": "irg-analyzer",
+        "provenance": "analyzer-v0.2.0 LoRA merged -> int4 ONNX; the ADOPTED on-device IRG analyzer (TOTEM-C-0099). Component + harness only; not wired into the closed peer pipeline.",
+        "formed": true
+      },
+      {
+        "name": "gemma-3-1b-analyzer-bidir-v0.1.0",
+        "kind": "irg-analyzer-experimental",
+        "provenance": "Bidirectional analyzer experiment (unadopted; reversible).",
+        "formed": true
       }
     ],
-    "status": "to_build"
+    "canon_layer": {
+      "status": "formed-in-research-not-shipped",
+      "artifact": "gemma3-1b-formation-v0.2.1 (reversible LoRA over a frozen base; dataset formation-seed-v0.2.1.jsonl, sha256 73a9649a...; adapter sha256 e604acb2...)",
+      "note": "The Canon is the model's formed DISPOSITION (intrinsic, education-time), not runtime text. The latest RESPONDER formation is v0.2.1 (Canon + Tech Library) - a research adapter that is NOT the shipped plan-author. There is no v3 responder (v0.3.x are ANALYZER adapters). Merging a formed adapter into the shipped app (ONNX export) is a pending step; the shipping plan-author is BASE."
+    },
+    "nature_layer": {
+      "status": "designed-not-built",
+      "note": "Per docs/CPU_LOCAL_MODEL_EDUCATION_PLAN.md the Nature Layer is RUNTIME-supplied (named aspects + grounded observations), not educated in. No nature-layer/ package is materialized on disk and no Nature-aspects runtime input is wired into the app; the wired runtime grounding is the append-only findings relay (session findings + repair knowledge)."
+    },
+    "seed": {
+      "status": "pending",
+      "note": "The SEED (Signed Evidence of Exact Design) attests the disposition was formed from the exact locked Canon. It is issued when a formed adapter is adopted into the shipped model - not yet, since the shipped plan-author is base."
+    }
+  },
+  "architecture": {
+    "ref": "docs/POD_ARCHITECTURE.md (TOTEM-C-0113)",
+    "summary": "The Educated Model is the orchestrating center; Orbs & Satellites give it its abilities. Two Orbs frame the product: the Computer Technician Orb (no client channel; scans, authors the plan, PUBLISHES its findings) and the Communications & Governance Orb (the Prism front door - PIM->IRG->RBC->IDS, bidirectional; READS this session's findings to ground the Custodian). They are joined by the append-only findings relay - a record, not a live channel - which is why both run on a single model.",
+    "orbs": [
+      {
+        "orb_id": "computer-technician",
+        "purpose": "Diagnose and act on the PC. Repair knowledge (the Tech Library, formed into the model) + the repair engine + the Action Envelope; scans against the validated SystemAudit, authors the plan on-device, and publishes envelope-admissible findings. Has NO client channel.",
+        "client_channel": false,
+        "relay": "publishes",
+        "composed_of": ["prontopc-repair-engine", "prontopc-repair-plan", "prontopc-diagnostics"]
+      },
+      {
+        "orb_id": "communications-governance",
+        "purpose": "Communicate under governance. The Prism on a Portal (PIM->IRG->RBC->IDS, bidirectional) - the front door for all customer conversation; reads this session's authorized findings to ground the Custodian, then governs every inbound and outbound turn. Observe, never judge; where a message does not resonate the way forward is an IDS reroute, never a deny.",
+        "client_channel": true,
+        "relay": "reads",
+        "composed_of": ["prontopc-custodian-stage"]
+      }
+    ],
+    "relay_seam": "StoreApp/FindingsRelayIntegration.cs + StoreApp/Governance/AppendOnlyFindingsRelay.cs (TOTEM-C-0112). Technician PUBLISHES (MainWindow.PublishFindingsToRelay: valid SystemAudit + each action Action-Envelope-admissible + record bound to the audit's own EvidenceHash); Comms & Governance READS (ComposeCommsSeed -> ReadAuthorizedFindings: session-boundary authorized, held==requested==token). A caller cannot read another session's findings.",
+    "gate": "PipelineGovernance(enabled:false) in StoreApp/MainWindow.xaml.cs - the section-8 admission gate is CLOSED: OfferingAllowed is false, TechnicianEntry is hidden, ScreenInbound refuses every inbound, and the on-device model is never constructed in a shipped build. The conversation is code-complete and wired; opening it is a deliberate section-8 decision (new PipelineGovernance(enabled:true, canon:<shipped ref>)) that also requires the exact Canon provisioned on the machine."
   },
   "orbs": [
     {
@@ -25,7 +76,20 @@
       "umbilical": "orbs/repair-engine/umbilical.json",
       "orb_version_pin": "1.0.0",
       "trust_state": "provisional",
-      "manifest_specs": ["I1", "I4", "C4"]
+      "manifest_specs": ["I1", "I4", "C4"],
+      "role": "computer-technician",
+      "client_channel": false,
+      "relay": "none"
+    },
+    {
+      "orb_id": "prontopc-repair-plan",
+      "required_for_full_function": true,
+      "umbilical": "orbs/repair-plan/umbilical.json",
+      "trust_state": "provisional",
+      "manifest_specs": ["I2", "C3"],
+      "role": "computer-technician",
+      "client_channel": false,
+      "relay": "publishes"
     },
     {
       "orb_id": "prontopc-diagnostics",
@@ -33,21 +97,20 @@
       "umbilical": "orbs/diagnostics/umbilical.json",
       "orb_version_pin": "1.0.0",
       "trust_state": "provisional",
-      "manifest_specs": ["C4"]
-    },
-    {
-      "orb_id": "prontopc-repair-plan",
-      "required_for_full_function": true,
-      "umbilical": "orbs/repair-plan/umbilical.json",
-      "trust_state": "provisional",
-      "manifest_specs": ["I2", "C3"]
+      "manifest_specs": ["C4"],
+      "role": "computer-technician",
+      "client_channel": false,
+      "relay": "none"
     },
     {
       "orb_id": "prontopc-custodian-stage",
       "required_for_full_function": false,
       "umbilical": "orbs/custodian-stage/umbilical.json",
       "trust_state": "draft",
-      "manifest_specs": ["U1", "U2", "U3", "U4", "U5", "U6"]
+      "manifest_specs": ["U1", "U2", "U3", "U4", "U5", "U6"],
+      "role": "communications-governance",
+      "client_channel": true,
+      "relay": "reads"
     },
     {
       "orb_id": "prontopc-session",
@@ -55,14 +118,20 @@
       "umbilical": "orbs/session/umbilical.json",
       "orb_version_pin": "1.0.0",
       "trust_state": "provisional",
-      "manifest_specs": ["C4"]
+      "manifest_specs": ["C4"],
+      "role": "infrastructure",
+      "client_channel": false,
+      "relay": "none"
     },
     {
       "orb_id": "prontopc-loyalty",
       "required_for_full_function": false,
       "umbilical": "orbs/loyalty/umbilical.json",
       "trust_state": "provisional",
-      "manifest_specs": []
+      "manifest_specs": [],
+      "role": "capability",
+      "client_channel": false,
+      "relay": "none"
     }
   ],
   "portals": [
@@ -71,33 +140,37 @@
       "required_for_full_function": true,
       "umbilical": "portals/stripe.umbilical.json",
       "trust_state": "provisional",
-      "manifest_specs": ["C1", "I5"]
+      "manifest_specs": ["C1", "I5"],
+      "role": "infrastructure"
     },
     {
       "orb_id": "prontopc-llm-portal",
       "required_for_full_function": true,
       "umbilical": "portals/llm.umbilical.json",
       "trust_state": "draft",
-      "manifest_specs": ["C3", "I3"]
+      "manifest_specs": ["C3", "I3"],
+      "role": "infrastructure"
     },
     {
       "orb_id": "prontopc-cloudrun-portal",
       "required_for_full_function": true,
       "umbilical": "portals/cloudrun.umbilical.json",
       "trust_state": "provisional",
-      "manifest_specs": ["C2"]
+      "manifest_specs": ["C2"],
+      "role": "infrastructure"
     },
     {
       "orb_id": "prontopc-mint-portal",
       "required_for_full_function": false,
       "umbilical": "portals/mint.umbilical.json",
       "trust_state": "draft",
-      "manifest_specs": []
+      "manifest_specs": [],
+      "role": "infrastructure"
     }
   ],
   "evidence": {
     "created_utc": "2026-08-27T00:00:00Z",
-    "source": "Opened clean from the Manifest-of-Completion audit (5 PASS / 3 FAIL / 4 PARTIAL / 4 UNVERIFIABLE). Places audit-passing elements as provisional Orbs; declares FAIL/redesign items as draft Orbs to be built clean. Note: a local-model Satellite (embedded small multimodal model) will serve prontopc-repair-plan; declared in README, not yet an attachment.",
+    "source": "Opened clean from the Manifest-of-Completion audit (5 PASS / 3 FAIL / 4 PARTIAL / 4 UNVERIFIABLE). Reconciled to the two-Orb POD architecture (docs/POD_ARCHITECTURE.md, TOTEM-C-0113) at TOTEM-C-0119: added the model-at-center block (honest base-vs-formed provenance; no v3, Canon formed only in research, Nature Layer designed-not-built), the architecture block mapping the flat orbs[] onto the Computer Technician Orb and the Communications & Governance Orb, and per-orb role/client_channel/relay markers. Known honesty gaps carried forward (not invented away): the diagnostics/session/loyalty orb dirs have no orb.json/umbilical.json yet (declared, not built), so their umbilical paths are intent, not files.",
     "trust_state": "draft"
   }
 }
