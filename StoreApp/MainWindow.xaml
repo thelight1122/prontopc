@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ProntoPC"
-        Title="Pronto PC" Height="760" Width="540"
-        WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize"
+        Title="Pronto PC" Height="920" Width="640" MinHeight="680" MinWidth="540"
+        WindowStartupLocation="CenterScreen" ResizeMode="CanResize"
         Background="#070a18" FontFamily="Segoe UI">
 
   <Window.Resources>
@@ -96,12 +96,19 @@
                  real Q&amp;A — inbound PIM-screened, outbound RBC/Prism-shaped. The checklist above
                  stays visible so Start Repair runs only what is approved. Nothing here executes an
                  action (Manifest I2): Start Repair is the explicit consent, Skip Repair declines. -->
-            <TextBlock Text="Talk to your Technician about what was found" Foreground="#eef1ff"
-                       FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,4,0,8"/>
-            <Border Background="#12142c" BorderBrush="#2a2f55" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,10">
-              <ScrollViewer x:Name="ChatScroll" MaxHeight="220" VerticalScrollBarVisibility="Auto">
-                <StackPanel x:Name="ChatLog"/>
-              </ScrollViewer>
+            <Border Background="#171a3c" BorderBrush="#5b52a6" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,4,0,10">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                  <TextBlock Text="&#128172;" FontSize="18" Margin="0,0,8,0"/>
+                  <TextBlock Text="Talk to your AI Technician" Foreground="#eef1ff"
+                             FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Border Background="#0b0e24" BorderBrush="#2a2f55" BorderThickness="1" CornerRadius="8" Padding="10,8">
+                  <ScrollViewer x:Name="ChatScroll" MinHeight="140" MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="ChatLog"/>
+                  </ScrollViewer>
+                </Border>
+              </StackPanel>
             </Border>
             <Grid Margin="0,0,0,12">
               <Grid.ColumnDefinitions>
