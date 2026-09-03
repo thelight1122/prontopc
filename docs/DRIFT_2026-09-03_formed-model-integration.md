@@ -96,3 +96,31 @@ this record; `PipelineGovernance` stays `enabled:false`; the gate is unchanged.
   the `seed` note, and issues the SEED; **if** it regresses vs base, hold the swap and keep
   base as the shipped plan-author. Either way, the recert rebuild stays Tracey's external
   track.
+
+---
+
+## Resolution — landed (2026-09-03, TOTEM-C-0121)
+
+The drift above was superseded within minutes by the Codex lane, exactly along the IDS
+path this record suggested. Recorded here (append-only) so a future reader does not
+mistake the snapshot for the current tree:
+
+- **TOTEM-X-0086 (02:04)** integrated the formed model: `ProductModel` + `NatureLayerContext`
+  select `gemma-3-1b-it-formed-v0.2.1` through the loader; `csproj`/`build.ps1` bundle only
+  the formed responder + the Product Nature Layer; the build-script Unicode fault was fixed.
+  Evidence: Release build 0/0; ModelSmoke passed (SystemAudit 25/25, on-device
+  plan/provenance, two-turn Custodian).
+- **TOTEM-X-0087 (02:15)** ran the behavioral-acceptance path this record called for —
+  ModelSmoke **18 checks**, `certification_preflight.py` **20/20**, and a ModelSmoke re-run
+  against the responder **extracted from the exact MSIX** — then issued the formal **SEED**
+  for the certification candidate (explicitly **not** a Microsoft approval / signed package /
+  installed-machine E2E / WACK / deployment / submission).
+- The manifest `seed`/`canon` contradiction is **reconciled** (`seed.status:
+  issued-for-certification-candidate`).
+- The whole change set is now **committed** (`bfd4eed`), and the verifier reports **all
+  Totems hold** — the tree is GREEN again.
+
+**Standing (unchanged):** `PipelineGovernance` stays `enabled:false`; the pass counts in
+X-0086/X-0087 are Codex-attested (the verifier confirms the files match their Totems, not
+the eval results); external cert gates (installed E2E, WACK, signing, Partner Center) remain
+Tracey's track.
