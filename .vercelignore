@@ -41,3 +41,9 @@ landing-*.png
 *.md
 
 # Kept (do NOT ignore): *.html at root, logo.png, assets/  — the served site.
+
+# Full-resolution source character art (the web uses downscaled derivatives
+# such as assets/characters/hero-robot.png) — keep the ~30MB originals local.
+assets/characters/PRONTO_AUDITOR_GOOD.png
+assets/characters/REPAIR_NO_BACK.png
+assets/characters/PRONTO_THUMBS_UP_NO_BACK.png
