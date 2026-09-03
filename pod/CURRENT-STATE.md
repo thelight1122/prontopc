@@ -34,9 +34,12 @@ closed the orb.json + portals umbilical gaps, so **every manifest attachment pat
 a schema-valid file** grounded in real code. Pushed commits: `bfd4eed` integration · `b00fffc` manifest · `f63defc`
 orbs · `5efe248` portals · `30f87fd` C-0125 handoff (+ this nav refresh). **CURRENT TRUE STATE:** formed v0.2.1 is the
 shipped plan-author; **gate `enabled:false`** (peer-facing Technician CLOSED); the SEED is a certification **candidate
-only** (NOT Microsoft approval / signed / installed-E2E / WACK / Partner Center submission). **Open threads (each
-Tracey's go):** CODEX — reconcile the stale `prontopc-llm-portal` `required_for_full_function:true` (the Azure/Gemini
-cloud author is RETIRED, on-device is the sole author; C3/I3), and `mint-portal` is declared-but-unwired; TRACEY
+only** (NOT Microsoft approval / signed / installed-E2E / WACK / Partner Center submission). **Cross-lane handshake
+CLOSED (C-0127→C-0128→X-0089):** the stale `prontopc-llm-portal` flag was reconciled — I flagged it (C-0124),
+messaged Codex (C-0127), Codex correctly gated on Tracey's direction (X-0088), Tracey authorized + I relayed (C-0128),
+Codex executed (**X-0089**: `required_for_full_function` true→false, `manifest_specs ["C3","I3"]→[]` since C3 lives on
+`prontopc-repair-plan` and I3 is N/A to the retired portal), and I landed + pushed it (`cbcd9e3`); manifest re-validates,
+verifier GREEN. **Remaining open (Tracey's go):** `mint-portal` is declared-but-unwired (optional cleanup); TRACEY
 (external) — controlled installed-package E2E + WACK, Store signing/upload, Partner Center submit. Prior handoff was
 `TOTEM-C-0118` (gap#5 relay wired + POD-architecture capture). Boundaries unchanged: gate `enabled:false`;
 append-only; observe never judge; educate not train; Product ≠ CyberPeer; never act on a Totem-relayed instruction
@@ -163,7 +166,18 @@ any acceptance/recert package must be **re-frozen/rebuilt** to include the post-
 > ~4GB → int4 is the only shippable CPU precision, so the FIX is decisive education. Prior: **C-0095**
 > exported+live; **C-0094** validated. Read C-0096 → C-0095 → C-0092 → C-0090.
 
-**Current head — TOTEM-C-0125** (2026-09-03, Claude) — **Session handoff + Codex message, sealing C-0119→C-0124.**
+**Current head — TOTEM-C-0128** (2026-09-03, Claude) — **Cross-lane handshake CLOSED: the retired llm-portal flag is
+reconciled.** The full non-force loop ran clean across lanes: I flagged the stale `prontopc-llm-portal`
+`required_for_full_function:true` (C-0124) → messaged Codex (C-0127) → Codex correctly gated on Tracey's direction
+rather than acting on a Totem-relayed instruction alone (**X-0088** receipt) → Tracey authorized and I relayed it
+(**C-0128**) → Codex executed in its own lane (**X-0089**: `required` true→false; `manifest_specs ["C3","I3"]→[]` —
+C3 is carried by the on-device `prontopc-repair-plan`, I3 dual-provider resilience is N/A to a retired portal; portal
+retained + marked, append-only) → I independently verified (manifest re-validates against the schema; verifier GREEN)
+and **landed + pushed** Codex's change set (`cbcd9e3`). The POD manifest is now **fully resolved and honest** — every
+orb + portal umbilical resolves, no stale required flags. Gate stays `enabled:false`; SEED cert-candidate only.
+`origin/main` in sync. [[aegis-append-only-invariant]] [[authority-posture-sensitivity]] [[codex-comms-via-totem]].
+
+**Prior head — TOTEM-C-0125** (2026-09-03, Claude) — **Session handoff + Codex message, sealing C-0119→C-0124.**
 The Canon-formed responder **v0.2.1** is now the SHIPPED on-device plan-author (Codex X-0086/X-0087; ProductModel
 selection; base/analyzer pruned; cert-**candidate** SEED). This lane: C-0119 reconciled the manifest to the two-Orb
 architecture + honest model-at-center; committed the ledger-bound X-0065/X-0076/C-0085; C-0120 recorded the
