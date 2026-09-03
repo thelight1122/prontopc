@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace ProntoPC;
 
@@ -176,6 +177,7 @@ public partial class MainWindow : Window
     {
         Cust.SetState(CustodianState.Scanning, "Reading your system… nothing on your PC is changed.");
         CollapseAllPanels();
+        ShowWorkingArt("pronto-auditor.png");   // auditor present through scan + plan authoring
         var diag = await Task.Run(() => Diagnostics.Collect());
 
         Cust.SetState(CustodianState.Thinking, "Building your personalized repair plan…");
@@ -487,6 +489,7 @@ public partial class MainWindow : Window
     {
         Cust.SetState(CustodianState.Repairing, "Starting repairs…");
         CollapseAllPanels();
+        ShowWorkingArt("pronto-repair.png");     // repair tech present while repairs run
 
         // Repair + verify phases: the Orchestrator invokes the engine and summarizes.
         // Each real progress tick fires ONE angular stroke on the Custodian — the visual
@@ -552,6 +555,27 @@ public partial class MainWindow : Window
         CompletePanel.Visibility = Visibility.Collapsed;
         ErrorPanel.Visibility = Visibility.Collapsed;
         MakeGoodPanel.Visibility = Visibility.Collapsed;
+        WorkingArt.Visibility = Visibility.Collapsed;
+    }
+
+    // Working-phase character art. Decoded once at a capped height (the source PNGs
+    // are large), cached, and frozen so the same image is reused across phases.
+    readonly Dictionary<string, BitmapImage> _artCache = new();
+    void ShowWorkingArt(string file)
+    {
+        if (!_artCache.TryGetValue(file, out var art))
+        {
+            art = new BitmapImage();
+            art.BeginInit();
+            art.UriSource = new Uri($"pack://application:,,,/Assets/{file}");
+            art.DecodePixelHeight = 720;              // displayed at MaxHeight 360
+            art.CacheOption = BitmapCacheOption.OnLoad;
+            art.EndInit();
+            art.Freeze();
+            _artCache[file] = art;
+        }
+        WorkingArt.Source = art;
+        WorkingArt.Visibility = Visibility.Visible;   // set AFTER any CollapseAllPanels
     }
 
     void ShowPanel(UIElement panel) { CollapseAllPanels(); panel.Visibility = Visibility.Visible; }

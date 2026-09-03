@@ -40,10 +40,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Character AI presence: Auditor (scan/findings), Builder (repair complete),
-         Thumbs-up (completed screen — the AI Technician signing off) -->
+    <!-- Character AI presence across the phases (transparent PNGs):
+         pronto-auditor  → scanning / building the plan
+         pronto-repair   → running the repairs
+         pronto-thumbsup → completed screen (the AI Technician signing off)
+         auditor/builder → legacy vector-era art, retained for reference -->
     <Resource Include="Assets\auditor.png" />
     <Resource Include="Assets\builder.png" />
+    <Resource Include="Assets\pronto-auditor.png" />
+    <Resource Include="Assets\pronto-repair.png" />
     <Resource Include="Assets\pronto-thumbsup.png" />
   </ItemGroup>
 
