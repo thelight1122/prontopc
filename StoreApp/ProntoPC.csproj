@@ -22,12 +22,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Bundled Gemma model (Stage 2b). SCOPED to the shipped responder model only —
-         Assets\models\gemma-3-1b-it\ (genai_config.json + model.onnx + tokenizer). The IRG's
+    <!-- Bundled Canon-formed Gemma responder.  The v0.2.1 LoRA is merged into this CPU/INT4
+         ONNX export; its formation provenance travels with the model folder. The IRG's
          analyzer research model (gemma-3-1b-analyzer, TOTEM-C-0092+) also lives under
          Assets\models\ for the on-device smoke, but it is NOT part of the shipped product
          (governance gate enabled:false) and must NOT be packaged. -->
-    <Content Include="Assets\models\gemma-3-1b-it\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Remove="Assets\models\**\*" />
+    <Content Include="Assets\models\gemma-3-1b-it-formed-v0.2.1\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Product Nature Layer: bounded evidence-domain context, supplied at runtime. -->
+    <Content Include="..\pod\orbs\repair-plan\satellites\local-model\education\nature-layer\repair-nature-layer.json"
+             Link="Assets\aegis\repair-nature-layer.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Bundled AI-model + third-party license notices (Gemma Terms of Use +
          Prohibited Use Policy). Shipped in every install so the required notices
          travel with the distribution; also opened in-app from the "AI model &

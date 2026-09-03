@@ -15,8 +15,9 @@ TOTEM-C-0114 / C-0115. This document changes no product behavior.)
 
 ProntoPC applies **AEGIS as Product-level architecture** in three areas:
 
-1. **On-device model formation** — the bundled AI is *formed* (educated) with the AEGIS Canon and
-   Nature Layer plus curated technical repair knowledge.
+1. **On-device model formation and grounding** — the bundled responder is formed (educated) from
+   the AEGIS Canon and curated technical repair knowledge. The bounded Product Nature Layer is
+   packaged as runtime evidence-domain context; it supplies no facts or execution authority.
 2. **Deterministic evidence controls** — the diagnostic, the audit, the admissible-action
    catalogue, explicit consent, and append-only evidence, none of which are decided by the model.
 3. **A bidirectional communication-governance pipeline** (PIM → IRG → RBC → PRISM → IDS) —
@@ -28,7 +29,7 @@ execution, or guaranteed correctness (see §6).
 
 ---
 
-## 2. What is ACTIVE and evidenced in this shipped build
+## 2. What is ACTIVE and evidenced in this certification candidate
 
 The controls below are present and operative in the certified application:
 

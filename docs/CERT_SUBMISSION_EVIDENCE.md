@@ -113,3 +113,34 @@ plan locally** (`provenance=local-model`), NOT `ShowMakeGood` (the exact real-ru
 targets, which has only ever been verified in source). Then: Partner Center submit (this MSIX +
 `MICROSOFT_STORE_CERT_NOTES.md`), and the web deploy backlog (C-0073/C-0085 + confirm the $0-checkout
 redirect fix is live). Governance gate stays `enabled:false`.
+
+---
+
+## Formed-model candidate rebuild — 2026-09-03 (TOTEM-X-0086)
+
+This successor replaces the historical base-model package above as the current **unsigned
+certification candidate**. It selects the Canon-formed CPU responder
+`gemma-3-1b-it-formed-v0.2.1`; its formation manifest binds the frozen base, responder adapter,
+locked Canon fingerprint, and the bounded Product Nature Layer. The Nature Layer supplies only
+evidence-domain context alongside the validated SystemAudit. It never supplies facts or execution
+authority. The peer-facing conversational governance gate remains `enabled:false`.
+
+| Field | Value |
+| --- | --- |
+| Package version | `1.2.0.2` (unsigned MSIX — Partner Center signs a submission) |
+| Uploadable candidate | `StoreApp/ProntoPC.msix` |
+| SHA-256 | `5DB9462B0B6F2DBCA1997820057C511068C61F85C04047F005B94A1A0B0E1D2D` |
+| Bundled responder | `gemma-3-1b-it-formed-v0.2.1` CPU INT4 ONNX |
+| Model inventory | exactly 10 formed-responder files plus `Assets/aegis/repair-nature-layer.json`; no base or analyzer payload |
+
+**Fresh source evidence:** clean Release build succeeded with 0 warnings/errors. `ModelSmoke` ran
+against the exact formed responder, validated a complete 25/25 SystemAudit, a local-model authored
+plan with envelope-admissible actions and diagnostic-grounded summary, formation provenance, the
+packaged Product Nature Layer, and two on-device Custodian turns.
+
+**SEED evidence:** the formal SEED is issued for this certification candidate after the acceptance
+suite passed against the exact extracted MSIX payload and verified its model, configuration, Nature
+Layer, and formation-manifest hashes. This is Product provenance evidence, not a Microsoft approval.
+
+**Remaining external gates:** controlled installed-package E2E and WACK, Store signing/upload
+workflow, and Partner Center submission.

@@ -55,11 +55,11 @@ public partial class MainWindow : Window
         // sequences the phases. The bundled local-model Satellite is the only desktop
         // plan author: diagnostics are never sent to a cloud AI fallback. An unkeyed
         // envelope or a local decline is presented honestly and does not enable repairs.
-        string modelDir = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "models", "gemma-3-1b-it");
-        _modelPresent = System.IO.File.Exists(System.IO.Path.Combine(modelDir, "genai_config.json"));
+        string modelDir = ProductModel.DirectoryPath;
+        _modelPresent = ProductModel.IsPresentAndBound();
         _orch = new Orchestrator(new IPlanAuthor[]
         {
-            new GemmaLocalPlanner(OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it")),
+            new GemmaLocalPlanner(OnnxGenAiInference.CreateOrAbsent(modelDir, ProductModel.Name)),
         });
         _findingsRelay = BuildFindingsRelay();
         Loaded += async (_, __) => await Start();
@@ -533,12 +533,12 @@ public partial class MainWindow : Window
     {
         // Never open the conversation unless governance admits the offering.
         if (!_gov.OfferingAllowed(out _)) return;
-        string modelDir = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "models", "gemma-3-1b-it");
+        string modelDir = ProductModel.DirectoryPath;
         // The Custodian is seeded with the governance-supplied system prompt (Canon + RBC framing),
         // GROUNDED in this session's findings read back from the Technician Orb through the relay.
         // The read is the Communications Orb's side of the seam; the Prism (_gov: PIM→IRG→RBC→IDS)
         // still governs every turn — this only supplies the true subject matter to explain.
-        _chat ??= new CustodianChat(OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it"), ComposeCommsSeed(_gov.SystemPrompt));
+        _chat ??= new CustodianChat(OnnxGenAiInference.CreateOrAbsent(modelDir, ProductModel.Name), ComposeCommsSeed(_gov.SystemPrompt));
         ShowPanel(ChatPanel);
         ChatInput.Focus();
     }

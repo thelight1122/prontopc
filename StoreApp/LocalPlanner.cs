@@ -85,6 +85,8 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         sb.AppendLine("Reply with JSON: {\"summary\": string, \"actions\": [{\"id\": string, \"category\": string, \"friendly_name\": string, \"estimated_mb_recovered\": integer}]}.");
         sb.AppendLine("The summary must reference the machine's real numbers.");
         sb.AppendLine();
+        sb.Append(NatureLayerContext.ForPlan());
+        sb.AppendLine();
         sb.AppendLine("Allowed action ids: " + string.Join(", ", admissible.OrderBy(x => x)));
         sb.AppendLine();
         sb.AppendLine("Diagnostics:");

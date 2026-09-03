@@ -155,7 +155,8 @@ def check_success_path():
 # So the AI-plan gate is entirely "is the on-device model bundled". There is no cloud
 # authoring path to probe (the server /api/repair-plan endpoint remains only for the
 # legacy web/agent flow, which the certified Store app does not use).
-MODEL_DIR = HERE / "StoreApp" / "Assets" / "models" / "gemma-3-1b-it"
+MODEL_NAME = "gemma-3-1b-it-formed-v0.2.1"
+MODEL_DIR = HERE / "StoreApp" / "Assets" / "models" / MODEL_NAME
 
 
 def check_ai_repair_plan():
@@ -165,13 +166,19 @@ def check_ai_repair_plan():
     # without it the .msixupload cannot author a plan and the app can only make-good.
     cfg = MODEL_DIR / "genai_config.json"
     weights = MODEL_DIR / "model.onnx.data"
+    formation = MODEL_DIR / "aegis-formation-manifest.json"
+    nature = HERE / "pod" / "orbs" / "repair-plan" / "satellites" / "local-model" / "education" / "nature-layer" / "repair-nature-layer.json"
     have_model = (cfg.exists() and weights.exists()
                   and weights.stat().st_size > 100_000_000)
     record("on-device model bundled (genai_config + weights)", have_model,
            str(MODEL_DIR) if have_model else "MISSING at %s" % MODEL_DIR)
     record("on-device authoring proven by tests/ModelSmoke", have_model,
            "model present — run: dotnet run --project tests/ModelSmoke -c Release"
-           if have_model else "cannot prove on-device authoring without the model")
+            if have_model else "cannot prove on-device authoring without the model")
+    record("formed responder carries formation provenance", formation.exists(),
+           str(formation) if formation.exists() else "formation manifest missing")
+    record("Product Nature Layer is present", nature.exists(),
+           str(nature) if nature.exists() else "Nature Layer source missing")
 
 
 # ── 4. Countable claims made in the listing ──────────────────────────────────

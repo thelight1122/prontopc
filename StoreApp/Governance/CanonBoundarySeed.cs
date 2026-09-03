@@ -17,11 +17,10 @@ namespace ProntoPC.Governance;
 // model IS was formed from the exact locked Canon. It is FORMATION PROVENANCE — a signature of
 // the exact design the disposition came from, not a runtime reference.
 //
-// HONEST INTERIM STATUS: the shipped model is not yet educated on the Canon, so it does not yet
-// HAVE this disposition — it has SCAFFOLDING. ReflectionSeed below is that scaffolding: a short
-// posture orientation that asks the model to speak with the disposition, held only until the
-// disposition is genuinely formed in the model itself and passes evaluation. Until then we do
-// not claim the model IS the disposition; the seed does not assert a foundation it lacks.
+// PRODUCT CANDIDATE STATUS: the selected responder is the Canon-formed v0.2.1 CPU export.
+// Its formation manifest and extracted-package acceptance evidence bind this reference to that
+// artifact. ReflectionSeed remains a compact conversational orientation for the separately
+// gated Custodian surface; it is not Canon text and does not replace the formed disposition.
 public static class CanonBoundarySeed
 {
     // The SEED — Signed Evidence of Exact Design. Title + version + the exact-design signature
@@ -35,20 +34,16 @@ public static class CanonBoundarySeed
         "in-model:formed-disposition",
         "CF9F9C8E08E0AC2245C5D3DC0FDFFE1DC155F470E1A7BDD4D5B3543F76DDDC2F");
 
-    // INTERIM SCAFFOLDING (not the Canon text, not a rule set to consult). Once the disposition
-    // is formed in the model, this posture is subsumed by what the model simply IS. Until then it
-    // states the disposition to hold WITHOUT claiming the model already has a Canon foundation —
-    // an honest ask, not an assertion of a formation that has not run.
+    // Compact conversational orientation (not Canon text and not a rule set to consult).
     public static string ReflectionSeed(CanonReference reference) =>
         "Speak as the ProntoPC Custodian, holding this disposition: describe what the diagnostics "
       + "show, offer options, never direct or pressure the customer or claim authority over them, "
       + "and defer when you are uncertain.";
 
-    // No filesystem access — nothing external is consulted at runtime. The disposition is meant to
-    // be intrinsic; today the interim scaffolding stands in until formation. Either way the seed is
-    // always available wherever the model runs.
+    // No filesystem access — nothing external is consulted at runtime. The Canon formation is
+    // intrinsic to the selected model; this attestation remains available wherever it runs.
     public static CanonSeedResult Resolve(CanonReference reference) =>
         new CanonSeedResult(CanonSeedAvailability.Available, reference, ReflectionSeed(reference),
-            "The AEGIS Canon is the model's disposition (in-model, formed); no external source is "
-          + "consulted at runtime. Interim: scaffolding stands in until the disposition is formed.");
+            "The AEGIS Canon is the selected model's formed disposition; no external source is "
+          + "consulted at runtime. The separate ReflectionSeed is compact conversation context only.");
 }

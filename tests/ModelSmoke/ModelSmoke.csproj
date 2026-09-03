@@ -19,5 +19,11 @@
     <Compile Include="..\..\StoreApp\LocalPlanner.cs" />
     <Compile Include="..\..\StoreApp\OnnxGenAiInference.cs" />
     <Compile Include="..\..\StoreApp\CustodianChat.cs" />
+    <Compile Include="..\..\StoreApp\NatureLayerContext.cs" />
+    <Compile Include="..\..\StoreApp\ProductModel.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\pod\orbs\repair-plan\satellites\local-model\education\nature-layer\repair-nature-layer.json"
+             Link="Assets\aegis\repair-nature-layer.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

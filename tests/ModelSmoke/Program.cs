@@ -16,8 +16,11 @@ static string RepoRoot()
 }
 
 string root = RepoRoot();
-string modelDir = Path.Combine(root, "StoreApp", "Assets", "models", "gemma-3-1b-it");
-var inf = OnnxGenAiInference.CreateOrAbsent(modelDir, "gemma-3-1b-it");
+string modelDir = Path.Combine(root, "StoreApp", "Assets", "models", ProductModel.Name);
+for (int i = 0; i < args.Length - 1; i++)
+    if (args[i].Equals("--model-dir", StringComparison.OrdinalIgnoreCase)) modelDir = Path.GetFullPath(args[i + 1]);
+string modelName = Path.GetFileName(Path.TrimEndingDirectorySeparator(modelDir));
+var inf = OnnxGenAiInference.CreateOrAbsent(modelDir, modelName);
 if (!inf.Available)
 {
     Console.WriteLine("SKIP: model not bundled at " + modelDir + " (build it via the Satellite SPEC).");
@@ -50,6 +53,21 @@ var r = await planner.AuthorAsync(audit, env.AdmissibleSet(diag), new Cancellati
 int fail = 0;
 void Check(bool ok, string label) { Console.WriteLine((ok ? "  PASS " : "  FAIL ") + label); if (!ok) fail++; }
 string Trunc(string s) => s.Length <= 160 ? s : s.Substring(0, 160) + "…";
+string provenancePath = Path.Combine(modelDir, "aegis-formation-manifest.json");
+Check(File.Exists(provenancePath), "formation manifest travels with the selected model");
+if (File.Exists(provenancePath))
+{
+    using JsonDocument provenance = JsonDocument.Parse(File.ReadAllText(provenancePath));
+    Check(provenance.RootElement.GetProperty("model_name").GetString() == ProductModel.Name,
+        "formation manifest identifies the Product responder");
+    Check(provenance.RootElement.GetProperty("canon_sha256").GetString()
+          == "CF9F9C8E08E0AC2245C5D3DC0FDFFE1DC155F470E1A7BDD4D5B3543F76DDDC2F",
+        "formation manifest binds the locked Canon fingerprint");
+}
+string nature = NatureLayerContext.ForPlan();
+Check(nature.Contains("Storage & disk health", StringComparison.Ordinal)
+      && nature.Contains("System integrity", StringComparison.Ordinal),
+    "packaged Product Nature Layer is available as bounded evidence-domain context");
 Check(audit.IsValid && audit.SectionsPresent == SystemAuditor.ExpectedCount, "System Audit completed + validated (25/25 sections)");
 Check(r != null, "on-device author returned a plan");
 Check(r != null && r.Provider == "local-model", "provenance.provider == local-model");
@@ -59,6 +77,9 @@ if (r != null)
     Check(plan["actions"]!.AsArray().Count > 0, "plan has >=1 admissible action after validation");
     string summary = r.Plan.TryGetProperty("summary", out var s) ? (s.GetString() ?? "") : "";
     Check(summary.Length > 0, "plan carries a non-empty summary");
+    Check(summary.Contains("91", StringComparison.Ordinal) || summary.Contains("740", StringComparison.Ordinal)
+          || summary.Contains("1300", StringComparison.Ordinal) || summary.Contains("22", StringComparison.Ordinal),
+        "plan summary grounds itself in a supplied diagnostic observation");
 }
 
 // ── Phase 2: conversational Custodian — prove a 2-turn on-device exchange ──

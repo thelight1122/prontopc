@@ -15,10 +15,10 @@
     "role": "orchestrating-center",
     "bundled_shipping": [
       {
-        "name": "gemma-3-1b-it",
+        "name": "gemma-3-1b-it-formed-v0.2.1",
         "kind": "plan-author",
-        "provenance": "BASE google/gemma-3-1b-it (snapshot dcc83ea841ab6100d6b47a070329e1ba4cf78752), int4 ONNX Runtime GenAI CPU. No formation adapter is merged into the shipped model.",
-        "formed": false
+        "provenance": "Canon-formed responder v0.2.1: frozen google/gemma-3-1b-it snapshot dcc83ea841ab6100d6b47a070329e1ba4cf78752 + merged adapter e604acb218079a51e0e2b8f0f1433163cbc00a14129cb5d86b6baa246c9773c2; CPU int4 ONNX export. Product acceptance evidence remains required before certification submission.",
+        "formed": true
       },
       {
         "name": "gemma-3-1b-analyzer",
@@ -34,17 +34,17 @@
       }
     ],
     "canon_layer": {
-      "status": "formed-in-research-not-shipped",
+      "status": "formed-and-integrated-pending-product-acceptance",
       "artifact": "gemma3-1b-formation-v0.2.1 (reversible LoRA over a frozen base; dataset formation-seed-v0.2.1.jsonl, sha256 73a9649a...; adapter sha256 e604acb2...)",
-      "note": "The Canon is the model's formed DISPOSITION (intrinsic, education-time), not runtime text. The latest RESPONDER formation is v0.2.1 (Canon + Tech Library) - a research adapter that is NOT the shipped plan-author. There is no v3 responder (v0.3.x are ANALYZER adapters). Merging a formed adapter into the shipped app (ONNX export) is a pending step; the shipping plan-author is BASE."
+      "note": "The Canon is the model's formed DISPOSITION (intrinsic, education-time), not runtime text. Responder v0.2.1 is merged and selected as the Product plan-author. There is no v3 responder (v0.3.x are ANALYZER adapters). The formal SEED remains pending the Product acceptance evaluation of this exact CPU export."
     },
     "nature_layer": {
-      "status": "designed-not-built",
-      "note": "Per docs/CPU_LOCAL_MODEL_EDUCATION_PLAN.md the Nature Layer is RUNTIME-supplied (named aspects + grounded observations), not educated in. No nature-layer/ package is materialized on disk and no Nature-aspects runtime input is wired into the app; the wired runtime grounding is the append-only findings relay (session findings + repair knowledge)."
+      "status": "runtime-supplied-and-packaged-pending-product-acceptance",
+      "note": "The Product Nature Layer is a bounded runtime evidence-domain map, not a CyberPeer Nature Layer. It is packaged at Assets/aegis/repair-nature-layer.json and supplied to the plan-author alongside validated diagnostics; it never supplies facts or authorizes action."
     },
     "seed": {
-      "status": "pending",
-      "note": "The SEED (Signed Evidence of Exact Design) attests the disposition was formed from the exact locked Canon. It is issued when a formed adapter is adopted into the shipped model - not yet, since the shipped plan-author is base."
+      "status": "issued-for-certification-candidate",
+      "note": "The SEED (Signed Evidence of Exact Design) attests the selected v0.2.1 disposition was formed from the exact locked Canon. It is bound to the formation manifest and passed ModelSmoke against the exact extracted unsigned MSIX payload on 2026-09-03. Store signing, installation, and submission remain external gates."
     }
   },
   "architecture": {
