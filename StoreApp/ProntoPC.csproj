@@ -11,7 +11,9 @@
     <AssemblyName>ProntoPC</AssemblyName>
     <RootNamespace>ProntoPC</RootNamespace>
     <ApplicationDisplayVersion>1.2.0</ApplicationDisplayVersion>
-    <ApplicationVersion>6</ApplicationVersion>
+    <ApplicationVersion>7</ApplicationVersion>
+    <!-- Embed the app manifest so ProntoPC.exe declares PerMonitorV2 DPI awareness. -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>

@@ -9,11 +9,11 @@ verification before submission, tied to the exact tree state it attests to.
 | --- | --- |
 | Product | ProntoPC |
 | Store / Product ID | `9P1K9QJXKND8` |
-| Package version | `1.2.0.6` |
-| Verified at | 2026-09-04 (UTC), source Totem **TOTEM-C-0162** (artifact) / **-0163** (archive) |
-| Tree state | `main` @ `9dadd18` |
-| Unsigned submission artifact | `StoreApp/ProntoPC.msix` — copy `release-candidates/ProntoPC_1.2.0.6_x64_unsigned_partnercenter.msix` |
-| SHA-256 | `4945CD985989744DF04557AE2AE2FE7B1ACFBE7012671E934E4EB39AF8E95211` (735.5 MB, **unsigned** — Microsoft signs) |
+| Package version | `1.2.0.7` |
+| Verified at | 2026-09-04 (UTC), source Totem **TOTEM-C-0165** (WACK-polish rebuild) |
+| Unsigned submission artifact | `StoreApp/ProntoPC.msix` — copy `release-candidates/ProntoPC_1.2.0.7_x64_unsigned_partnercenter.msix` |
+| SHA-256 | `1D759844A72B6C6991B03E2BE219D1571833F8B4F154F069B88CFFC7D3F5AD0B` (735.5 MB, **unsigned** — Microsoft signs) |
+| Package architecture | `x64` (was `neutral`) |
 | Re-verify with | `python pod/totems/verify_totems.py` · `python certification_preflight.py` (v2) |
 
 ---
@@ -37,7 +37,14 @@ machine-checkable gate passes; the only non-green item is **WACK**, which requir
 | Listing claims (all blocking) | **PASS** — repairs 26 ≥ 18 · session 3 days · categories 95 ≥ 35 | preflight `[4]` |
 | Certification notes match flow | **PASS** — no account, on-device AI plan, `MSCERT26`, UAC→scan→Perform Repairs | preflight `[5]` |
 | Backend live | health **200**, `request-refund` fail-closed | Cloud Run rev `pronto-pc-00083-qtn` |
-| **WACK** | **PENDING — manual, elevated** | `appcert.exe` present; requires an elevated shell (attempted 2026-09-04, blocked: "requires elevation") |
+| **WACK** (on v1.2.0.6) | **WARNING, 0 blocking FAILs — submittable** | 21 PASS / 2 optional FAIL / 1 WARNING; overall WARNING (optional-test fails don't block) |
+| **WACK re-run on v1.2.0.7** | **PENDING — manual, elevated** | v1.2.0.7 applies the two polish fixes below; re-run `appcert.exe` elevated to confirm a clean PASS |
+
+**WACK polish (v1.2.0.7):** the v1.2.0.6 WACK WARNING came from two *optional* fails + one warning, all now
+addressed: (1) *Platform appropriate files* (bundled x64 runtime vs a `neutral` package) → package
+`ProcessorArchitecture` set to **x64**; (2) *DPI awareness* (blurry on high-DPI) → **PerMonitorV2** declared via an
+embedded `app.manifest`. The third flag, *Blocked executables* (the app references `ShellExecute`/`CreateProcess` to
+open the checkout URL and the report), is a benign optional check for a full-trust desktop app and does not block.
 | Governance gate | **`enabled:true`** — §8 post-scan Technician active (TOTEM-C-0144) | live governed chat, no canned path (C-0148) |
 
 ## 2. What the reviewer exercises (and what they do not)
@@ -71,8 +78,8 @@ A Microsoft "PASS" is issued **after** submission and is not producible SI-side.
 2. **Stripe LIVE confirmed** ✅ — `MSCERT26` 100%-off active (25 redemptions), and the `$29` Payment
    Link redirects to `success-store?session={CHECKOUT_SESSION_ID}` (the Store continuation page — **not**
    the legacy `success.html`).
-3. **Unsigned submission artifact built** ✅ — `StoreApp/ProntoPC.msix` **v1.2.0.6**, sha `4945CD98…`,
-   the formed model bundled, identity `5DServiceSolutionsGlobal.ProntoPC` / Store `9P1K9QJXKND8`.
+3. **Unsigned submission artifact built** ✅ — `StoreApp/ProntoPC.msix` **v1.2.0.7**, sha `1D759844…`,
+   the formed model bundled, identity `5DServiceSolutionsGlobal.ProntoPC` / Store `9P1K9QJXKND8`, arch `x64`.
    Microsoft signs at submission. *(A literal `.wapproj` `.msixupload` container needs the VS "Windows
    application packaging" component; the unsigned `.msix` is `build.ps1`'s documented Partner Center upload.)*
 4. **Controlled installed-package E2E** — partly done: v1.2.0.6 installed and run on the test machine
