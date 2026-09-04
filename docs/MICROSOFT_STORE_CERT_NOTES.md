@@ -15,7 +15,7 @@ download; each repair run is unlocked by a one-time $29 checkout. The AI that bu
 the repair plan is a model bundled inside the app and runs on the device itself, so
 the repair plan is generated locally and does not depend on any internet service.
 
-BEFORE YOU START: use promotion code  MSCERT2026  at checkout (step 4). It makes the
+BEFORE YOU START: use promotion code  MSCERT26  at checkout (step 4). It makes the
 total $0.00 and requires no payment card. There is no account and no sign-in anywhere
 in this flow.
 
@@ -26,7 +26,7 @@ HOW TO TEST (full functionality):
 3. On the "Ready to service your PC" screen, click "Start your $29 diagnostic." Your
    browser opens the secure Stripe checkout.
 4. On the checkout page, click "Add promotion code" and enter:
-       MSCERT2026
+       MSCERT26
    The total changes from $29.00 to $0.00 and NO payment card is required. Enter any
    valid email address and complete the (free) checkout.
 5. Return to the ProntoPC window. It detects the completed checkout automatically
@@ -46,7 +46,7 @@ NOTES:
 - Pricing: the app is a free download; each run is a one-time $29 Stripe checkout.
   There is no subscription and no in-app purchase inside the Store package - the
   charge is a standard Stripe checkout in the browser.
-- No real payment is taken anywhere in this flow when the MSCERT2026 code is applied,
+- No real payment is taken anywhere in this flow when the MSCERT26 code is applied,
   and no account or sign-in is required - the run is unlocked by the checkout itself.
 - After checkout the ProntoPC window continues automatically; the reviewer does not
   need to return a code to the app or paste anything.
@@ -107,7 +107,7 @@ Root cause fixed - durably:
       and analyzer models pruned). Without it the app cannot author a repair plan
       and can only present honest make-good. This is the single most important
       packaging check.
-- [ ] Confirm in the Stripe Dashboard (LIVE mode) that promotion code MSCERT2026
+- [ ] Confirm in the Stripe Dashboard (LIVE mode) that promotion code MSCERT26
       still exists and is 100% off, and that the $29 Payment Link's after-payment
       redirect points at the STORE continuation page
       (success-store?session={CHECKOUT_SESSION_ID}) — NOT success.html, which is the

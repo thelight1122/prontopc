@@ -17,7 +17,7 @@ that cannot be backed by a true referent is a defect, not decoration.**
 ## TIER 0 — Certification-Ready  (already executable via certification_preflight.py)
 
 - **C1 · Reviewer free access (policy 10.3.3)** — PASS if the Stripe payment link is
-  active, `MSCERT2026` exists, is 100% off, has redemptions left, and is not expired.
+  active, `MSCERT26` exists, is 100% off, has redemptions left, and is not expired.
   Verify: `certification_preflight.check_reviewer_access`. Status: PASS (last run).
 - **C2 · Post-checkout path resolves (10.1.2.10)** — PASS if `prontopc.online`=200,
   `/success`=200, backend answers. Verify: `check_success_path`. Status: PASS.

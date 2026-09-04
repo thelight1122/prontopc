@@ -38,7 +38,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 BACKEND = "https://pronto-pc-108655745293.us-central1.run.app"
 SITE = "https://prontopc.online"
-CERT_CODE = "MSCERT2026"
+CERT_CODE = "MSCERT26"
 PAYMENT_LINK = "plink_1Ta4SfLLKFLplB2ZeOVKy2ol"
 CLAIMED_CATEGORIES = 35      # "35+ category diagnostic scan"
 CLAIMED_REPAIRS = 18         # "18 repair capabilities"

@@ -29,7 +29,7 @@ verification before submission, tied to the exact tree state it attests to.
 | PipelineGovernanceEval | **15 / 15** | `dotnet run --project tests/PipelineGovernanceEval -c Release` |
 | ModelSmoke (real int4 model) | **PASS** | on-device plan (`provenance=local-model`, ≥1 admissible action, non-empty summary) + 2-turn no-echo chat |
 | Backend live | health **200**, `verify-token` fail-closed (`paid:false`) | Cloud Run rev `pronto-pc-00076-hf5` (`…run.app/health`) |
-| MSCERT2026 promo (reviewer code) | live, **14 redemptions left**, not expired | preflight `[1]` |
+| MSCERT26 promo (reviewer code) | replaced the retired MSCERT2026 — re-verify active/redemptions/expiry via preflight `[1]` | preflight `[1]` |
 | Governance gate | **Historical snapshot: `enabled:false` (closed)** | This 2026-08-30 record predates the active post-scan Technician |
 
 **The one non-blocking warning:** cloud fallback (Gemini) returns HTTP **429** (prepay credits depleted).
@@ -67,7 +67,7 @@ cert path. A Microsoft "PASS" is issued **after** submission and is not producib
 1. **Deploy** `pronto-server-cloudrun.mjs` to Cloud Run *(recommended, not blocking — the live rev
    already serves the reviewer flow; deploying makes the TOTEM-C-0046 await-payment reliability fix
    live)*, then positively verify `await-payment` with a real/comped checkout.
-2. **Confirm Stripe LIVE**: `MSCERT2026` 100%-off + the `$29` Payment Link redirect to
+2. **Confirm Stripe LIVE**: `MSCERT26` 100%-off + the `$29` Payment Link redirect to
    `success.html?session={CHECKOUT_SESSION_ID}`.
 3. **Build the signed `.msixupload` v1.2.0.0** in Visual Studio — model bundled (confirmed above),
    identity `9P1K9QJXKND8`.

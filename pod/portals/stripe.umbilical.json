@@ -10,7 +10,7 @@
     "orb_version": "1.0.0"
   },
   "input_contract": {
-    "description": "Outward to Stripe. Entry: the $29 Payment Link (buy.stripe.com/...) carrying a per-launch nonce (client_reference_id) and allowing promotion codes (MSCERT2026 = 100% off for cert review). Verification: a checkout session id.",
+    "description": "Outward to Stripe. Entry: the $29 Payment Link (buy.stripe.com/...) carrying a per-launch nonce (client_reference_id) and allowing promotion codes (MSCERT26 = 100% off for cert review). Verification: a checkout session id.",
     "checkout_session_id": "string",
     "client_reference_id": "string (per-launch nonce)"
   },

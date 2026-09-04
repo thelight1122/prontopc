@@ -586,7 +586,7 @@ async function verifyStripeSession(sessionId) {
   if (!resp.ok) throw new Error("Could not verify payment. Please contact support@prontopc.online.");
   const session = await resp.json();
   // A completed checkout is fulfilled even when no charge occurred: a 100%-off
-  // promo (e.g. the Microsoft cert code MSCERT2026) settles as
+  // promo (e.g. the Microsoft cert code MSCERT26) settles as
   // "no_payment_required"/status "complete", not "paid".
   const fulfilled = session.payment_status === "paid"
     || session.payment_status === "no_payment_required"
