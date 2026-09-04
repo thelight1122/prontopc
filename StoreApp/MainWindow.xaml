@@ -124,7 +124,11 @@
               </Grid.ColumnDefinitions>
               <TextBox x:Name="ChatInput" Grid.Column="0" Height="42" Background="#12142c" Foreground="#eef1ff"
                        BorderBrush="#2a2f55" BorderThickness="1" Padding="10,0" VerticalContentAlignment="Center"
-                       FontSize="13.5" KeyDown="ChatInput_KeyDown"/>
+                       FontSize="13.5" KeyDown="ChatInput_KeyDown" TextChanged="ChatInput_TextChanged"/>
+              <!-- Placeholder hint so the box reads as the chat input; hidden as soon as the customer types. -->
+              <TextBlock x:Name="ChatPlaceholder" Grid.Column="0" Text="Enter your question here…"
+                         Foreground="#8b8fb0" FontSize="13.5" IsHitTestVisible="False"
+                         VerticalAlignment="Center" HorizontalAlignment="Left" Margin="12,0,0,0"/>
               <Button x:Name="ChatSendButton" Grid.Column="1" Content="Send" Click="ChatSend_Click"
                       Height="42" Width="76" Margin="8,0,0,0" Foreground="#ffffff" FontWeight="Bold" Cursor="Hand">
                 <Button.Background>
@@ -162,7 +166,17 @@
                  RenderOptions.BitmapScalingMode="HighQuality"/>
           <TextBlock Text="✓ Your PC has been serviced." Foreground="#eef1ff" FontSize="23" FontWeight="Bold" TextAlignment="Center" Margin="0,4,0,0"/>
           <TextBlock x:Name="CompleteText" Foreground="#c3c8e6" FontSize="14" TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"/>
-          <Button Content="Close" Click="Close_Click" Height="44" Width="150" Margin="0,22,0,0"
+          <!-- Opens the server-rendered repair report saved to the Desktop (repair path only; hidden on Skip). -->
+          <Button x:Name="OpenReportButton" Content="Open Report" Click="OpenReport_Click" Visibility="Collapsed"
+                  Height="48" Width="220" FontSize="15" FontWeight="Bold" Foreground="#ffffff" Cursor="Hand"
+                  HorizontalAlignment="Center" Margin="0,18,0,0">
+            <Button.Background>
+              <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                <GradientStop Color="#7c5cff" Offset="0"/><GradientStop Color="#4f7dff" Offset="1"/>
+              </LinearGradientBrush>
+            </Button.Background>
+          </Button>
+          <Button Content="Close" Click="Close_Click" Height="44" Width="150" Margin="0,12,0,0"
                   Foreground="#eef1ff" Background="#12142c" Cursor="Hand" HorizontalAlignment="Center"/>
         </StackPanel>
 

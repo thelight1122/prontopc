@@ -51,6 +51,7 @@ public partial class MainWindow : Window
     // Remembered across a plan-authoring retry so the Retry screen can re-attempt WITHOUT
     // re-running the multi-minute diagnostic, and so the make-good / refund routes keep context.
     Dictionary<string, object?>? _lastDiag;
+    string? _reportPath;   // set when the repair report is saved; opened by the Open Report button
     SystemAudit? _lastAudit;
     string? _lastDecline;
 
@@ -510,6 +511,8 @@ public partial class MainWindow : Window
         Cust.SetState(CustodianState.Complete, "No repairs were performed.");
         CompleteText.Text = "You chose to skip the repairs, so nothing on this PC was changed. "
             + "Your read-only diagnostic is complete — you can run Pronto PC again anytime.";
+        _reportPath = null;
+        OpenReportButton.Visibility = Visibility.Collapsed;   // no repair ran — no report to open
         ShowPanel(CompletePanel);
     }
 
@@ -592,6 +595,8 @@ public partial class MainWindow : Window
 
         Cust.SetState(CustodianState.Complete, "Your PC has been serviced.");
         CompleteText.Text = $"{outcome.Message}\n\nConfirmed repair report saved to:\n{reportPath}";
+        _reportPath = reportPath;
+        OpenReportButton.Visibility = Visibility.Visible;   // a report exists — offer to open it
         ShowPanel(CompletePanel);
     }
 
@@ -711,6 +716,21 @@ public partial class MainWindow : Window
     void ChatInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == System.Windows.Input.Key.Enter) { e.Handled = true; ChatSend_Click(sender, e); }
+    }
+
+    // Show the "Enter your question here…" hint only while the box is empty.
+    void ChatInput_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (ChatPlaceholder != null)
+            ChatPlaceholder.Visibility = string.IsNullOrEmpty(ChatInput.Text) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // Open the server-rendered repair report saved to the Desktop (shell-launch the saved HTML).
+    void OpenReport_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_reportPath)) return;
+        try { Process.Start(new ProcessStartInfo(_reportPath) { UseShellExecute = true }); }
+        catch { ShowError("The report couldn't be opened. You'll find it on your Desktop as an HTML file."); }
     }
 
     async void ChatSend_Click(object sender, RoutedEventArgs e)

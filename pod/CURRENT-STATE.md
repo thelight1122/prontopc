@@ -40,6 +40,14 @@ auto-retry ×3, a Retry screen, restored per-phase art, a refund button) need a 
 screenshots were a stale build); **backend `POST /api/request-refund` needs a Cloud Run deploy** — it moves money
 (automatic full refund per Tracey), deploy only on Tracey's OK.
 
+**Post-C-0151 fixes on the pending-rebuild pile.** MSCERT26 reviewer promo swap (**C-0155/-0156**, preflight 20/20 live,
+committed) + Codex resolution (**C-0157**). A live installed-package E2E on the stale v1.2.0.5 surfaced 3 UI items,
+addressed in source (**C-0158**, build 0/0): (1) the toolbelt Technician on the plan-authoring screen — already wired in
+source (`ShowWorkingArt("pronto-auditor.png")`), absent only because v1.2.0.5 predates the C-0151 art restoration →
+appears on rebuild; (2) a **"Enter your question here…" placeholder** on the Technician chat box; (3) an **"Open Report"
+button** on the completion screen (opens the saved Desktop report; hidden on Skip). All three land together on the next
+StoreApp rebuild+reinstall.
+
 **OPEN ITEMS (Tracey-confirmed, for the next instance):** (1) **Refund XOR coupon — DONE (C-0153, code landed; needs
 the Cloud Run deploy to go live):** `/api/request-refund` now voids the make-good promotion code (Stripe `active=false`)
 and clears `session.makeGoodCouponCode` on refund, `report-ai-unavailable` won't mint a coupon after a refund, and the
