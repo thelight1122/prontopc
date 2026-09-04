@@ -1,0 +1,16 @@
+ProntoPC is a free download; each diagnostic + repair run is a one-time $29 Stripe checkout in the browser. No subscription, no in-app purchase, no account, no sign-in. The AI that builds the repair plan is bundled inside the app and runs on the device, so it needs no internet connection.
+
+REVIEWER: apply promotion code  MSCERT26  at checkout. The total becomes $0.00 and no payment card is required.
+
+HOW TO TEST (full functionality):
+1. Install ProntoPC from the Store and launch it.
+2. Approve the single Windows (UAC) prompt. The app elevates once for both scan and repair; you are not prompted again.
+3. Click "Start your $29 diagnostic." Your browser opens the secure Stripe checkout.
+4. Click "Add promotion code" and enter MSCERT26. The total changes to $0.00 with no card required. Enter any email and complete the free checkout.
+5. Return to the ProntoPC window. It auto-detects the completed checkout (it is polling) and continues on its own - nothing to copy or paste.
+6. "Reading your system..." runs for about a minute. This phase is read-only.
+7. The bundled on-device AI builds a personalized repair plan (no internet needed) and shows "Here's what we found" with recommended repairs plus a live on-device Technician you can ask about the findings.
+8. Optionally ask the Technician (it explains findings only and cannot perform repairs) or uncheck any item, then click "Perform Repairs." Repairs run immediately (permission was granted by the UAC prompt in step 2).
+9. When finished, the app shows "Your PC has been serviced."
+
+Support: support@prontopc.online
