@@ -11,7 +11,7 @@
     <AssemblyName>ProntoPC</AssemblyName>
     <RootNamespace>ProntoPC</RootNamespace>
     <ApplicationDisplayVersion>1.2.0</ApplicationDisplayVersion>
-    <ApplicationVersion>5</ApplicationVersion>
+    <ApplicationVersion>6</ApplicationVersion>
   </PropertyGroup>
 
   <ItemGroup>
