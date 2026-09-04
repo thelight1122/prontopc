@@ -9,33 +9,36 @@ verification before submission, tied to the exact tree state it attests to.
 | --- | --- |
 | Product | ProntoPC |
 | Store / Product ID | `9P1K9QJXKND8` |
-| Package version | `1.2.0.0` |
-| Verified at | 2026-08-30 (UTC), source Totem **TOTEM-C-0048** |
-| Tree state | `main` @ `d2113b5` (the commit carrying TOTEM-C-0048) |
-| Re-verify with | `python pod/totems/verify_totems.py` · `python certification_preflight.py` |
+| Package version | `1.2.0.6` |
+| Verified at | 2026-09-04 (UTC), source Totem **TOTEM-C-0162** (artifact) / **-0163** (archive) |
+| Tree state | `main` @ `9dadd18` |
+| Unsigned submission artifact | `StoreApp/ProntoPC.msix` — copy `release-candidates/ProntoPC_1.2.0.6_x64_unsigned_partnercenter.msix` |
+| SHA-256 | `4945CD985989744DF04557AE2AE2FE7B1ACFBE7012671E934E4EB39AF8E95211` (735.5 MB, **unsigned** — Microsoft signs) |
+| Re-verify with | `python pod/totems/verify_totems.py` · `python certification_preflight.py` (v2) |
 
 ---
 
-## 1. Verification results (SI-side, all green this pass)
+## 1. Verification results (SI-side, v1.2.0.6 pass — 2026-09-04)
+
+Run with the **v2** preflight, which now executes ModelSmoke and inspects the real package. Every
+machine-checkable gate passes; the only non-green item is **WACK**, which requires an elevated shell
+(a Tracey step), so the tool's own verdict reads **DO_NOT_SUBMIT until WACK is run** — by design.
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Certification preflight | **18/19 — Safe to submit** | `certification_preflight.py`; sole warning is non-blocking (below) |
-| StoreApp Release build | **0 warnings / 0 errors** | `dotnet build StoreApp/ProntoPC.csproj -c Release` |
-| On-device model bundled | **`model.onnx.data` = 693,829,632 bytes** + `genai_config.json` | in `StoreApp/bin/Release/net8.0-windows10.0.19041.0/…/Assets/models/gemma-3-1b-it/` |
-| License notices bundled | `GEMMA-NOTICE.txt` + `THIRD-PARTY-NOTICES.txt` | in `…/Assets/licenses/` (Content) |
-| PodEval (envelope/plan logic) | **ALL PASS** | `dotnet run --project tests/PodEval -c Release` |
-| CustodianGovernanceEval | **18 / 0** | `dotnet run --project tests/CustodianGovernanceEval -c Release` |
-| PipelineGovernanceEval | **15 / 15** | `dotnet run --project tests/PipelineGovernanceEval -c Release` |
-| ModelSmoke (real int4 model) | **PASS** | on-device plan (`provenance=local-model`, ≥1 admissible action, non-empty summary) + 2-turn no-echo chat |
-| Backend live | health **200**, `verify-token` fail-closed (`paid:false`) | Cloud Run rev `pronto-pc-00076-hf5` (`…run.app/health`) |
-| MSCERT26 promo (reviewer code) | replaced the retired MSCERT2026 — re-verify active/redemptions/expiry via preflight `[1]` | preflight `[1]` |
-| Governance gate | **Historical snapshot: `enabled:false` (closed)** | This 2026-08-30 record predates the active post-scan Technician |
-
-**The one non-blocking warning:** cloud fallback (Gemini) returns HTTP **429** (prepay credits depleted).
-Not a cert blocker — the reviewer's repair plan is authored **on-device**, so the cloud path is never
-required during review. This is the exact failure mode that caused the prior 10.1.2.10 rejection, now
-durably removed by on-device authoring.
+| Certification preflight (v2) | **all machine-checkable gates PASS**; `DO_NOT_SUBMIT` pending WACK only | `python certification_preflight.py`; evidence `docs/CERTIFICATION_PREFLIGHT_EVIDENCE.json` |
+| Reviewer $0 access (`MSCERT26`) | **PASS** — active, 100% off, 25 redemptions left, not expired | preflight `[1]` — promo `promo_1UBka3LLKFLplB2Zc6pcidVH` on coupon `8kRBfcok` |
+| Post-checkout path | **PASS** — `prontopc.online` 200, `/success` 200, backend responding | preflight `[2]` |
+| **Package inspected directly (PKG-001)** | **PASS** — package version `1.2.0.6` == source; model assets **inside** the package | preflight `[6]` |
+| — model `genai_config.json` in package | **found** | inside `Assets/models/gemma-3-1b-it-formed-v0.2.1/` |
+| — model weights in package | **822 MB** (`model.onnx.data`, int4) | inside the package |
+| — formation provenance in package | **found** (`aegis-formation-manifest.json`) | inside the package |
+| ModelSmoke (real on-device authoring) | **PASS** — `exit 0`, `MODEL SMOKE PASS` (~20s) | preflight `[3b]` executes `dotnet run --project tests/ModelSmoke -c Release` |
+| Listing claims (all blocking) | **PASS** — repairs 26 ≥ 18 · session 3 days · categories 95 ≥ 35 | preflight `[4]` |
+| Certification notes match flow | **PASS** — no account, on-device AI plan, `MSCERT26`, UAC→scan→Perform Repairs | preflight `[5]` |
+| Backend live | health **200**, `request-refund` fail-closed | Cloud Run rev `pronto-pc-00083-qtn` |
+| **WACK** | **PENDING — manual, elevated** | `appcert.exe` present; requires an elevated shell (attempted 2026-09-04, blocked: "requires elevation") |
+| Governance gate | **`enabled:true`** — §8 post-scan Technician active (TOTEM-C-0144) | live governed chat, no canned path (C-0148) |
 
 ## 2. What the reviewer exercises (and what they do not)
 
@@ -61,24 +64,26 @@ durably removed by on-device authoring.
 
 ## 4. Remaining steps to submit — external / owner: Tracey
 
-These require production / Stripe / Partner Center / Windows-signing authority and are the reviewer
-cert path. A Microsoft "PASS" is issued **after** submission and is not producible SI-side.
+A Microsoft "PASS" is issued **after** submission and is not producible SI-side. Status as of 2026-09-04:
 
-1. **Deploy** `pronto-server-cloudrun.mjs` to Cloud Run *(recommended, not blocking — the live rev
-   already serves the reviewer flow; deploying makes the TOTEM-C-0046 await-payment reliability fix
-   live)*, then positively verify `await-payment` with a real/comped checkout.
-2. **Confirm Stripe LIVE**: `MSCERT26` 100%-off + the `$29` Payment Link redirect to
-   `success.html?session={CHECKOUT_SESSION_ID}`.
-3. **Build the signed `.msixupload` v1.2.0.0** in Visual Studio — model bundled (confirmed above),
-   identity `9P1K9QJXKND8`.
-4. **Controlled end-to-end** on an admin test machine (repairs change system state — use no
-   irreplaceable data); confirm the post-scan Technician gives a grounded on-device reply and that
-   repair remains unavailable until explicit consent. Run **WACK**.
+1. **Backend deployed** ✅ — `pronto-server-cloudrun.mjs` live at Cloud Run rev `pronto-pc-00083-qtn`
+   (TOTEM-C-0160); `/api/request-refund` + refund-XOR-coupon active and fail-closed.
+2. **Stripe LIVE confirmed** ✅ — `MSCERT26` 100%-off active (25 redemptions), and the `$29` Payment
+   Link redirects to `success-store?session={CHECKOUT_SESSION_ID}` (the Store continuation page — **not**
+   the legacy `success.html`).
+3. **Unsigned submission artifact built** ✅ — `StoreApp/ProntoPC.msix` **v1.2.0.6**, sha `4945CD98…`,
+   the formed model bundled, identity `5DServiceSolutionsGlobal.ProntoPC` / Store `9P1K9QJXKND8`.
+   Microsoft signs at submission. *(A literal `.wapproj` `.msixupload` container needs the VS "Windows
+   application packaging" component; the unsigned `.msix` is `build.ps1`'s documented Partner Center upload.)*
+4. **Controlled installed-package E2E** — partly done: v1.2.0.6 installed and run on the test machine
+   (grounded on-device Technician reply, Start/Skip Repair consent). Remaining owner steps:
+   **run WACK from an elevated shell** (`appcert.exe test -appxpackagepath StoreApp\ProntoPC.msix
+   -reportoutputpath wack-report.xml`) and a full paid-$0 → scan → Perform Repairs pass.
 5. **Submit in Partner Center** with `MICROSOFT_STORE_CERT_NOTES.md` in "Notes for certification."
 6. **On cert PASS** — promote `prontopc-repair-plan` provisional → verified (a Totem).
 
-*Current governance boundary for cert: `PipelineGovernance` is enabled for the governed,
-post-scan Technician. It remains on-device, findings-grounded, and non-executing; explicit consent
+*Current governance boundary for cert: `PipelineGovernance` is **enabled** for the governed, post-scan
+Technician (TOTEM-C-0144). It remains on-device, findings-grounded, and non-executing; explicit consent
 and the admissible-action envelope remain the only repair path.*
 
 ---
