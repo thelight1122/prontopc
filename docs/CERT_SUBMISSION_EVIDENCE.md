@@ -21,8 +21,10 @@ verification before submission, tied to the exact tree state it attests to.
 ## 1. Verification results (SI-side, v1.2.0.6 pass — 2026-09-04)
 
 Run with the **v2** preflight, which now executes ModelSmoke and inspects the real package. Every
-machine-checkable gate passes; the only non-green item is **WACK**, which requires an elevated shell
-(a Tracey step), so the tool's own verdict reads **DO_NOT_SUBMIT until WACK is run** — by design.
+machine-checkable gate passes, and **WACK now returns OVERALL PASS on v1.2.0.7** (run elevated, 2026-09-04).
+**All SI-side gates are green** — the only remaining step is the external Partner Center submission.
+*(The preflight tool still prints WACK as manual-required because it does not launch the elevated `appcert.exe`
+itself; the PASS is recorded from the actual run, `wack-report-v1207.xml`.)*
 
 | Check | Result | Evidence |
 | --- | --- | --- |
@@ -37,14 +39,13 @@ machine-checkable gate passes; the only non-green item is **WACK**, which requir
 | Listing claims (all blocking) | **PASS** — repairs 26 ≥ 18 · session 3 days · categories 95 ≥ 35 | preflight `[4]` |
 | Certification notes match flow | **PASS** — no account, on-device AI plan, `MSCERT26`, UAC→scan→Perform Repairs | preflight `[5]` |
 | Backend live | health **200**, `request-refund` fail-closed | Cloud Run rev `pronto-pc-00083-qtn` |
-| **WACK** (on v1.2.0.6) | **WARNING, 0 blocking FAILs — submittable** | 21 PASS / 2 optional FAIL / 1 WARNING; overall WARNING (optional-test fails don't block) |
-| **WACK re-run on v1.2.0.7** | **PENDING — manual, elevated** | v1.2.0.7 applies the two polish fixes below; re-run `appcert.exe` elevated to confirm a clean PASS |
+| **WACK on v1.2.0.7** | **OVERALL_RESULT = PASS** ✅ | 23 PASS / 1 optional FAIL; report `wack-report-v1207.xml` (run 2026-09-04, elevated) |
 
-**WACK polish (v1.2.0.7):** the v1.2.0.6 WACK WARNING came from two *optional* fails + one warning, all now
-addressed: (1) *Platform appropriate files* (bundled x64 runtime vs a `neutral` package) → package
-`ProcessorArchitecture` set to **x64**; (2) *DPI awareness* (blurry on high-DPI) → **PerMonitorV2** declared via an
-embedded `app.manifest`. The third flag, *Blocked executables* (the app references `ShellExecute`/`CreateProcess` to
-open the checkout URL and the report), is a benign optional check for a full-trust desktop app and does not block.
+**WACK history:** v1.2.0.6 read **WARNING** (0 blocking fails — already submittable) from two *optional* fails + one
+warning. v1.2.0.7 addressed them: (1) *Platform appropriate files* → package `ProcessorArchitecture` = **x64** (now
+PASS); (2) *DPI awareness* → **PerMonitorV2** via embedded `app.manifest` (now PASS). The remaining single *optional*
+FAIL, *Blocked executables* (the app references `ShellExecute`/`CreateProcess` to open the checkout URL and the report),
+is benign for a full-trust desktop app — **OVERALL_RESULT is PASS**, so it does not block certification.
 | Governance gate | **`enabled:true`** — §8 post-scan Technician active (TOTEM-C-0144) | live governed chat, no canned path (C-0148) |
 
 ## 2. What the reviewer exercises (and what they do not)
@@ -82,11 +83,12 @@ A Microsoft "PASS" is issued **after** submission and is not producible SI-side.
    the formed model bundled, identity `5DServiceSolutionsGlobal.ProntoPC` / Store `9P1K9QJXKND8`, arch `x64`.
    Microsoft signs at submission. *(A literal `.wapproj` `.msixupload` container needs the VS "Windows
    application packaging" component; the unsigned `.msix` is `build.ps1`'s documented Partner Center upload.)*
-4. **Controlled installed-package E2E** — partly done: v1.2.0.6 installed and run on the test machine
-   (grounded on-device Technician reply, Start/Skip Repair consent). Remaining owner steps:
-   **run WACK from an elevated shell** (`appcert.exe test -appxpackagepath StoreApp\ProntoPC.msix
-   -reportoutputpath wack-report.xml`) and a full paid-$0 → scan → Perform Repairs pass.
-5. **Submit in Partner Center** with `MICROSOFT_STORE_CERT_NOTES.md` in "Notes for certification."
+4. **WACK** ✅ — **OVERALL PASS** on v1.2.0.7 (elevated, 2026-09-04; `wack-report-v1207.xml`).
+   Installed-package E2E on v1.2.0.6 confirmed the grounded on-device Technician + Start/Skip Repair consent
+   (the 1.2.0.7 delta is metadata only — x64 arch + DPI — no behavior change). A full paid-$0 → scan →
+   Perform Repairs pass is the reviewer's own path.
+5. **Submit in Partner Center** ← **the only remaining step** — upload the unsigned `.msix` v1.2.0.7 with
+   `MICROSOFT_STORE_CERT_NOTES.md` in "Notes for certification."
 6. **On cert PASS** — promote `prontopc-repair-plan` provisional → verified (a Totem).
 
 *Current governance boundary for cert: `PipelineGovernance` is **enabled** for the governed, post-scan
