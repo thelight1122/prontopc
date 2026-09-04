@@ -55,8 +55,14 @@ blocking (CLAIM-001), labels historical policy codes (POLICY-001), supports run-
 `docs/CERTIFICATION_PREFLIGHT_EVIDENCE.json`. **ARCH-001 was NOT implemented** — the Stripe/web/Cloud-Run gates are the
 live PAID reviewer path (only the AI *plan* is on-device), so removing them would re-open the 10.3.3/10.1.2.10 gates; I
 corrected the false "self-contained" comment that caused the misread. Reply to Lumin: `docs/CERT_PREFLIGHT_V2_COMPLETION_REPORT.md`.
-Current verdict: **DO_NOT_SUBMIT** — the only `.msixupload` is the stale 1.2.0.0 (fresh build is a sideload `.msix`),
-and WACK is unrun. A fresh unsigned `.msixupload` + WACK are Tracey's cert-track gates.
+**Cert artifacts now (C-0162/-0163):** the **unsigned v1.2.0.6** Partner Center artifact is rebuilt from head
+(`StoreApp/ProntoPC.msix`, sha `4945CD98`; copy `release-candidates/ProntoPC_1.2.0.6_x64_unsigned_partnercenter.msix`) —
+PKG-001 PASSES (version==source, formed model inside). A literal `.wapproj` `.msixupload` container needs the VS "Windows
+application packaging" component (not installed); the unsigned `.msix` is build.ps1's documented Partner Center upload.
+The stale 1.2.0.0 `.msixupload` is **archived** (renamed `.retired`, ARCHIVE.md) so the preflight auto-picks the fresh
+one. Current verdict: **DO_NOT_SUBMIT** — only because **WACK is unrun** (appcert.exe requires an ELEVATED shell — a
+Tracey step) and ModelSmoke is executed-on-demand. Everything machine-checkable passes. Remaining Tracey gates: run WACK
+elevated · refresh `CERT_SUBMISSION_EVIDENCE.md` to v1.2.0.6 · Partner Center submit.
 
 **OPEN ITEMS (Tracey-confirmed, for the next instance):** (1) **Refund XOR coupon — DONE (C-0153, code landed; needs
 the Cloud Run deploy to go live):** `/api/request-refund` now voids the make-good promotion code (Stripe `active=false`)

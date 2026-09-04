@@ -72,3 +72,15 @@ process behind the current state.
     runtime reference library.
   - Never landed (never committed, never Totem-bound, MainWindow was not wired). Kept here for the reversible
     trail — if a runtime auditability/versioning layer is ever wanted, recover from here.
+
+---
+
+## Retired build artifacts (large, untracked — marked in place, not moved)
+
+- **`release-candidates/ProntoPC_1.2.0.0-x64-a60e978-storeupload/ProntoPC.Package_1.2.0.0_x64.msixupload.retired`**
+  (TOTEM-C-0163, 2026-09-04) — the stale **v1.2.0.0** Store `.msixupload`. Renamed `.retired` (not moved into
+  `archive/`, which is git-tracked — a 679 MB binary would bloat the repo) so the certification preflight's
+  package auto-pick no longer selects it. Superseded by the fresh **unsigned v1.2.0.6** submission artifact
+  (`StoreApp/ProntoPC.msix`, TOTEM-C-0162; a copy at `release-candidates/ProntoPC_1.2.0.6_x64_unsigned_partnercenter.msix`).
+  Reversible — rename back to `.msixupload` to restore it. It predates the on-device formed model, the §8
+  Technician, and every UI/reliability change since 1.2.0.0, so it must not be submitted.
