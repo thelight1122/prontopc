@@ -1,0 +1,231 @@
+{
+  "timestamp": "2026-09-04T00:45:16.062902+00:00",
+  "preflight_version": "2.0",
+  "mode": "store",
+  "package_path": "StoreApp\\ProntoPC.msix",
+  "package_sha256": "7B3468196D3B08A55D405EED3AFB20E4489F8444D31B9C335C915C5DD60A397A",
+  "checks": [
+    {
+      "claim": "payment link active",
+      "ok": true,
+      "evidence": "https://buy.stripe.com/28E4gA9bBfuY62ibfk9Ve02",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "promo codes enabled on link",
+      "ok": true,
+      "evidence": "allow_promotion_codes=True",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "cert code MSCERT26 exists",
+      "ok": true,
+      "evidence": "promo_1UBka3LLKFLplB2Zc6pcidVH",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "cert code active",
+      "ok": true,
+      "evidence": "active=True",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "cert code is 100%% off (no card needed)",
+      "ok": true,
+      "evidence": "coupon=8kRBfcok percent_off=100.0 valid=True",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "cert code has redemptions left",
+      "ok": true,
+      "evidence": "24 remaining",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "cert code not expired",
+      "ok": true,
+      "evidence": "expires_at=None",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "prontopc.online reachable",
+      "ok": true,
+      "evidence": "HTTP 200",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "/success page reachable",
+      "ok": true,
+      "evidence": "HTTP 200",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "backend responding",
+      "ok": true,
+      "evidence": "HTTP 404",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "on-device model bundled (genai_config + weights)",
+      "ok": true,
+      "evidence": "H:\\PRONTOPC_PRODUCTION\\StoreApp\\Assets\\models\\gemma-3-1b-it-formed-v0.2.1",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "formed responder carries formation provenance",
+      "ok": true,
+      "evidence": "H:\\PRONTOPC_PRODUCTION\\StoreApp\\Assets\\models\\gemma-3-1b-it-formed-v0.2.1\\aegis-formation-manifest.json",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "Product Nature Layer is present",
+      "ok": true,
+      "evidence": "H:\\PRONTOPC_PRODUCTION\\pod\\orbs\\repair-plan\\satellites\\local-model\\education\\nature-layer\\repair-nature-layer.json",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "ModelSmoke PASS (on-device plan + admissible action)",
+      "ok": true,
+      "evidence": "exit=0 20s \u2014 MODEL SMOKE PASS",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "repair capabilities >= 18 claimed",
+      "ok": true,
+      "evidence": "26 repair action IDs in catalogue",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "session window is 3 days as claimed",
+      "ok": true,
+      "evidence": "SESSION_TTL_MS starts at 3",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "diagnostic categories >= 35 claimed",
+      "ok": true,
+      "evidence": "95 categories found",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "notes state no account/sign-in required",
+      "ok": true,
+      "evidence": "stated",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "notes describe on-device AI plan (no network needed for the plan)",
+      "ok": true,
+      "evidence": "on-device AI + no-network-for-plan stated",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "notes carry the reviewer $0 checkout code (MSCERT26)",
+      "ok": true,
+      "evidence": "cert code present in notes",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "notes give the UAC -> scan -> Perform Repairs flow",
+      "ok": true,
+      "evidence": "reviewer flow present",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "candidate submission package found",
+      "ok": true,
+      "evidence": "ProntoPC.msix (771.3 MB)",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "package version matches source manifest",
+      "ok": true,
+      "evidence": "package=1.2.0.6 source=1.2.0.6",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "model genai_config.json inside package",
+      "ok": true,
+      "evidence": "found",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "model weights (>100MB) inside package",
+      "ok": true,
+      "evidence": "822 MB",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "formation provenance inside package",
+      "ok": true,
+      "evidence": "found",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "WACK run against the package",
+      "ok": false,
+      "evidence": "appcert present but NOT auto-run (needs an ELEVATED shell + minutes). Run: \"C:\\Program Files (x86)\\Windows Kits\\10\\App Certification Kit\\appcert.exe\" test -appxpackagepath \"StoreApp\\ProntoPC.msix\" -reportoutputpath wack-report.xml",
+      "blocking": true,
+      "state": "manual",
+      "manual": true
+    }
+  ],
+  "blocking_failures": [],
+  "warnings": [],
+  "manual_required": [
+    "WACK run against the package"
+  ],
+  "final_status": "DO_NOT_SUBMIT"
+}

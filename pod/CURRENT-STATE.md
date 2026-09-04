@@ -48,6 +48,16 @@ appears on rebuild; (2) a **"Enter your question here…" placeholder** on the T
 button** on the completion screen (opens the saved Desktop report; hidden on Skip). All three land together on the next
 StoreApp rebuild+reinstall.
 
+**Cert preflight upgraded to v2 (C-0161, from Lumin's suggestions).** `certification_preflight.py` now returns
+CERT_READY/DO_NOT_SUBMIT from **executed evidence**: it RUNS ModelSmoke (AI-001), INSPECTS the real `.msix`/`.msixupload`
+for the formed-model assets + version-vs-source (PKG-001, catches a stale package), makes the 35+ categories claim
+blocking (CLAIM-001), labels historical policy codes (POLICY-001), supports run-or-manual WACK, and writes
+`docs/CERTIFICATION_PREFLIGHT_EVIDENCE.json`. **ARCH-001 was NOT implemented** — the Stripe/web/Cloud-Run gates are the
+live PAID reviewer path (only the AI *plan* is on-device), so removing them would re-open the 10.3.3/10.1.2.10 gates; I
+corrected the false "self-contained" comment that caused the misread. Reply to Lumin: `docs/CERT_PREFLIGHT_V2_COMPLETION_REPORT.md`.
+Current verdict: **DO_NOT_SUBMIT** — the only `.msixupload` is the stale 1.2.0.0 (fresh build is a sideload `.msix`),
+and WACK is unrun. A fresh unsigned `.msixupload` + WACK are Tracey's cert-track gates.
+
 **OPEN ITEMS (Tracey-confirmed, for the next instance):** (1) **Refund XOR coupon — DONE (C-0153, code landed; needs
 the Cloud Run deploy to go live):** `/api/request-refund` now voids the make-good promotion code (Stripe `active=false`)
 and clears `session.makeGoodCouponCode` on refund, `report-ai-unavailable` won't mint a coupon after a refund, and the
