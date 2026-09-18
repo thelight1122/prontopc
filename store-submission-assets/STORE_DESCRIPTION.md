@@ -33,6 +33,9 @@ ProntoPC does what a good technician does — without the trip to the shop. It r
 **Private by design**
 Your diagnosis and repair plan run on your own PC — there's no account to create and no diagnostic data leaves your machine. The scan is read-only and never changes your system on its own.
 
+**Governed AI — the AEGIS Initiative**
+ProntoPC's AI operates under the AEGIS Initiative, our framework for safe, accountable AI. In practice, the AI never acts on its own: the diagnostic only reads your system, every recommended action is checked against an approved list of admissible fixes, nothing runs without your explicit per-item consent, and each step is written to a tamper-evident report you keep. The AI explains and recommends — you decide. It's an auditable safeguard for transparency and non-force, not a claim that software is ever perfect.
+
 **You stay in control**
 Every finding and every recommended action is shown in plain English before anything runs. Routine cleanup (temporary files and caches) reclaims space now but naturally builds back up with normal use. Genuine repairs are backed by our 30-day repair guarantee: if a problem we fixed returns within 30 days, we'll fix it again — just contact support with your report. If the scan finds a hardware problem, ProntoPC documents it with the details a local repair shop needs, so you don't pay twice for a diagnosis.
 
@@ -48,6 +51,7 @@ ProntoPC is made by 5D Service Solutions Global LLC. Questions? support@prontopc
 
 ## Product features (separate bullet field)
 - On-device AI repair plan — runs locally, works offline, no account
+- Governed by the AEGIS Initiative — the AI recommends, you decide, with a full audit trail
 - Read-only diagnostic across six areas — nothing changes without your OK
 - Plain-English AI Technician you can ask questions
 - Per-item consent before any repair runs
