@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-09-18T02:29:00.665996+00:00",
+  "timestamp": "2026-09-18T08:11:08.688558+00:00",
   "preflight_version": "3.0",
   "mode": "store",
-  "package_path": "H:\\PRONTOPC_PRODUCTION\\StoreApp\\ProntoPC.msix",
-  "package_sha256": "3502B5D4BE08D93E87222DEF5AFFDF7CE4A9A591904214971F4667A46C7E1E96",
+  "package_path": "StoreApp\\ProntoPC.msix",
+  "package_sha256": "71CA9235E92D68460D76DCACAEC75DCBFA9DF1384A61C62A8BFC2CC434182E5B",
   "checks": [
     {
       "claim": "served site has no Stripe/checkout/token gate",
@@ -38,12 +38,12 @@
       "manual": false
     },
     {
-      "claim": "ModelSmoke PASS (on-device plan + admissible action)",
-      "ok": true,
-      "evidence": "exit=0 24s \u2014 MODEL SMOKE PASS",
+      "claim": "ModelSmoke executed (real on-device plan)",
+      "ok": false,
+      "evidence": "skipped via --no-smoke; run: dotnet run --project tests/ModelSmoke -c Release",
       "blocking": true,
-      "state": "pass",
-      "manual": false
+      "state": "manual",
+      "manual": true
     },
     {
       "claim": "diagnostic categories >= 25 claimed",
@@ -56,7 +56,7 @@
     {
       "claim": "repair capabilities >= 18 claimed",
       "ok": true,
-      "evidence": "31 candidate action IDs in Envelope.cs",
+      "evidence": "33 candidate action IDs in Envelope.cs",
       "blocking": false,
       "state": "pass",
       "manual": false
@@ -120,7 +120,7 @@
     {
       "claim": "package version matches source manifest",
       "ok": true,
-      "evidence": "package=1.2.9.0 source=1.2.9.0",
+      "evidence": "package=1.2.10.0 source=1.2.10.0",
       "blocking": true,
       "state": "pass",
       "manual": false
@@ -144,7 +144,7 @@
     {
       "claim": "WACK run against the package",
       "ok": false,
-      "evidence": "appcert present but NOT auto-run (needs an ELEVATED shell + minutes). Run: \"C:\\Program Files (x86)\\Windows Kits\\10\\App Certification Kit\\appcert.exe\" test -appxpackagepath \"H:\\PRONTOPC_PRODUCTION\\StoreApp\\ProntoPC.msix\" -reportoutputpath wack-report.xml",
+      "evidence": "appcert present but NOT auto-run (needs an ELEVATED shell + minutes). Run: \"C:\\Program Files (x86)\\Windows Kits\\10\\App Certification Kit\\appcert.exe\" test -appxpackagepath \"StoreApp\\ProntoPC.msix\" -reportoutputpath wack-report.xml",
       "blocking": true,
       "state": "manual",
       "manual": true
@@ -153,6 +153,7 @@
   "blocking_failures": [],
   "warnings": [],
   "manual_required": [
+    "ModelSmoke executed (real on-device plan)",
     "WACK run against the package"
   ],
   "final_status": "DO_NOT_SUBMIT"
