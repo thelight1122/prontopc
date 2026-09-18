@@ -84,3 +84,40 @@ process behind the current state.
   (`StoreApp/ProntoPC.msix`, TOTEM-C-0162; a copy at `release-candidates/ProntoPC_1.2.0.6_x64_unsigned_partnercenter.msix`).
   Reversible — rename back to `.msixupload` to restore it. It predates the on-device formed model, the §8
   Technician, and every UI/reliability change since 1.2.0.0, so it must not be submitted.
+
+---
+
+## Retired web payment flow (one-time paid Store app pivot, TOTEM-C-0174, 2026-09-17)
+
+Moved to `archive/web-payment-flow/` when the website became an **information site** for a one-time paid
+Microsoft Store app (proposal `docs/PROPOSAL-ONE-TIME-PAID-APP.md`; consent C-0171 / X-0116; Tracey "go ahead
+with the split"). Every page here depended on the Stripe checkout + Cloud Run backend that the pivot removes:
+
+- **success.html**, **success-store.html** — post-payment verify + `prontopc://run` scan hand-off.
+- **test-pay.html** — $1.00 live-Stripe test checkout.
+- **guardian-offer.html**, **guardian.html** — Stripe subscription (Guardian) sign-up + activation.
+
+The served site is now **index + terms + privacy** only, with a "Get it on Microsoft Store" CTA and no payment
+or server dependency (`vercel.json` routes for the retired pages removed). Reversible — recover from here if a
+Store-native subscription (Guardian) is ever wanted.
+
+---
+
+## Retired Cloud Run backend source (one-time paid Store app pivot, TOTEM-X-0118, 2026-09-18)
+
+Moved to `archive/cloudrun-backend/` when the installed StoreApp stopped using the Stripe/Cloud Run
+pay-per-run lifecycle. This preserves the exact former backend source and deployment notes without leaving
+them at the repository root as an active service bundle:
+
+- **`pronto-server-cloudrun.mjs`** — former Cloud Run HTTP service for Stripe checkout verification,
+  paid-session token minting, session/plan/consent/repair report recording, refund helper paths, and
+  AI-unavailable make-good coupons.
+- **`package.json`** — former Node/Firestore Cloud Run package manifest.
+- **`.gcloudignore`** — former Cloud Run source upload filter.
+- **`deploy/`** — former Cloud Run env/deploy/runbook notes.
+- **`ProntoAgent/`** — former Python desktop/CLI agent source that sent diagnostics to the Cloud Run
+  repair-plan API.
+
+This archive move is source-level only. It does not delete the live Google Cloud Run service, Stripe objects,
+Firestore data, Secret Manager values, DNS, deployment history, or customer evidence. Any live teardown remains
+a separate owner-approved gate.

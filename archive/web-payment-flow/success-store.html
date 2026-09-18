@@ -81,7 +81,7 @@ tailwind.config = {
 
 
     <div id="need-app" class="hidden card border-[#a78bfa]/20" style="border-color:rgba(139,107,255,0.2); background:rgba(139,107,255,0.04);">
-      <div class="flex items-start gap-4"><span class="material-symbols-outlined text-[#a78bfa] text-2xl shrink-0">download</span><div><p class="font-bold text-[#eef1ff]">Install the ProntoPC app first</p><p class="text-[#c3c8e6] text-sm mt-1 mb-4">The free Microsoft Store app performs the scan securely on this PC.</p><a id="store-link" href="#" class="inline-flex items-center gap-2 bg-[#a78bfa] text-white font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"><span class="material-symbols-outlined text-base">store</span>Get ProntoPC from the Microsoft Store</a></div></div>
+      <div class="flex items-start gap-4"><span class="material-symbols-outlined text-[#a78bfa] text-2xl shrink-0">download</span><div><p class="font-bold text-[#eef1ff]">Install or open ProntoPC first</p><p class="text-[#c3c8e6] text-sm mt-1 mb-4">ProntoPC performs the scan securely on this PC after you launch the app.</p><a id="store-link" href="#" class="inline-flex items-center gap-2 bg-[#a78bfa] text-white font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity text-sm"><span class="material-symbols-outlined text-base">store</span>Open ProntoPC listing</a></div></div>
     </div>
 
     <div class="text-center pt-1">
@@ -206,7 +206,7 @@ async function init() {
       storeLink.href = `ms-windows-store://pdp/?productid=${STORE_PRODUCT_ID}`;
     } else {
       storeLink.href = "https://apps.microsoft.com/";
-      storeLink.textContent = "Microsoft Store (app pending approval)";
+      storeLink.textContent = "ProntoPC listing pending";
     }
 
     showActiveApp();

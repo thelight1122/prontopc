@@ -1,16 +1,18 @@
-ProntoPC is a free download; each diagnostic + repair run is a one-time $29 Stripe checkout in the browser. No subscription, no in-app purchase, no account, no sign-in. The AI that builds the repair plan is bundled inside the app and runs on the device, so it needs no internet connection.
+ProntoPC is a one-time paid app sold through the Microsoft Store for $9.99. There is no subscription, no in-app purchase, no trial, no external checkout, no account, and no sign-in. Microsoft Store commerce handles the purchase, and the Store price tier is the price (policy 10.8.4). The AI that builds the repair plan is bundled inside the app and runs entirely on the device, so the app needs no internet connection and no server to function.
 
-REVIEWER: apply promotion code  MSCERT26  at checkout. The total becomes $0.00 and no payment card is required.
+REVIEWER ACCESS (policy 10.3.1): no code, account, sign-in, or test credentials are required. Acquire ProntoPC through the Store (or install the submitted package) and launch it — all functionality is immediately available, and it works with the machine offline.
 
-HOW TO TEST (full functionality):
-1. Install ProntoPC from the Store and launch it.
-2. Approve the single Windows (UAC) prompt. The app elevates once for both scan and repair; you are not prompted again.
-3. Click "Start your $29 diagnostic." Your browser opens the secure Stripe checkout.
-4. Click "Add promotion code" and enter MSCERT26. The total changes to $0.00 with no card required. Enter any email and complete the free checkout.
-5. Return to the ProntoPC window. It auto-detects the completed checkout (it is polling) and continues on its own - nothing to copy or paste.
-6. "Reading your system..." runs for about a minute. This phase is read-only.
-7. The bundled on-device AI builds a personalized repair plan (no internet needed) and shows "Here's what we found" with recommended repairs plus a live on-device Technician you can ask about the findings.
-8. Optionally ask the Technician (it explains findings only and cannot perform repairs) or uncheck any item, then click "Perform Repairs." Repairs run immediately (permission was granted by the UAC prompt in step 2).
-9. When finished, the app shows "Your PC has been serviced."
+HOW TO TEST:
+1. Launch ProntoPC. There is no UAC prompt on launch and no login.
+2. Click Scan. "Reading your system" runs for about a minute, entirely on-device and read-only.
+3. The bundled on-device AI presents "Here's what we found" with recommended repairs, plus a live on-device Technician you can ask about the findings.
+4. Optionally ask the Technician or uncheck any item, then click Perform Repairs. Windows asks for administrator approval at this repair step only.
+5. When finished, the app shows "Your PC has been serviced." A full HTML report is saved to the Desktop and can be opened from the app; you can then close ProntoPC.
+
+No network is used at any point — you may run the entire test with the machine disconnected after install.
+
+PRICING (policy 10.8.4): one-time purchase, $9.99, via the Microsoft Store. No subscription, no in-app purchases, no add-ons, no trial, no randomized purchases. Unlimited runs are included.
+
+Package submitted: ProntoPC.msix version __.__.__.__ (the one-time paid Store build). WACK passed on this exact package.
 
 Support: support@prontopc.online

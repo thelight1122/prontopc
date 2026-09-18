@@ -1,13 +1,8 @@
 {
   "version": 2,
   "routes": [
-    { "src": "/success", "dest": "/success.html" },
-    { "src": "/success-store", "dest": "/success-store.html" },
-    { "src": "/test-pay", "dest": "/test-pay.html" },
     { "src": "/privacy", "dest": "/privacy.html" },
     { "src": "/terms", "dest": "/terms.html" },
-    { "src": "/guardian-offer", "dest": "/guardian-offer.html" },
-    { "src": "/guardian", "dest": "/guardian.html" },
     { "src": "/(.*\\.(html|png|js|css|ico|svg))", "dest": "/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
