@@ -141,7 +141,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        Cust.SetState(CustodianState.Thinking, "Building your personalized repair plan…");
+        Cust.SetState(CustodianState.Thinking, "Building your personalized repair plan… This can take a few minutes — the AI runs entirely on your PC.");
         CollapseAllPanels();
         ShowWorkingArt("pronto-auditor.png");
 

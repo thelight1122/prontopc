@@ -82,8 +82,9 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         var sb = new StringBuilder();
         sb.AppendLine("You are ProntoPC's repair planner. From the diagnostics below, choose the");
         sb.AppendLine("repairs that will most help this PC. Choose ONLY from the allowed action ids.");
-        sb.AppendLine("Reply with JSON: {\"summary\": string, \"actions\": [{\"id\": string, \"category\": string, \"friendly_name\": string, \"estimated_mb_recovered\": integer}]}.");
-        sb.AppendLine("The summary must reference the machine's real numbers.");
+        sb.AppendLine("Reply with ONE JSON object and nothing after it. List the actions FIRST:");
+        sb.AppendLine("{\"actions\": [{\"id\": string, \"category\": string, \"friendly_name\": string, \"estimated_mb_recovered\": integer}], \"summary\": string}.");
+        sb.AppendLine("Keep \"summary\" to a single short sentence that references one or two of the machine's real numbers.");
         sb.AppendLine();
         sb.Append(NatureLayerContext.ForPlan());
         sb.AppendLine();
@@ -105,8 +106,17 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         if (Get(d, "memory") is JsonElement m && m.ValueKind == JsonValueKind.Object)
             Add($"Memory: {Num(m, "used_gb")}/{Num(m, "total_gb")} GB ({Num(m, "percent_used")}%)");
         if (Get(d, "disk") is JsonElement disk && disk.ValueKind == JsonValueKind.Array)
-            foreach (var dd in disk.EnumerateArray())
-                Add($"Drive {Str(dd, "device")}: {Num(dd, "percent_used")}% used ({Num(dd, "free_gb")} GB free of {Num(dd, "total_gb")} GB)");
+        {
+            // Only surface drives that matter to a repair plan (near-full), plus a count.
+            // Listing every drive on a many-drive machine bloats the model's summary and
+            // starves the token budget for the required actions (TOTEM-C-018x fix).
+            var drives = disk.EnumerateArray().ToList();
+            var notable = drives.Where(dd => NumOf(dd, "percent_used") >= 85).ToList();
+            if (notable.Count == 0 && drives.Count > 0) notable.Add(drives[0]);   // at least the primary drive
+            string near = string.Join(", ", notable.Take(3).Select(dd =>
+                $"{Str(dd, "device")} {Num(dd, "percent_used")}% used ({Num(dd, "free_gb")} GB free of {Num(dd, "total_gb")} GB)"));
+            Add($"Drives: {drives.Count} total" + (near.Length > 0 ? $"; notable: {near}" : ""));
+        }
         if (Get(d, "temp_files") is JsonElement tf && tf.ValueKind == JsonValueKind.Array)
             Add($"Temp files: {tf.EnumerateArray().Sum(e => NumOf(e, "size_mb"))} MB");
         if (Get(d, "recycle_bin") is JsonElement rb && rb.ValueKind == JsonValueKind.Object)
@@ -139,11 +149,12 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
     static string BuildSchema(IReadOnlySet<string> admissible)
     {
         string ids = string.Join(",", admissible.OrderBy(x => x).Select(x => JsonSerializer.Serialize(x)));
-        return "{\"type\":\"object\",\"properties\":{\"summary\":{\"type\":\"string\"},"
+        return "{\"type\":\"object\",\"properties\":{"
              + "\"actions\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{"
              + "\"id\":{\"enum\":[" + ids + "]},\"category\":{\"type\":\"string\"},"
              + "\"friendly_name\":{\"type\":\"string\"},\"estimated_mb_recovered\":{\"type\":\"integer\"}},"
-             + "\"required\":[\"id\",\"friendly_name\"]}}},\"required\":[\"summary\",\"actions\"]}";
+             + "\"required\":[\"id\",\"friendly_name\"]}},"
+             + "\"summary\":{\"type\":\"string\"}},\"required\":[\"actions\",\"summary\"]}";
     }
 
     // Models sometimes wrap JSON in prose; take the outermost {...}.
