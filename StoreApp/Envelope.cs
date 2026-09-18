@@ -185,9 +185,8 @@ sealed class Envelope
         }
 
         // Record which completeness additions actually survived (subsumption / max_actions
-        // may have dropped one, logged in `dropped`) as auditable metadata on the plan. It
-        // flows to the backend via {...plan}; consent + repair-start already operate on the
-        // recorded action list, so an added action is consented and run like any other.
+        // may have dropped one, logged in `dropped`) as auditable metadata on the local plan.
+        // The approved action list is the single consent surface used by the repair runner.
         if (addedIds.Count > 0)
         {
             var survivors = new JsonArray();

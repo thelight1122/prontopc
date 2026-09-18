@@ -3,34 +3,34 @@
   "umbilical_id": "prontopc-stripe-portal-umbilical",
   "pod_id": "prontopc-pod",
   "orb_id": "prontopc-stripe-portal",
-  "attachment_point": "cloudrun-portal",
-  "runtime": { "language": "javascript", "form": "http_service" },
+  "attachment_point": "retired-cloudrun-portal",
+  "runtime": { "language": "javascript", "form": "archived_http_service" },
   "invocation": {
-    "entrypoint": "pronto-server-cloudrun.mjs:verifyStripeSession",
+    "entrypoint": "archive/cloudrun-backend/pronto-server-cloudrun.mjs:verifyStripeSession",
     "orb_version": "1.0.0"
   },
   "input_contract": {
-    "description": "Outward to Stripe. Entry: the $29 Payment Link (buy.stripe.com/...) carrying a per-launch nonce (client_reference_id) and allowing promotion codes (MSCERT26 = 100% off for cert review). Verification: a checkout session id.",
+    "description": "Retired outward Stripe verification path. Entry was the $29 Payment Link carrying a per-launch nonce and promotion codes. Current Store acquisition is the purchase gate; the installed app no longer requires Stripe checkout fulfillment.",
     "checkout_session_id": "string",
     "client_reference_id": "string (per-launch nonce)"
   },
   "output_contract": {
-    "description": "Whether a checkout is FULFILLED (a 100%-off comp settles as fulfilled even with no charge), and - only then - a minted paid-session token.",
+    "description": "Historical output: fulfilled checkout state and a minted paid-session token. Current StoreApp has no paid-session token requirement.",
     "fulfilled": "boolean",
     "token": "string | null (minted only on a fulfilled checkout)"
   },
   "observation_contract": {
-    "description": "Payment is the entry gate, nothing more: this Portal only VERIFIES fulfillment with Stripe and mints the session token; it authors no plan and runs no repair. A paid-session token exists ONLY after verifyStripeSession confirmed a fulfilled checkout - the coupling that makes the pay gate real (C1/I5).",
+    "description": "Retired payment gate record. The current entry gate is Microsoft Store acquisition; this portal authors no current plan, report, repair, or entitlement.",
     "events": [
       "checkout.fulfilled { session_id }",
       "token.minted { token }"
     ]
   },
   "evidence_contract": {
-    "description": "Stripe is the external source of truth; the fulfilled checkout is the evidence a run was paid (or 100%-off comped). No card data ever touches the app or the Pod - only Stripe holds it."
+    "description": "Historical Stripe evidence is preserved for audit only. Current purchase evidence is Microsoft Store acquisition/listing state, outside this source archive."
   },
   "working_parameters": {
-    "status": "provisional",
-    "outside_parameters_behavior": "An unfulfilled/unknown checkout -> no token minted, no session, no service. Card data is never entered into the app (Stripe-hosted checkout only)."
+    "status": "retired",
+    "outside_parameters_behavior": "No current StoreApp behavior depends on Stripe verification. Any live Stripe object archival/deactivation requires explicit owner approval and dashboard/API evidence."
   }
 }

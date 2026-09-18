@@ -46,44 +46,6 @@
                Margin="0,0,0,12" MaxHeight="360" Stretch="Uniform"
                RenderOptions.BitmapScalingMode="HighQuality" IsHitTestVisible="False"/>
 
-        <!-- GATE (pay-per-run) — a run is unlocked by a one-time Stripe checkout. -->
-        <StackPanel x:Name="GatePanel" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" Width="440">
-          <!-- Start state -->
-          <StackPanel x:Name="GateStart">
-            <TextBlock Text="Ready to service your PC." Foreground="#eef1ff" FontSize="23"
-                       FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap"/>
-            <TextBlock Text="A one-time diagnostic and full repair, built for your PC by on-device AI. One flat price — no subscription, no add-ons."
-                       Foreground="#c3c8e6" FontSize="13.5" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0"/>
-            <TextBlock Text="ProntoPC is an AI-centric computer-repair platform engineered on the AEGIS Framework. Its embedded repair model is designed for AEGIS Canon-aligned guidance. The Technician architecture flows through PIM, IRG, and RBC. PRISM represents the State of Flow: resonance allows Flow through the PRISM; incoherence cannot resonate and IDS reroutes it to its originator. The interactive Technician remains closed until its governance gate is explicitly enabled."
-                       Foreground="#8b8fb0" FontSize="10.5" TextAlignment="Center" TextWrapping="Wrap" Margin="12,12,12,0"/>
-            <Button x:Name="GateBuyButton" Content="Start your $29 diagnostic" Click="GateBuy_Click"
-                    Height="52" FontSize="17" FontWeight="Bold" Foreground="#ffffff" Cursor="Hand" Margin="0,20,0,0">
-              <Button.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                  <GradientStop Color="#7c5cff" Offset="0"/>
-                  <GradientStop Color="#4f7dff" Offset="1"/>
-                </LinearGradientBrush>
-              </Button.Background>
-            </Button>
-            <TextBlock Text="Secure checkout via Stripe. You'll return here automatically after paying."
-                       Foreground="#8b8fb0" FontSize="11" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0"/>
-          </StackPanel>
-          <!-- Waiting state (browser checkout open; the app polls until payment lands) -->
-          <StackPanel x:Name="GateWaiting" Visibility="Collapsed">
-            <TextBlock Text="Waiting for your payment…" Foreground="#eef1ff" FontSize="21"
-                       FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap"/>
-            <TextBlock Text="Complete the secure Stripe checkout in your browser. This window continues on its own the moment your payment is confirmed."
-                       Foreground="#c3c8e6" FontSize="13" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0"/>
-            <Button x:Name="GateReopenButton" Content="Reopen checkout" Click="GateBuy_Click"
-                    Height="44" Width="200" Margin="0,18,0,0"
-                    Foreground="#eef1ff" Background="#12142c" Cursor="Hand" HorizontalAlignment="Center"/>
-            <Button Content="Cancel" Click="GateCancel_Click" Height="38" Width="140" Margin="0,10,0,0"
-                    Foreground="#8b8fb0" Background="#0d1024" Cursor="Hand" HorizontalAlignment="Center"/>
-          </StackPanel>
-          <TextBlock Text="support@prontopc.online" Foreground="#a78bfa" FontSize="12"
-                     TextAlignment="Center" Margin="0,14,0,0"/>
-        </StackPanel>
-
         <!-- FINDINGS -->
         <ScrollViewer x:Name="FindingsPanel" Visibility="Collapsed" Margin="24,2,24,18" VerticalScrollBarVisibility="Auto">
           <StackPanel>
@@ -166,7 +128,7 @@
                  RenderOptions.BitmapScalingMode="HighQuality"/>
           <TextBlock Text="✓ Your PC has been serviced." Foreground="#eef1ff" FontSize="23" FontWeight="Bold" TextAlignment="Center" Margin="0,4,0,0"/>
           <TextBlock x:Name="CompleteText" Foreground="#c3c8e6" FontSize="14" TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"/>
-          <!-- Opens the server-rendered repair report saved to the Desktop (repair path only; hidden on Skip). -->
+          <!-- Opens the locally generated repair report saved to the Desktop (repair path only; hidden on Skip). -->
           <Button x:Name="OpenReportButton" Content="Open Report" Click="OpenReport_Click" Visibility="Collapsed"
                   Height="48" Width="220" FontSize="15" FontWeight="Bold" Foreground="#ffffff" Cursor="Hand"
                   HorizontalAlignment="Center" Margin="0,18,0,0">
@@ -191,7 +153,7 @@
         <StackPanel x:Name="RetryPanel" Visibility="Collapsed" VerticalAlignment="Center" HorizontalAlignment="Center" Width="460">
           <TextBlock Text="Let's try that again." Foreground="#eef1ff" FontSize="21"
                      FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap"/>
-          <TextBlock Text="Your AI plan didn't build that time — nothing on your PC has changed. This usually clears on another try."
+          <TextBlock Text="ProntoPC could not build the repair plan from the completed scan. Nothing on your PC has changed. Try again to rebuild the plan without running the scan again."
                      Foreground="#c3c8e6" FontSize="14" TextAlignment="Center" TextWrapping="Wrap" Margin="0,12,0,0"/>
           <Border Background="#12142c" CornerRadius="10" Padding="16,12" Margin="0,16,0,0">
             <StackPanel>
@@ -206,7 +168,7 @@
           <Button Content="Try Again" Click="RetryAuthor_Click" Height="46" Width="200" Margin="0,20,0,0"
                   Foreground="#ffffff" Background="#7c5cff" Cursor="Hand" HorizontalAlignment="Center"/>
           <TextBlock TextAlignment="Center" Margin="0,14,0,0" FontSize="12">
-            <Hyperlink Click="GiveUpToMakeGood_Click" Foreground="#8b8fb0" TextDecorations="Underline">Still stuck? Get your free-repair coupon</Hyperlink>
+            <Hyperlink Click="GiveUpToMakeGood_Click" Foreground="#8b8fb0" TextDecorations="Underline">Still stuck? Get help from support</Hyperlink>
           </TextBlock>
         </StackPanel>
 
@@ -228,7 +190,7 @@
             </StackPanel>
           </Border>
           <TextBlock TextAlignment="Center" Margin="0,14,0,0" FontSize="12.5">
-            <Hyperlink Click="RequestRefund_Click" Foreground="#a78bfa" TextDecorations="Underline">Prefer your money back? Request a refund</Hyperlink>
+            <Hyperlink Click="RequestRefund_Click" Foreground="#a78bfa" TextDecorations="Underline">Need a refund? See your options</Hyperlink>
           </TextBlock>
           <Button Content="Close" Click="Close_Click" Height="44" Width="150" Margin="0,18,0,0"
                   Foreground="#eef1ff" Background="#12142c" Cursor="Hand" HorizontalAlignment="Center"/>
@@ -243,7 +205,7 @@
                      FontWeight="Bold" TextAlignment="Center" TextWrapping="Wrap"/>
           <TextBlock x:Name="RefundText" Foreground="#c3c8e6" FontSize="14" TextAlignment="Center"
                      TextWrapping="Wrap" Margin="0,12,0,0"/>
-          <Button Content="Close" Click="Close_Click" Height="44" Width="150" Margin="0,22,0,0"
+          <Button Content="Close ProntoPC" Click="Close_Click" Height="44" Width="170" Margin="0,22,0,0"
                   Foreground="#eef1ff" Background="#12142c" Cursor="Hand" HorizontalAlignment="Center"/>
         </StackPanel>
 

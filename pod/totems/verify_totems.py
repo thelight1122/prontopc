@@ -88,15 +88,45 @@ def main() -> int:
     # Latest-wins over the merged, time-ordered sequence: the current claimed state of
     # each file is its NEWEST Totem (by utc across trunk + all lanes). Append-only means
     # a file legitimately evolves, so only the most recent reference is authoritative.
-    current = {}  # path -> (totem_id, recorded_sha, state)
+    current = {}  # path -> (totem_id, file_record)
     for t in totems:
         for rec in t.get("files", []):
-            current[rec["path"]] = (t["totem_id"], rec["sha256"], rec.get("state"))
+            current[rec["path"]] = (t["totem_id"], rec)
 
     drift = False
     for path in sorted(current):
-        tid, recorded, state = current[path]
+        tid, rec = current[path]
+        recorded = rec["sha256"]
+        state = rec.get("state")
         p = REPO / path
+        if state == "archived":
+            archive_path = rec.get("archive_path")
+            archive_recorded = rec.get("archive_sha256", recorded)
+            archive_ok = True
+            if p.exists():
+                print("  [UNARCH]  %s  (authority %s) — archived path is present in active tree" % (path, tid))
+                drift = True
+                archive_ok = False
+            if not archive_path:
+                print("  [VOID  ]  %s  (authority %s) — archived state has no archive_path" % (path, tid))
+                drift = True
+                archive_ok = False
+            else:
+                ap = REPO / archive_path
+                if not ap.exists():
+                    print("  [VOID  ]  %s  (authority %s) — archive copy missing: %s" % (path, tid, archive_path))
+                    drift = True
+                    archive_ok = False
+                else:
+                    archive_actual = sha256_upper(ap)
+                    if archive_actual != archive_recorded:
+                        print("  [DRIFT ]  %s  (authority %s) — archive copy hash drifted" % (path, tid))
+                        print("            recorded %s… actual %s… at %s" % (archive_recorded[:16], archive_actual[:16], archive_path))
+                        drift = True
+                        archive_ok = False
+            if archive_ok:
+                print("  [ARCHIVED] %s  (%s) — active path absent; archive holds at %s" % (path, tid, archive_path))
+            continue
         if state == "deleted":
             # The newest Totem declares this path RETIRED — moved to archive/ under the
             # never-delete house rule, so history stays reversible. It HOLDS while the path

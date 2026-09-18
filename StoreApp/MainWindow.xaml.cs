@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Http;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -17,12 +17,8 @@ namespace ProntoPC;
 
 public partial class MainWindow : Window
 {
-    const string CloudRun = "https://pronto-pc-108655745293.us-central1.run.app";
-    // The $29 one-time diagnostic + repair (same Stripe Payment Link the web funnel uses).
-    const string CheckoutLink = "https://buy.stripe.com/28E4gA9bBfuY62ibfk9Ve02";
-    string _token;
-    string _payNonce = "";
-    CancellationTokenSource? _pollCts;
+    string _sessionId = Guid.NewGuid().ToString("N");
+    readonly string _repairRequestPath;
     readonly List<(Dictionary<string, object?> action, CheckBox box)> _rows = new();
     readonly Orchestrator _orch;
     readonly bool _modelPresent;
@@ -51,14 +47,17 @@ public partial class MainWindow : Window
     // Remembered across a plan-authoring retry so the Retry screen can re-attempt WITHOUT
     // re-running the multi-minute diagnostic, and so the make-good / refund routes keep context.
     Dictionary<string, object?>? _lastDiag;
+    JsonElement? _lastDiagnostics;
+    JsonElement? _lastPlan;
+    string _lastHostname = "";
     string? _reportPath;   // set when the repair report is saved; opened by the Open Report button
     SystemAudit? _lastAudit;
     string? _lastDecline;
 
-    public MainWindow(string token)
+    public MainWindow(string repairRequestPath = "")
     {
         InitializeComponent();
-        _token = token;
+        _repairRequestPath = repairRequestPath;
         // The Orchestrator holds the Action Envelope, keys the plan Umbilical to it, and
         // sequences the phases. The bundled local-model Satellite is the only desktop
         // plan author: diagnostics are never sent to a cloud AI fallback. An unkeyed
@@ -95,88 +94,16 @@ public partial class MainWindow : Window
         catch { return null; }
     }
 
-    // Entry: the pay-per-run gate stands in front of the scan. A run is unlocked only
-    // by a fulfilled Stripe checkout — there is no free path.
-    //  • Arrived via prontopc://run?token=… → re-verify the token names a live paid
-    //    session, then scan.
-    //  • No/expired/invalid token (e.g. a Start-menu launch) → present the checkout gate.
+    // Entry: Store acquisition owns payment. Once installed, the app is usable without
+    // a runtime account, token, checkout, or server round-trip.
     async Task Start()
     {
-        if (!string.IsNullOrWhiteSpace(_token) && await TokenIsPaid(_token)) { await RunScan(); return; }
-        ShowGate();
-    }
-
-    // ── Pay-per-run gate ──────────────────────────────────────────────────────
-    void ShowGate()
-    {
-        Cust.SetState(CustodianState.Greeting);
-        GateStart.Visibility = Visibility.Visible;
-        GateWaiting.Visibility = Visibility.Collapsed;
-        ShowPanel(GatePanel);
-    }
-
-    // Open the Stripe Payment Link tagged with a per-launch nonce, then poll the backend
-    // until that checkout is fulfilled. The customer pays in the browser and this window
-    // continues on its own — no deep-link, so no second instance and no second UAC.
-    void GateBuy_Click(object sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrEmpty(_payNonce))
-            _payNonce = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N"); // 64 hex
-
-        try { Process.Start(new ProcessStartInfo($"{CheckoutLink}?client_reference_id={_payNonce}") { UseShellExecute = true }); }
-        catch { /* no browser — the customer can still retry; polling continues */ }
-
-        GateStart.Visibility = Visibility.Collapsed;
-        GateWaiting.Visibility = Visibility.Visible;
-        ShowPanel(GatePanel);
-
-        _pollCts?.Cancel();
-        _pollCts = new CancellationTokenSource();
-        _ = PollForPayment(_payNonce, _pollCts.Token);
-    }
-
-    void GateCancel_Click(object sender, RoutedEventArgs e)
-    {
-        _pollCts?.Cancel();
-        ShowGate();
-    }
-
-    async Task PollForPayment(string nonce, CancellationToken ct)
-    {
-        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
-        while (!ct.IsCancellationRequested)
+        if (!string.IsNullOrWhiteSpace(_repairRequestPath))
         {
-            try
-            {
-                var resp = await http.GetAsync($"{CloudRun}/api/await-payment?ref={nonce}", ct);
-                using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
-                if (doc.RootElement.TryGetProperty("paid", out var p) && p.ValueKind == JsonValueKind.True
-                    && doc.RootElement.TryGetProperty("token", out var t) && t.ValueKind == JsonValueKind.String)
-                {
-                    _token = t.GetString()!;
-                    _payNonce = "";
-                    await RunScan();
-                    return;
-                }
-            }
-            catch (OperationCanceledException) { return; }
-            catch { /* transient — keep polling */ }
-            try { await Task.Delay(3000, ct); } catch { return; }
+            await ResumeElevatedRepair(_repairRequestPath);
+            return;
         }
-    }
-
-    // A live, unexpired session for this token means it came from a fulfilled checkout.
-    // Fail-closed: any error (offline, unknown token) is treated as unpaid → the gate.
-    async Task<bool> TokenIsPaid(string token)
-    {
-        try
-        {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
-            var resp = await http.GetAsync($"{CloudRun}/api/verify-token?token={Uri.EscapeDataString(token)}");
-            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
-            return doc.RootElement.TryGetProperty("paid", out var p) && p.ValueKind == JsonValueKind.True;
-        }
-        catch { return false; }
+        await RunScan();
     }
 
     // ── Scan ─────────────────────────────────────────────────────────────────
@@ -197,6 +124,8 @@ public partial class MainWindow : Window
         // from the Retry screen WITHOUT re-running the multi-minute diagnostic.
         _lastDiag = diag;
         _lastAudit = audit;
+        _lastDiagnostics = audit.Diagnostics.Clone();
+        _lastHostname = HostnameFromDiagnostics(diag);
 
         await AuthorPlanAndProceed();
     }
@@ -220,15 +149,11 @@ public partial class MainWindow : Window
         if (outcome.IsOk)
         {
             var plan = ToElement(outcome.Plan!);
-            if (await RecordNativePlanAsync(_lastDiag, plan, outcome))
-            {
-                // Technician Orb → the append-only relay: post the validated findings ONCE for
-                // this session so the Communications Orb can later READ (never re-derive) them.
-                PublishFindingsToRelay(_lastAudit, plan, outcome);
-                ShowFindings(plan);
-                return;
-            }
-            ShowError("We couldn't securely record this repair plan. No repairs have been run — please try again.");
+            _lastPlan = plan.Clone();
+            // Technician Orb → the append-only relay: post the validated findings ONCE for
+            // this session so the Communications Orb can later READ (never re-derive) them.
+            PublishFindingsToRelay(_lastAudit, plan, outcome);
+            ShowFindings(plan);
             return;
         }
 
@@ -240,55 +165,35 @@ public partial class MainWindow : Window
 
     void ShowRetry()
     {
-        Cust.SetState(CustodianState.Blocked, "Your AI plan didn't build that time.");
+        Cust.SetState(CustodianState.Blocked, "The repair plan did not build that time.");
         ShowPanel(RetryPanel);
     }
 
     async void RetryAuthor_Click(object sender, RoutedEventArgs e) => await AuthorPlanAndProceed();
 
-    // "Still stuck?" — take the customer to honest recourse (free-repair coupon + refund route).
+    // "Still stuck?" — take the customer to honest support/refund guidance. No backend
+    // coupon minting exists in the one-time Store model.
     async void GiveUpToMakeGood_Click(object sender, RoutedEventArgs e)
     {
-        if (_lastDiag is null) { Close(); return; }
-        await ReportAiUnavailable(_lastDiag, _lastDecline);
+        await Task.Yield();
+        ShowMakeGood();
     }
 
-    // "Prefer your money back?" — the app only REQUESTS the refund (token only, no PII); the
-    // backend enforces eligibility (refund only when no successful repair was recorded) and
-    // issues the actual amount paid via Stripe. The app just surfaces the outcome.
+    // Store purchases are handled by Microsoft. The app gives clear recourse without
+    // calling any ProntoPC backend to issue refunds.
     async void RequestRefund_Click(object sender, RoutedEventArgs e) => await RequestRefundAsync();
 
     async Task RequestRefundAsync()
     {
-        Cust.SetState(CustodianState.Blocked, "Requesting your refund…");
-        bool initiated = false;
-        string? message = null;
-        try
-        {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-            string payload = JsonSerializer.Serialize(new { token = _token });   // token only — anonymized
-            var resp = await http.PostAsync($"{CloudRun}/api/request-refund",
-                new StringContent(payload, Encoding.UTF8, "application/json"));
-            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
-            var root = doc.RootElement;
-            initiated = root.TryGetProperty("refundInitiated", out var ri) && ri.ValueKind == JsonValueKind.True;
-            if (root.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String) message = m.GetString();
-        }
-        catch { /* offline / backend unreachable — honest fallback below */ }
-
-        ShowRefundOutcome(initiated, message);
+        await Task.Yield();
+        ShowRefundOutcome();
     }
 
-    void ShowRefundOutcome(bool initiated, string? message)
+    void ShowRefundOutcome()
     {
-        RefundTitle.Text = initiated ? "Refund on its way." : "About your refund";
-        RefundText.Text = !string.IsNullOrWhiteSpace(message)
-            ? message!
-            : (initiated
-                ? "Your refund is on its way to the card you paid with. It typically appears within 5–10 business days."
-                : "We couldn't complete the refund automatically. Please contact support@prontopc.online and we'll take care of it.");
-        Cust.SetState(initiated ? CustodianState.Complete : CustodianState.Blocked,
-            initiated ? "Refund issued." : "Refund needs a hand.");
+        RefundTitle.Text = "About refunds";
+        RefundText.Text = "ProntoPC is now purchased through Microsoft Store. If you need help or believe the app did not deliver what you paid for, contact support@prontopc.online and use Microsoft's Store purchase/refund options for the transaction.";
+        Cust.SetState(CustodianState.Blocked, "Refund guidance shown.");
         ShowPanel(RefundPanel);
     }
 
@@ -302,106 +207,27 @@ public partial class MainWindow : Window
     // block the customer's already-paid repair flow. Opens no gate; executes nothing.
     void PublishFindingsToRelay(SystemAudit audit, JsonElement plan, PlanOutcome outcome)
     {
-        try { _findingsRelay?.PublishFindings(_token, audit, plan, outcome.Provider, outcome.Model); }
+        try { _findingsRelay?.PublishFindings(_sessionId, audit, plan, outcome.Provider, outcome.Model); }
         catch { /* append-only record for the gated Communications Orb — never disrupt the paid flow */ }
-    }
-
-    // A local model may author the plan, but the paid session is the source of truth
-    // for consent, completion, browser confirmation, and the report.  Do not offer
-    // repair checkboxes until the backend has recorded the validated native plan.
-    async Task<bool> RecordNativePlanAsync(Dictionary<string, object?> diagnostics, JsonElement plan, PlanOutcome outcome)
-    {
-        try
-        {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(45) };
-            string payload = JsonSerializer.Serialize(new
-            {
-                token = _token,
-                diagnostics,
-                plan,
-                provenance = new { provider = outcome.Provider, model = outcome.Model, dropped = outcome.Dropped }
-            });
-            var resp = await http.PostAsync($"{CloudRun}/api/native-plan",
-                new StringContent(payload, Encoding.UTF8, "application/json"));
-            if (!resp.IsSuccessStatusCode) return false;
-            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
-            return doc.RootElement.TryGetProperty("ok", out var ok) && ok.ValueKind == JsonValueKind.True;
-        }
-        catch { return false; }
     }
 
     // ── Local plan declined → honest, local diagnostic ───────────────────────
     // A local-model failure must not invoke a cloud AI provider, nor claim that one
     // did. The stable code is safe to show and lets support distinguish runtime,
     // parsing, and Envelope validation without exposing model text or exception data.
-    // Terminal AI-unavailable recourse (coupon make-good restored, TOTEM-C-0137). After a validated
-    // audit, if the on-device author cannot produce a plan, ProntoPC never substitutes a non-AI plan
-    // under the AI claim: it reports the miss to the backend, which mints a single-use 100% make-good
-    // coupon for THIS customer + THIS machine and notifies support@prontopc.online, then shows an
-    // honest make-good screen with the code. Instant customer recourse AND the support incident still
-    // surfaces a genuine on-device model bug (so a broken local path is not silently masked).
-    async Task ReportAiUnavailable(Dictionary<string, object?> diag, string? declineReason)
-    {
-        var (machineId, machineName) = MachineFingerprint(diag);
-        // Single on-device author (no cloud fallback): the reason reflects why the local author declined.
-        string reason = !string.IsNullOrWhiteSpace(declineReason)
-            ? declineReason!
-            : (_modelPresent ? "local_author_declined" : "no_local_model");
-        string? coupon = null;
-        try
-        {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-            string payload = JsonSerializer.Serialize(new { token = _token, machineId, machineName, reason });
-            var resp = await http.PostAsync($"{CloudRun}/api/report-ai-unavailable",
-                new StringContent(payload, Encoding.UTF8, "application/json"));
-            string bodyText = await resp.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(bodyText);
-            if (doc.RootElement.TryGetProperty("couponCode", out var c) && c.ValueKind == JsonValueKind.String)
-                coupon = c.GetString();
-        }
-        catch { /* offline / backend unreachable — still show honest recourse below */ }
-
-        ShowMakeGood(coupon);
-    }
-
-    void ShowMakeGood(string? coupon)
+    // After a validated audit, if the on-device author cannot produce a plan, ProntoPC
+    // never substitutes a non-AI plan under the AI claim. It shows a local support code
+    // so the customer has a clear next step and the model/runtime failure is visible.
+    void ShowMakeGood()
     {
         Cust.SetState(CustodianState.Blocked, "Your AI plan didn't run this time.");
-        if (!string.IsNullOrWhiteSpace(coupon))
-        {
-            MakeGoodText.Text = "Your repair is AI-powered, and this time our AI couldn't build your plan. "
-                + "You paid for that and didn't get it — so this one's on us. We've emailed you a 100% coupon "
-                + "(a free repair on this PC) and flagged it to our team. Run Pronto PC again anytime with the code below.";
-            MakeGoodCode.Text = coupon;
-            MakeGoodCodeBox.Visibility = Visibility.Visible;
-        }
-        else
-        {
-            MakeGoodText.Text = "Your repair is AI-powered, and this time our AI couldn't build your plan. "
-                + "You paid for that and didn't get the full benefit — so we'll make it right. We've flagged this to "
-                + "our team at support@prontopc.online, and you'll receive a 100% coupon for a free repair on this PC.";
-            MakeGoodCodeBox.Visibility = Visibility.Collapsed;
-        }
+        string reason = !string.IsNullOrWhiteSpace(_lastDecline)
+            ? _lastDecline!
+            : (_modelPresent ? "local_author_declined" : "no_local_model");
+        MakeGoodText.Text = "Your repair is AI-powered, and this time the on-device AI could not build a valid repair plan. "
+            + $"Nothing on your PC has changed. Please contact support@prontopc.online and include this code: {reason}.";
+        MakeGoodCodeBox.Visibility = Visibility.Collapsed;
         ShowPanel(MakeGoodPanel);
-    }
-
-    // A stable, non-identifying fingerprint of THIS machine, so the make-good is scoped to the PC that
-    // missed its plan. Derived from already-collected diagnostics (no extra probing): hostname +
-    // processor + OS build, hashed.
-    static (string machineId, string machineName) MachineFingerprint(Dictionary<string, object?> diag)
-    {
-        string host = "", proc = "", build = "";
-        if (diag.TryGetValue("os", out var osv) && osv is Dictionary<string, object?> os)
-        {
-            host = os.GetValueOrDefault("hostname")?.ToString() ?? "";
-            proc = os.GetValueOrDefault("processor")?.ToString() ?? "";
-            build = os.GetValueOrDefault("build")?.ToString() ?? "";
-        }
-        string basis = $"{host}|{proc}|{build}";
-        string id;
-        using (var sha = System.Security.Cryptography.SHA256.Create())
-            id = Convert.ToHexString(sha.ComputeHash(Encoding.UTF8.GetBytes(basis))).Substring(0, 16);
-        return (id, string.IsNullOrWhiteSpace(host) ? "unknown-pc" : host);
     }
 
     // ── Findings ─────────────────────────────────────────────────────────────
@@ -529,44 +355,113 @@ public partial class MainWindow : Window
     {
         var approved = _rows.Where(r => r.box.IsChecked == true).Select(r => r.action).ToList();
         ProceedButton.IsEnabled = false;
-        var authoritative = await RecordConsentAndStartAsync(approved);
-        if (authoritative is null)
+        if (approved.Count > 0 && !IsAdmin())
         {
+            if (RequestElevatedRepair(approved))
+            {
+                Application.Current.Shutdown();
+                return;
+            }
             ProceedButton.IsEnabled = true;
-            ShowError("We couldn't record your approval. No repairs have been run — please try again.");
+            ShowError("Windows did not allow ProntoPC to start the repair step as administrator. No repairs have been run — please try again.");
             return;
         }
-        await RunRepair(authoritative);
+
+        await RunRepair(approved);
     }
 
-    // Persist explicit per-action approval, then request the exact server-authorized
-    // action list.  The desktop engine never runs a locally selected action that the
-    // paid session did not acknowledge.
-    async Task<List<Dictionary<string, object?>>?> RecordConsentAndStartAsync(List<Dictionary<string, object?>> approved)
+    async Task ResumeElevatedRepair(string requestPath)
+    {
+        if (!IsAdmin())
+        {
+            ShowError("ProntoPC needs administrator approval before it can perform the selected repairs. Please choose Perform Repairs again and approve the Windows prompt.");
+            return;
+        }
+        ElevatedRepairRequest? request;
+        try
+        {
+            string json = await System.IO.File.ReadAllTextAsync(requestPath);
+            using var doc = JsonDocument.Parse(json);
+            request = ReadElevatedRequest(doc.RootElement);
+        }
+        catch
+        {
+            ShowError("ProntoPC could not read the approved repair list. No repairs have been run — please return to the app and try again.");
+            return;
+        }
+        finally
+        {
+            try { System.IO.File.Delete(requestPath); } catch { }
+        }
+
+        if (request is null)
+        {
+            ShowError("ProntoPC could not verify the approved repair list. No repairs have been run — please return to the app and try again.");
+            return;
+        }
+
+        _sessionId = request.SessionId;
+        _lastDiagnostics = request.Diagnostics;
+        _lastPlan = request.RepairPlan;
+        _lastHostname = request.Hostname;
+
+        if (request.ApprovedActions.Count == 0)
+        {
+            SkipRepair_Click(this, new RoutedEventArgs());
+            return;
+        }
+
+        Cust.SetState(CustodianState.Repairing, "Starting your approved repairs…");
+        CollapseAllPanels();
+        ShowWorkingArt("pronto-repair.png");
+        await RunRepair(request.ApprovedActions);
+    }
+
+    bool RequestElevatedRepair(List<Dictionary<string, object?>> approved)
     {
         try
         {
-            var selectedIds = approved.Select(a => a.GetValueOrDefault("id")?.ToString() ?? "").ToArray();
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(45) };
-            var consent = await http.PostAsync($"{CloudRun}/api/session/{Uri.EscapeDataString(_token)}/consent",
-                new StringContent(JsonSerializer.Serialize(new { selectedIds }), Encoding.UTF8, "application/json"));
-            if (!consent.IsSuccessStatusCode) return null;
-            using var consentDoc = JsonDocument.Parse(await consent.Content.ReadAsStringAsync());
-            if (!consentDoc.RootElement.TryGetProperty("ok", out var consentOk) || consentOk.ValueKind != JsonValueKind.True) return null;
+            if (_lastDiagnostics is not JsonElement diagnostics || _lastPlan is not JsonElement repairPlan)
+                return false;
+            string dir = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ProntoPC", "repair-requests");
+            System.IO.Directory.CreateDirectory(dir);
+            string requestPath = System.IO.Path.Combine(dir, "repair-" + Guid.NewGuid().ToString("N") + ".json");
+            string json = JsonSerializer.Serialize(new
+            {
+                sessionId = _sessionId,
+                diagnostics,
+                repairPlan,
+                approvedActions = approved,
+                hostname = _lastHostname
+            });
+            System.IO.File.WriteAllText(requestPath, json, Encoding.UTF8);
 
-            var start = await http.PostAsync($"{CloudRun}/api/session/{Uri.EscapeDataString(_token)}/repair-start",
-                new StringContent("{}", Encoding.UTF8, "application/json"));
-            if (!start.IsSuccessStatusCode) return null;
-            using var startDoc = JsonDocument.Parse(await start.Content.ReadAsStringAsync());
-            if (!startDoc.RootElement.TryGetProperty("ok", out var startOk) || startOk.ValueKind != JsonValueKind.True
-                || !startDoc.RootElement.TryGetProperty("actions", out var actions) || actions.ValueKind != JsonValueKind.Array) return null;
-
-            var authoritative = actions.EnumerateArray().Select(JsonToDict).ToList();
-            var authoritativeIds = authoritative.Select(a => a.GetValueOrDefault("id")?.ToString() ?? "").OrderBy(id => id);
-            if (!authoritativeIds.SequenceEqual(selectedIds.OrderBy(id => id))) return null;
-            return authoritative;
+            string exe = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName!;
+            string args = "--repair-request=" + QuoteArg(requestPath);
+            var psi = new ProcessStartInfo
+            {
+                FileName = exe,
+                Arguments = args,
+                Verb = "runas",
+                UseShellExecute = true
+            };
+            Process.Start(psi);
+            return true;
         }
-        catch { return null; }
+        catch
+        {
+            return false;
+        }
+    }
+
+    static string QuoteArg(string value) => "\"" + Uri.EscapeDataString(value).Replace("\"", "%22") + "\"";
+
+    static bool IsAdmin()
+    {
+        using var id = WindowsIdentity.GetCurrent();
+        return new WindowsPrincipal(id).IsInRole(WindowsBuiltInRole.Administrator);
     }
 
     // ── Repair ───────────────────────────────────────────────────────────────
@@ -583,18 +478,18 @@ public partial class MainWindow : Window
             Cust.ReportRepairComplete(p.Total > 0 ? $"[{p.Index}/{p.Total}] {p.Name}" : p.Name));
         var outcome = await _orch.RunRepairAsync(approved, progress);
 
-        // Complete only after the same paid session accepts the result set and its
-        // server-rendered report has been atomically saved to the customer's Desktop.
+        // Complete only after the selected local actions finish and the on-device
+        // report has been atomically saved to the customer's Desktop.
         Cust.SetActivity("Saving your report…");
         string? reportPath = await SubmitResultsAndSaveReportAsync(outcome.Results);
         if (reportPath is null)
         {
-            ShowError("Your repair results could not be confirmed and saved. The actions already run are shown only after the connection is restored and the report is saved.");
+            ShowError("Your repair actions finished, but ProntoPC could not save the local report. Please contact support@prontopc.online.");
             return;
         }
 
         Cust.SetState(CustodianState.Complete, "Your PC has been serviced.");
-        CompleteText.Text = $"{outcome.Message}\n\nConfirmed repair report saved to:\n{reportPath}";
+        CompleteText.Text = $"{outcome.Message}\n\nRepair report saved to:\n{reportPath}";
         _reportPath = reportPath;
         OpenReportButton.Visibility = Visibility.Visible;   // a report exists — offer to open it
         ShowPanel(CompletePanel);
@@ -604,17 +499,14 @@ public partial class MainWindow : Window
     {
         try
         {
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-            string payload = JsonSerializer.Serialize(new { token = _token, results });
-            var submitted = await http.PostAsync($"{CloudRun}/api/submit-repair-results",
-                new StringContent(payload, Encoding.UTF8, "application/json"));
-            if (!submitted.IsSuccessStatusCode) return null;
-            using var resultDoc = JsonDocument.Parse(await submitted.Content.ReadAsStringAsync());
-            if (!resultDoc.RootElement.TryGetProperty("ok", out var ok) || ok.ValueKind != JsonValueKind.True) return null;
-
-            var reportResponse = await http.GetAsync($"{CloudRun}/api/session/{Uri.EscapeDataString(_token)}/report");
-            if (!reportResponse.IsSuccessStatusCode) return null;
-            string reportHtml = await reportResponse.Content.ReadAsStringAsync();
+            if (_lastDiagnostics is not JsonElement diagnostics || _lastPlan is not JsonElement repairPlan)
+                return null;
+            JsonElement repairResults = JsonSerializer.SerializeToElement(results);
+            string reportHtml = LocalReport.Generate(
+                diagnostics,
+                repairPlan,
+                repairResults,
+                _lastHostname);
             if (string.IsNullOrWhiteSpace(reportHtml)) return null;
 
             string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
@@ -637,7 +529,6 @@ public partial class MainWindow : Window
 
     void CollapseAllPanels()
     {
-        GatePanel.Visibility = Visibility.Collapsed;
         FindingsPanel.Visibility = Visibility.Collapsed;
         CompletePanel.Visibility = Visibility.Collapsed;
         ErrorPanel.Visibility = Visibility.Collapsed;
@@ -688,15 +579,15 @@ public partial class MainWindow : Window
     // PIM-screened inbound (ScreenInbound) and RBC/Prism-shaped outbound (ApplyBoundary); nothing
     // here executes an action — Start Repair remains the explicit consent (Manifest I2).
 
-    // Communications & Governance Orb → the append-only relay: fold THIS session's authorized
-    // findings into the Custodian seed. Reads ONLY the session this window holds (held ==
-    // requested == _token — the session-boundary authorization); a mismatch or an absent/
+    // Communications & Governance Orb → the append-only relay: fold THIS local session's
+    // authorized findings into the Custodian seed. Reads ONLY the session this window holds;
+    // a mismatch or an absent/
     // unverifiable record yields the ungrounded seed. Read-only, executes nothing, opens no gate.
     string ComposeCommsSeed(string systemPrompt)
     {
         try
         {
-            var findings = _findingsRelay?.ReadAuthorizedFindings(_token, _token);
+            var findings = _findingsRelay?.ReadAuthorizedFindings(_sessionId, _sessionId);
             if (findings is null) return systemPrompt;
             var sb = new StringBuilder();
             sb.Append("Findings already established by the read-only diagnostic (explain only these; invent nothing further): ");
@@ -725,7 +616,7 @@ public partial class MainWindow : Window
             ChatPlaceholder.Visibility = string.IsNullOrEmpty(ChatInput.Text) ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    // Open the server-rendered repair report saved to the Desktop (shell-launch the saved HTML).
+    // Open the locally generated repair report saved to the Desktop.
     void OpenReport_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrEmpty(_reportPath)) return;
@@ -797,4 +688,42 @@ public partial class MainWindow : Window
                 };
         return d;
     }
+
+    static string HostnameFromDiagnostics(Dictionary<string, object?> diag)
+    {
+        if (diag.TryGetValue("os", out var osValue) && osValue is Dictionary<string, object?> os)
+        {
+            string? host = os.GetValueOrDefault("hostname")?.ToString();
+            if (!string.IsNullOrWhiteSpace(host)) return host!;
+        }
+        return Environment.MachineName;
+    }
+
+    static ElevatedRepairRequest? ReadElevatedRequest(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object) return null;
+        if (!root.TryGetProperty("diagnostics", out var diagnostics)) return null;
+        if (!root.TryGetProperty("repairPlan", out var repairPlan)) return null;
+        if (!root.TryGetProperty("approvedActions", out var actions) || actions.ValueKind != JsonValueKind.Array) return null;
+
+        var approved = actions.EnumerateArray()
+            .Select(JsonToDict)
+            .Where(a => !string.IsNullOrWhiteSpace(a.GetValueOrDefault("id")?.ToString()))
+            .ToList();
+        string sessionId = root.TryGetProperty("sessionId", out var sid) && sid.ValueKind == JsonValueKind.String
+            ? sid.GetString() ?? Guid.NewGuid().ToString("N")
+            : Guid.NewGuid().ToString("N");
+        string hostname = root.TryGetProperty("hostname", out var host) && host.ValueKind == JsonValueKind.String
+            ? host.GetString() ?? Environment.MachineName
+            : Environment.MachineName;
+
+        return new ElevatedRepairRequest(sessionId, diagnostics.Clone(), repairPlan.Clone(), approved, hostname);
+    }
+
+    sealed record ElevatedRepairRequest(
+        string SessionId,
+        JsonElement Diagnostics,
+        JsonElement RepairPlan,
+        List<Dictionary<string, object?>> ApprovedActions,
+        string Hostname);
 }

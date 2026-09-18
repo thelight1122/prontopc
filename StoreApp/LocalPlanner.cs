@@ -22,8 +22,8 @@ interface ILocalInference
     // True only when a usable on-device model is loaded.
     bool Available { get; }
     string ModelName { get; }
-    // Run the model. `jsonSchema` constrains output when the backend supports guided
-    // decoding. Returns the completion text, or null on any failure.
+    // Run the model. `jsonSchema` is passed through to model runtimes that support
+    // guided decoding. Returns the completion text, or null on any failure.
     string? Complete(string prompt, string jsonSchema, CancellationToken ct);
 
     // Multi-turn free-form chat (the conversational Custodian — SPEC Phase 2). `history`
@@ -75,7 +75,7 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         return new PlanResult(plan, "local-model", _model.ModelName);
     }
 
-    // Prompt mirrors the cloud broker's diagnostic wording for provider parity, then
+    // Prompt uses the same compact diagnostic wording across local model builds, then
     // constrains the model to choose only from the admissible action ids.
     static string BuildPrompt(JsonElement diag, IReadOnlySet<string> admissible)
     {
@@ -94,7 +94,7 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         return sb.ToString();
     }
 
-    // Compact, native port of the backend buildDiagnosticText salient lines.
+    // Compact diagnostic text used by local plan authoring.
     static string DiagnosticText(JsonElement d)
     {
         var lines = new List<string>();

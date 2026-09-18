@@ -2,18 +2,18 @@
   "schema_version": "1.0.0",
   "orb_id": "prontopc-session",
   "orb_version": "1.0.0",
-  "ability_name": "Paid-run session lifecycle",
-  "purpose": "Bind one paid repair run together as a token-keyed state machine, enforced server-side so payment gates the service - the exact coupling whose earlier breakage sank prior submissions. A token names a live PAID session (created only after a fulfilled Stripe checkout, incl. a 100%-off comp) and advances created -> diagnosed -> (consent) -> repaired -> complete with a 3-day TTL. A repair plan is authored and recorded ONLY for a token naming a live paid session; an unknown/expired token is refused (402), no session created, no plan.",
+  "ability_name": "Retired paid-run session lifecycle",
+  "purpose": "Historical token-keyed paid-session state machine. Retired by the one-time paid Microsoft Store app pivot: Store acquisition is the purchase gate, the installed app starts without a website token, and scan/plan/repair/report run locally without server-side paid-session state.",
   "runtime": {
     "language": "javascript",
-    "form": "http_service",
-    "entrypoint": "pronto-server-cloudrun.mjs:createSession|getSession|transitionState"
+    "form": "archived_http_service",
+    "entrypoint": "archive/cloudrun-backend/pronto-server-cloudrun.mjs:createSession|getSession|transitionState"
   },
   "capabilities": [
     { "name": "create", "function": "createSession(stripeSessionId, email, clientRef): mint a token bound to a fulfilled checkout; store createdAt + expiresAt (SESSION_TTL_MS = 3 days)." },
     { "name": "read", "function": "getSession(token): return the live session or null; expire past the 3-day TTL." },
     { "name": "advance", "function": "transitionState(token, newState): move created->diagnosed->consented->repaired->complete under an optimistic-concurrency write; reject an out-of-order or post-TTL transition." },
-    { "name": "pay_gate", "function": "handleNativePlan records a plan only for a token naming a live PAID session (single atomic read+conditional write, TOTEM-X-0065); unknown/expired -> 402, no session, no plan." }
+    { "name": "pay_gate", "function": "RETIRED. The current StoreApp does not call handleNativePlan and does not require a paid-session token before diagnostics or repair." }
   ],
   "demonstration": {
     "input_fixture": "a fulfilled Stripe checkout session id (live) or a forged token (negative case)",
@@ -30,7 +30,7 @@
   "umbilicals": ["umbilical.json"],
   "evidence": {
     "created_utc": "2026-09-03T00:00:00Z",
-    "source": "Placed from pronto-server-cloudrun.mjs (createSession/getSession/transitionState/handleNativePlan; SESSION_TTL_MS; server-side pay gate proven fail-closed, TOTEM-X-0065/X-0034). Closes the C-0119 gap where this Orb dir was empty and its umbilical reference dangled. trust_state=provisional matches the manifest attachment.",
-    "trust_state": "provisional"
+    "source": "Placed from pronto-server-cloudrun.mjs (createSession/getSession/transitionState/handleNativePlan; SESSION_TTL_MS; server-side pay gate proven fail-closed, TOTEM-X-0065/X-0034). Retired by TOTEM-X-0118 after StoreApp removed token/payment/backend dependencies and the former backend source moved to archive/cloudrun-backend.",
+    "trust_state": "retired"
   }
 }

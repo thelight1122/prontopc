@@ -2,17 +2,17 @@
   "schema_version": "1.0.0",
   "orb_id": "prontopc-loyalty",
   "orb_version": "1.0.0",
-  "ability_name": "Post-service loyalty & make-good coupons",
-  "purpose": "Extend the relationship after a run with honest, real value - never pressure. Two single-use Stripe coupons: (1) the 50%-off NEXT-repair coupon presented at completion (relationship-building, the Custodian may present it personally rather than the page); (2) the 100%-off AI-unavailable make-good, minted for that customer + that machine when BOTH AI authors decline, so the app refunds honestly instead of ever showing a non-AI plan under the AI claim. Not required for full function; it never gates or blocks a run.",
+  "ability_name": "Retired post-service loyalty & make-good coupons",
+  "purpose": "Historical Stripe coupon and make-good surface. Retired by the one-time paid Store app pivot: AI-unavailable now shows local support guidance, refunds are directed to Microsoft Store/support options, and no backend coupon is minted from the installed app.",
   "runtime": {
     "language": "javascript",
-    "form": "http_service",
-    "entrypoint": "pronto-server-cloudrun.mjs:ensureNextRepairCoupon|createMakeGoodCoupon"
+    "form": "archived_http_service",
+    "entrypoint": "archive/cloudrun-backend/pronto-server-cloudrun.mjs:ensureNextRepairCoupon|createMakeGoodCoupon"
   },
   "capabilities": [
     { "name": "next_repair_coupon", "function": "A reusable 50%-off Stripe coupon (COUPON_ID=NEXTREPAIR50) + a unique single-use promotion code minted per completed run; presented at completion." },
     { "name": "make_good_coupon", "function": "A single-use 100%-off promotion code tagged with email+machine metadata, minted via /api/report-ai-unavailable when on-device AND cloud authors both decline; emailed to the customer + a Support incident raised." },
-    { "name": "honest_recourse", "function": "The make-good is the terminal state on AI failure - real value-for-value, never a rule-based plan dressed as the AI plan (Manifest I2 honesty)." }
+    { "name": "honest_recourse", "function": "RETIRED backend coupon path. Current honest recourse is local support guidance and Microsoft Store refund direction, never a rule-based plan dressed as the AI plan." }
   ],
   "demonstration": {
     "input_fixture": "a completed run (next-repair) or a both-authors-declined event carrying token+machineId (make-good)",
@@ -29,7 +29,7 @@
   "umbilicals": ["umbilical.json"],
   "evidence": {
     "created_utc": "2026-09-03T00:00:00Z",
-    "source": "Placed from pronto-server-cloudrun.mjs (NEXTREPAIR50 next-repair coupon + the 100% AI-unavailable make-good stack, TOTEM-0013). Closes the C-0119 gap where this Orb dir was empty and its umbilical reference dangled. required_for_full_function=false; trust_state=provisional matches the manifest attachment.",
-    "trust_state": "provisional"
+    "source": "Placed from pronto-server-cloudrun.mjs (NEXTREPAIR50 next-repair coupon + the 100% AI-unavailable make-good stack, TOTEM-0013). Retired by TOTEM-X-0118 after StoreApp removed backend coupon/refund calls and the former backend source moved to archive/cloudrun-backend.",
+    "trust_state": "retired"
   }
 }

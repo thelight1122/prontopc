@@ -17,7 +17,7 @@
     Name="5DServiceSolutionsGlobal.ProntoPC"
     Publisher="CN=D4266722-F7B1-45D4-8B71-CC6C75E7273F"
     ProcessorArchitecture="x64"
-    Version="1.2.7.0" />
+    Version="1.2.9.0" />
 
   <mp:PhoneIdentity
     PhoneProductId="0cfd9c7c-1ca7-4195-b275-17441af39b2d"
@@ -48,21 +48,10 @@
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
-
-      <Extensions>
-        <!-- URI Protocol registration: prontopc:// -->
-        <uap:Extension Category="windows.protocol">
-          <uap:Protocol Name="prontopc">
-            <uap:DisplayName>ProntoPC Scan Launcher</uap:DisplayName>
-          </uap:Protocol>
-        </uap:Extension>
-      </Extensions>
-
     </Application>
   </Applications>
 
   <Capabilities>
-    <Capability Name="internetClient" />
     <rescap:Capability Name="runFullTrust" />
   </Capabilities>
 

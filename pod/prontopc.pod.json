@@ -4,7 +4,7 @@
   "product": "ProntoPC",
   "runtime": {
     "language": "csharp",
-    "implementation": "WPF self-contained Store client (canonical) + Cloud Run broker portal"
+    "implementation": "WPF self-contained Store client (canonical); former Cloud Run broker portal retired to archive/cloudrun-backend"
   },
   "orchestrator": {
     "purpose": "The Model is the orchestrating center of the POD (docs/POD_ARCHITECTURE.md sec1): it takes the Prism-screened input, decides what the situation needs, reads the Orbs' records for grounding, and coordinates the response. StoreApp/Orchestrator.cs is NOT that intelligence - it is the deterministic execution boundary (sec6): the rails the Model orchestrates within. It owns phase/session state and the safety preconditions (valid SystemAudit before anything reaches the model/consent/repair; Action-Envelope admissibility; consent-before-repair) and holds no diagnostic or repair logic of its own. It HOLDS the action envelope (owned/authored by the Computer Technician Orb) and KEYS the repair-plan Umbilical to it: at scan->plan it compiles the per-machine admissible action set (preconditions x diagnostics) and hands it to the model author; at plan->consent the keyed envelope is the guard; at consent it renders risk / requires_restart / estimated_mb from the envelope, not from model output - so every sign the user approves has a real referent.",
@@ -114,11 +114,11 @@
     },
     {
       "orb_id": "prontopc-session",
-      "required_for_full_function": true,
+      "required_for_full_function": false,
       "umbilical": "orbs/session/umbilical.json",
       "orb_version_pin": "1.0.0",
-      "trust_state": "provisional",
-      "manifest_specs": ["C4"],
+      "trust_state": "retired",
+      "manifest_specs": [],
       "role": "infrastructure",
       "client_channel": false,
       "relay": "none"
@@ -137,10 +137,10 @@
   "portals": [
     {
       "orb_id": "prontopc-stripe-portal",
-      "required_for_full_function": true,
+      "required_for_full_function": false,
       "umbilical": "portals/stripe.umbilical.json",
-      "trust_state": "provisional",
-      "manifest_specs": ["C1", "I5"],
+      "trust_state": "retired",
+      "manifest_specs": [],
       "role": "infrastructure"
     },
     {
@@ -153,10 +153,10 @@
     },
     {
       "orb_id": "prontopc-cloudrun-portal",
-      "required_for_full_function": true,
+      "required_for_full_function": false,
       "umbilical": "portals/cloudrun.umbilical.json",
-      "trust_state": "provisional",
-      "manifest_specs": ["C2"],
+      "trust_state": "retired",
+      "manifest_specs": [],
       "role": "infrastructure"
     },
     {
@@ -170,7 +170,7 @@
   ],
   "evidence": {
     "created_utc": "2026-08-27T00:00:00Z",
-    "source": "Opened clean from the Manifest-of-Completion audit (5 PASS / 3 FAIL / 4 PARTIAL / 4 UNVERIFIABLE). Reconciled to the two-Orb POD architecture (docs/POD_ARCHITECTURE.md, TOTEM-C-0113) at TOTEM-C-0119: added the model-at-center block (honest base-vs-formed provenance; no v3, Canon formed only in research, Nature Layer designed-not-built), the architecture block mapping the flat orbs[] onto the Computer Technician Orb and the Communications & Governance Orb, and per-orb role/client_channel/relay markers. Prior C-0119 honesty gap CLOSED at TOTEM-C-0123: the diagnostics/session/loyalty orb dirs now carry schema-valid orb.json + umbilical.json grounded in real code (ProntoPC.Diagnostics.Collect + SystemAudit; the backend paid-run session lifecycle; the Stripe next-repair + AI-unavailable make-good coupons), so every orbs[] umbilical path resolves to a file. Extended at TOTEM-C-0124: the four portals[] umbilical files (stripe/llm/cloudrun/mint) are authored too, so every attachment path in the manifest now resolves. The retired cloud LLM author was reconciled as a non-required, zero-spec portal after the formed on-device responder became the sole plan author; C3 is carried by prontopc-repair-plan and legacy I3 provider resilience no longer applies. The mint portal is now RETIRED (TOTEM-C-0130): superseded by the shipping Custodian's zero-asset vector Actuator, it is non-required with no active specs and retained + marked, not erased (append-only). Both retired portals (llm, mint) are kept as append-only records of superseded outward dependencies; every orbs[] + portals[] umbilical path still resolves.",
+    "source": "Opened clean from the Manifest-of-Completion audit (5 PASS / 3 FAIL / 4 PARTIAL / 4 UNVERIFIABLE). Reconciled to the two-Orb POD architecture (docs/POD_ARCHITECTURE.md, TOTEM-C-0113) at TOTEM-C-0119: added the model-at-center block (honest base-vs-formed provenance; no v3, Canon formed only in research, Nature Layer designed-not-built), the architecture block mapping the flat orbs[] onto the Computer Technician Orb and the Communications & Governance Orb, and per-orb role/client_channel/relay markers. Prior C-0119 honesty gap CLOSED at TOTEM-C-0123: the diagnostics/session/loyalty orb dirs carried schema-valid orb.json + umbilical.json grounded in real code (ProntoPC.Diagnostics.Collect + SystemAudit; the backend paid-run session lifecycle; the Stripe next-repair + AI-unavailable make-good coupons), so every orbs[] umbilical path resolved to a file. Extended at TOTEM-C-0124: the four portals[] umbilical files (stripe/llm/cloudrun/mint) were authored too, so every attachment path in the manifest resolved. The retired cloud LLM author was reconciled as a non-required, zero-spec portal after the formed on-device responder became the sole plan author; C3 is carried by prontopc-repair-plan and legacy I3 provider resilience no longer applies. The mint portal is RETIRED (TOTEM-C-0130): superseded by the shipping Custodian's zero-asset vector Actuator. The Stripe and Cloud Run portals plus the paid-run session lifecycle are now RETIRED by the one-time paid Store app pivot (TOTEM-X-0117/TOTEM-X-0118): the installed StoreApp runs scan/plan/repair/report locally after Store acquisition, and the former backend source is preserved at archive/cloudrun-backend. Retired portals are kept as append-only records of superseded outward dependencies; every orbs[] + portals[] umbilical path still resolves.",
     "trust_state": "draft"
   }
 }

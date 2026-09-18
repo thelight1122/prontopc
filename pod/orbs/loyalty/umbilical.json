@@ -3,35 +3,35 @@
   "umbilical_id": "prontopc-loyalty-umbilical",
   "pod_id": "prontopc-pod",
   "orb_id": "prontopc-loyalty",
-  "attachment_point": "cloudrun-portal",
-  "runtime": { "language": "javascript", "form": "http_service" },
+  "attachment_point": "retired-cloudrun-portal",
+  "runtime": { "language": "javascript", "form": "archived_http_service" },
   "invocation": {
-    "entrypoint": "pronto-server-cloudrun.mjs:ensureNextRepairCoupon|createMakeGoodCoupon",
+    "entrypoint": "archive/cloudrun-backend/pronto-server-cloudrun.mjs:ensureNextRepairCoupon|createMakeGoodCoupon",
     "orb_version": "1.0.0"
   },
   "input_contract": {
-    "description": "Two triggers, both from a live paid session. Next-repair: a completed run. Make-good: a report that both AI authors declined, carrying token + machine identity.",
+    "description": "Retired triggers from the former live paid-session backend. Current StoreApp does not call these coupon endpoints.",
     "next_repair": { "token": "string (completed session)" },
     "make_good": { "token": "string", "machineId": "string", "machineName": "string", "reason": "string" }
   },
   "output_contract": {
-    "description": "A single-use coupon code, or an honest no-op. Absent Stripe keys degrade gracefully to ok with couponCode null - never a fabricated code, never a blocked run.",
+    "description": "Historical single-use coupon code or honest no-op. Current AI-unavailable path uses support/Microsoft Store guidance.",
     "ok": "boolean",
     "couponCode": "string | null",
     "kind": "next_repair (50%) | make_good (100%)"
   },
   "observation_contract": {
-    "description": "Loyalty attaches AFTER the service and never affects it: it authors no plan, gates no state, blocks nothing. The make-good is the honest terminal recourse on AI failure (not a non-AI plan); the next-repair coupon is presented, never pushed (no-force ethos). The Custodian may PRESENT a coupon, but the coupon itself is minted only here.",
+    "description": "Retired loyalty record. The current app still does not substitute a non-AI plan; it no longer mints Stripe coupons as recourse.",
     "events": [
       "coupon.presented { code, kind: next_repair }",
       "makegood.issued { code, email, machine }"
     ]
   },
   "evidence_contract": {
-    "description": "Coupons are real Stripe promotion codes (single-use), tagged with email + machine metadata; the make-good also sends the customer email + a Support incident. The issued code is the after-the-fact evidence of the honest recourse."
+    "description": "Historical coupon evidence remains in the archive only. No current StoreApp path depends on Stripe coupon creation."
   },
   "working_parameters": {
-    "status": "provisional",
-    "outside_parameters_behavior": "Missing Stripe/Resend keys -> ok with couponCode null (honest no-op), never a fabricated code. A make-good is idempotent per session. No loyalty path can block, gate, or delay the paid repair flow."
+    "status": "retired",
+    "outside_parameters_behavior": "No current StoreApp behavior depends on this loyalty backend. Live Stripe/Resend teardown requires separate owner approval."
   }
 }

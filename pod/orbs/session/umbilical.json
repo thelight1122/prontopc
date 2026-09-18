@@ -3,35 +3,35 @@
   "umbilical_id": "prontopc-session-umbilical",
   "pod_id": "prontopc-pod",
   "orb_id": "prontopc-session",
-  "attachment_point": "cloudrun-portal",
-  "runtime": { "language": "javascript", "form": "http_service" },
+  "attachment_point": "retired-cloudrun-portal",
+  "runtime": { "language": "javascript", "form": "archived_http_service" },
   "invocation": {
-    "entrypoint": "pronto-server-cloudrun.mjs:createSession|getSession|transitionState",
+    "entrypoint": "archive/cloudrun-backend/pronto-server-cloudrun.mjs:createSession|getSession|transitionState",
     "orb_version": "1.0.0"
   },
   "input_contract": {
-    "description": "A token that must name a live PAID session, plus the requested transition. The token arrives with the app (from prontopc://run?token= or the await-payment poll) and is re-verified server-side.",
+    "description": "Retired token/state transition contract. Tokens formerly arrived from prontopc://run?token= or await-payment polling. The current StoreApp has no website token or server-side paid session.",
     "token": "string (names a paid session)",
     "requested_transition": "created | diagnosed | consented | repaired | complete"
   },
   "output_contract": {
-    "description": "The authoritative session state, or a fail-closed refusal. A plan is recordable only in state created|diagnosed for a live paid session.",
+    "description": "Historical authoritative session state, or a fail-closed refusal. Current plan/report evidence is local to the installed StoreApp.",
     "ok": "boolean",
     "state": "created | diagnosed | consented | repaired | complete",
     "refusal": "402 unpaid (unknown/expired token) | 409 conflict (concurrent state change) | 400 (bad request)"
   },
   "observation_contract": {
-    "description": "The session is the spine every other Orb hangs a run on: diagnostics/plan/consent/repair each act only within a live paid session, and the findings relay is keyed to the session id (a caller may read only the session it holds). The session never authors a plan or a repair - it only gates and records state.",
+    "description": "Retired session spine. Diagnostics, plan, consent, repair, and report now run through local app state after Store acquisition. The findings relay remains session-keyed locally, but no Cloud Run paid-session token is required.",
     "events": [
       "session.created { token, expiresAt }",
       "session.state_changed { token, from, to }"
     ]
   },
   "evidence_contract": {
-    "description": "Session state lives in Firestore (paidSessions), keyed by token; a session exists ONLY post-verifyStripeSession, so a token that names a live session IS the proof of a paid (or 100%-off comped) run. Writes use optimistic concurrency (lastUpdateTime) so a delayed plan upload cannot overwrite a concurrent consent/state change."
+    "description": "Historical session state lived in Firestore (paidSessions), keyed by token. Current StoreApp source no longer writes this state."
   },
   "working_parameters": {
-    "status": "provisional",
-    "outside_parameters_behavior": "Unknown/expired token -> 402 unpaid, no session created, no plan authored (fail-closed). Out-of-order or post-TTL transition -> refused; a concurrent write -> 409, the app re-reads the authoritative state."
+    "status": "retired",
+    "outside_parameters_behavior": "No current StoreApp behavior depends on this paid-session lifecycle. Live Firestore retention or deletion is a separate owner-approved gate."
   }
 }

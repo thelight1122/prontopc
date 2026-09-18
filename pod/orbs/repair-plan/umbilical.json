@@ -4,14 +4,14 @@
   "pod_id": "prontopc-pod",
   "orb_id": "prontopc-repair-plan",
   "attachment_point": "orchestrator",
-  "runtime": { "language": "javascript", "form": "http_service" },
+  "runtime": { "language": "csharp", "form": "library" },
   "invocation": {
-    "entrypoint": "pronto-server-cloudrun.handleRepairPlan",
+    "entrypoint": "ProntoPC.GemmaLocalPlanner",
     "orb_version": "0.1.0"
   },
   "input_contract": {
-    "description": "Real diagnostics for one session.",
-    "session": "string (token)",
+    "description": "Real diagnostics for one local app session.",
+    "session": "string (local app session id; not a Cloud Run paid-session token)",
     "diagnostics": "object (the diagnostics Orb output: os, disk[], memory, temp_files, drivers, security, startup, ...)"
   },
   "output_contract": {
@@ -28,7 +28,7 @@
           ],
           "deferred_actions": "array (optional)"
         },
-        "provenance": { "provider": "local-model | azure-openai | gemini", "model": "string" }
+        "provenance": { "provider": "local-model", "model": "string" }
       },
       {
         "status": "unavailable",
@@ -46,7 +46,7 @@
     ]
   },
   "evidence_contract": {
-    "description": "Each ok plan carries provenance (provider+model) as its evidence of authorship. certification_preflight.check_ai_repair_plan is the executable check that the plan references diagnostics and is not the canned fallback string."
+    "description": "Each ok plan carries provenance (provider+model) as its evidence of authorship. ModelSmoke is the executable check that the plan references diagnostics and is not a canned fallback string."
   },
   "working_parameters": {
     "status": "draft",

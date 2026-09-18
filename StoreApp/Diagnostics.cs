@@ -10,8 +10,8 @@ using Microsoft.Win32;
 
 namespace ProntoPC;
 
-// Native diagnostic collector. Produces the exact `diag` JSON the Cloud Run
-// backend expects — WITHOUT invoking PowerShell or downloading/executing any
+// Native diagnostic collector. Produces the `diag` JSON consumed by the local
+// planner and report writer without invoking PowerShell or downloading/executing
 // remote code. Read-only: it only queries system state, never modifies it.
 //
 // Each section is collected defensively (matching the PowerShell script's

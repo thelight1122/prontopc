@@ -12,7 +12,7 @@ namespace ProntoPC;
 // APIs (file/registry work) and by spawning the ordinary Windows system tools
 // (sfc, DISM, chkdsk, netsh, cleanmgr, wsreset, powercfg) — NOT PowerShell, and
 // nothing downloaded or executed from the network. Each action returns a result
-// row matching what /api/submit-repair-results expects:
+// row matching what the local report writer expects:
 //   { action, name, status: done|noted|skipped|error, mb_freed, detail }
 //
 // Actions that require a reboot to fully apply are reported via NeedsRestart.

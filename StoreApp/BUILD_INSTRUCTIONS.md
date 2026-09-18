@@ -29,12 +29,13 @@
 
 ## Step 3 — Test locally
 1. Build in Debug (x64)
-2. Run: ProntoPC.exe "prontopc://scan?token=test-token-123"
-3. Confirm UAC elevation prompt appears
-4. Confirm the repair plan is authored **on-device** (provider=local-model). The
-   cloud broker is a fallback only; if BOTH the on-device model and the cloud
-   decline, the app shows the honest AI-unavailable make-good (100% coupon) — it
-   never shows a rule-based plan under the AI claim.
+2. Run ProntoPC from the Start menu or from the built executable.
+3. Confirm the scan runs without a website payment token or protocol handoff.
+4. Confirm UAC elevation appears only after the customer approves repair actions
+   that require administrator rights.
+5. Confirm the repair plan is authored **on-device** (provider=local-model). If
+   the on-device model declines, the app shows an honest AI-unavailable support
+   path and never shows a rule-based plan under the AI claim.
 
 ## Step 4 — Package for Store
 1. Right-click packaging project → Publish → Create App Packages
@@ -59,11 +60,12 @@
      locally, no diagnostic data leaves the PC to build the plan), governed by
      the Gemma Terms of Use (ai.google.dev/gemma/terms) and Prohibited Use Policy
      (ai.google.dev/gemma/prohibited_use_policy). If the AI is ever unavailable,
-     the customer is issued a 100% make-good coupon — no non-AI substitute.
+     the app shows an honest support path — no non-AI substitute.
    - Screenshots: take them of the app running on a real scan
    - Age rating: ESRB E (Everyone)
    - Category: Utilities & Tools
-4. Pricing: Free (the Stripe paywall is on the website; the app is the launcher)
+4. Pricing: Paid one-time purchase in Microsoft Store. The app does not require
+   Stripe, a website checkout token, or a separate payment server after install.
 5. Submit for certification
 
 ## Timeline
@@ -75,8 +77,7 @@ Microsoft Store review: typically 1–3 business days for new apps.
 - Publisher CN: CN=D4266722-F7B1-45D4-8B71-CC6C75E7273F
 - Package Family Name: 5DServiceSolutionsGlobal.ProntoPC_cne6wjsv6stbm
 
-## After approval — update success-store.html
-Once the app is live in the Store, set STORE_PRODUCT_ID in success-store.html:
-  const STORE_PRODUCT_ID = "9P1K9QJXKND8";
-
-Then update the Stripe Payment Link success URL from /success → /success-store.
+## After approval
+Keep the website as an information and support surface that links directly to the
+Microsoft Store listing. Do not restore a separate Stripe payment gate for the
+Store app.

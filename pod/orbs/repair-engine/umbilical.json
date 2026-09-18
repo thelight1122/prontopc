@@ -39,7 +39,7 @@
     ]
   },
   "evidence_contract": {
-    "description": "Result rows are POSTed to the cloudrun portal (/api/submit-repair-results) and saved to the on-desktop report; both are the after-the-fact evidence of what actually ran."
+    "description": "Result rows are saved into the locally generated Desktop report. The former Cloud Run /api/submit-repair-results evidence path is retired by the one-time paid Store app pivot."
   },
   "working_parameters": {
     "status": "provisional",
