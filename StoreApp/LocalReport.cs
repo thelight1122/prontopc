@@ -94,6 +94,18 @@ public static class LocalReport
         // ── Repair actions ────────────────────────────────────────────────────────────────
         if (results.Count > 0)
         {
+            // Map each action id -> kind (maintenance/repair/report) from the validated plan
+            // (the envelope stamps "kind"). Lets the report scope the guarantee to true repairs.
+            var kindById = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (plan.ValueKind == JsonValueKind.Object && plan.TryGetProperty("actions", out var planActs)
+                && planActs.ValueKind == JsonValueKind.Array)
+                foreach (var pa in planActs.EnumerateArray())
+                    if (pa.ValueKind == JsonValueKind.Object && pa.TryGetProperty("id", out var pid)
+                        && pid.ValueKind == JsonValueKind.String)
+                        kindById[pid.GetString()!] = pa.TryGetProperty("kind", out var pk)
+                            && pk.ValueKind == JsonValueKind.String ? pk.GetString()! : "repair";
+
+            bool anyMaintenance = false;
             var rows = new StringBuilder();
             foreach (var a in results)
             {
@@ -102,13 +114,22 @@ public static class LocalReport
                 int freed = I(a, "mb_freed");
                 string detail = S(a, "detail"); if (detail.Length == 0) detail = "—";
                 if (detail.Length > 120) detail = detail.Substring(0, 120);
-                rows.Append($"<tr><td>{Esc(name)}</td><td style=\"color:{StatusColor(status)};font-weight:600\">{StatusLabel(status)}</td>")
+                string kind = kindById.TryGetValue(S(a, "action"), out var k) ? k : "repair";
+                if (kind == "maintenance") anyMaintenance = true;
+                string typeLabel = kind == "maintenance" ? "Maintenance" : kind == "report" ? "Report" : "Repair";
+                string typeColor = kind == "maintenance" ? "#6B6560" : kind == "report" ? "#4F7DFF" : "#2A7A4A";
+                rows.Append($"<tr><td>{Esc(name)}</td><td style=\"color:{typeColor};font-weight:600\">{typeLabel}</td>")
+                    .Append($"<td style=\"color:{StatusColor(status)};font-weight:600\">{StatusLabel(status)}</td>")
                     .Append($"<td style=\"color:#2A7A4A;font-family:'Courier New',monospace\">{(freed > 0 ? Esc(FmtMb(freed)) + " recovered" : "")}</td>")
                     .Append($"<td style=\"color:#6B6560;font-size:.85em\">{Esc(detail)}</td></tr>");
             }
             sec.Append("<div class=\"section\"><div class=\"section-head\"><div class=\"dot\"></div><h3>Repair Actions</h3></div>")
-               .Append("<table><tr><th>Action</th><th>Result</th><th>Space</th><th>Notes</th></tr>")
-               .Append(rows).Append("</table></div>");
+               .Append("<table><tr><th>Action</th><th>Type</th><th>Result</th><th>Space</th><th>Notes</th></tr>")
+               .Append(rows).Append("</table>");
+            if (anyMaintenance)
+                sec.Append("<div style=\"padding:0 20px 12px\"><p style=\"font-size:.82rem;color:#6B6560;margin:6px 0 0\">"
+                    + "<strong>Maintenance</strong> items — temporary files, caches and similar — reclaim space now but naturally build back up with normal use, so their return is expected. The 30-day repair guarantee covers genuine <strong>repairs</strong>, not routine cleanup.</p></div>");
+            sec.Append("</div>");
         }
 
         // ── Drive health ────────────────────────────────────────────────────────────────
@@ -344,7 +365,7 @@ public static class LocalReport
           .Append($"<div class=\"stat\"><div class=\"num\">{(I(mem, "percent_used") > 0 ? I(mem, "percent_used") + "%" : "—")}</div><div class=\"lbl\">memory in use</div></div></div>\n")
           .Append(sec)
           .Append(couponBlock)
-          .Append("<div class=\"footer\"><p><strong>Pronto PC</strong> · prontopc.online · support@prontopc.online</p><p>5D Service Solutions Global LLC · 30-day re-repair guarantee</p></div>\n")
+          .Append("<div class=\"footer\"><p><strong>Pronto PC</strong> · prontopc.online · support@prontopc.online</p><p>5D Service Solutions Global LLC · 30-day repair guarantee</p></div>\n")
           .Append("</div></body></html>");
         return sb.ToString();
     }

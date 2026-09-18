@@ -125,9 +125,10 @@ sealed class Envelope
                 }
                 if (!seenIds.Add(id)) { dropped.Add($"{id}: duplicate"); continue; }
 
-                // stamp risk + requires_restart from the envelope (never the author's)
+                // stamp risk + requires_restart + kind from the envelope (never the author's)
                 act["risk"] = def.GetProperty("risk").GetString();
                 act["requires_restart"] = def.TryGetProperty("requires_restart", out var rr) && rr.GetBoolean();
+                act["kind"] = def.TryGetProperty("kind", out var kd) ? kd.GetString() : "repair";
                 // clamp estimated_mb_recovered to the envelope mb bound
                 act["estimated_mb_recovered"] = ClampMb(def, diag, act);
 
@@ -160,6 +161,7 @@ sealed class Envelope
             candidate["friendly_name"] = lbl.name;
             candidate["risk"] = def.GetProperty("risk").GetString();
             candidate["requires_restart"] = def.TryGetProperty("requires_restart", out var rr) && rr.GetBoolean();
+            candidate["kind"] = def.TryGetProperty("kind", out var kd) ? kd.GetString() : "repair";
             candidate["estimated_mb_recovered"] = mb;
             kept.Add(candidate);
             seenIds.Add(id);

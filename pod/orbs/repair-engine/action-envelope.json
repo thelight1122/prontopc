@@ -4,177 +4,491 @@
   "envelope_version": "0.1.0",
   "owner_orb": "prontopc-repair-engine",
   "diagnostics_ref": "prontopc-diagnostics output (os, disk[], memory, temp_files, recycle_bin, browser_caches, windows_caches, update_leftovers, startup_programs, drivers, device_errors, bsod_history, smart_health, network, dns_cache, security)",
-  "predicate_ops": ["always", "present", "nonempty", "eq", "gt", "gte", "and", "or"],
+  "predicate_ops": [
+    "always",
+    "present",
+    "nonempty",
+    "eq",
+    "gt",
+    "gte",
+    "and",
+    "or"
+  ],
   "plan_bounds": {
     "max_actions": 12,
     "estimated_mb_recovered_cap": "Each action's estimated_mb_recovered is clamped to [0, measured cap from its mb.source]. The plan total may never exceed the sum of measured reclaimable space in the diagnostics.",
     "subsumption": [
       {
         "umbrella": "clear_all_browser_caches",
-        "members": ["clear_chrome_cache", "clear_edge_cache", "clear_firefox_cache", "clear_brave_cache", "clear_opera_cache"]
+        "members": [
+          "clear_chrome_cache",
+          "clear_edge_cache",
+          "clear_firefox_cache",
+          "clear_brave_cache",
+          "clear_opera_cache"
+        ]
       }
     ]
   },
   "actions": {
     "clear_temp_files": {
-      "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "nonempty", "field": "temp_files" },
-      "mb": { "source": "field", "field": "temp_files[].size_mb (sum)", "unit": "mb", "fallback": 0 },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "nonempty",
+        "field": "temp_files"
+      },
+      "mb": {
+        "source": "field",
+        "field": "temp_files[].size_mb (sum)",
+        "unit": "mb",
+        "fallback": 0
+      },
       "notes": "diag.temp_files is an ARRAY of {size_mb}; the Orchestrator sums size_mb for the cap. Repair.cs: DeleteRecursive(TEMP, C:\\Windows\\Temp)."
     },
     "clear_all_browser_caches": {
-      "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "nonempty", "field": "browser_caches" },
-      "mb": { "source": "field", "field": "browser_caches[].size_mb (sum)", "unit": "mb", "fallback": 0 },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "nonempty",
+        "field": "browser_caches"
+      },
+      "mb": {
+        "source": "field",
+        "field": "browser_caches[].size_mb (sum)",
+        "unit": "mb",
+        "fallback": 0
+      },
       "notes": "diag.browser_caches is an ARRAY of {browser,size_mb,file_count}; cap = sum of size_mb. Subsumes the five per-browser actions (see plan_bounds.subsumption)."
     },
     "clear_chrome_cache": {
-      "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "nonempty", "field": "browser_caches" },
-      "mb": { "source": "zero" },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "nonempty",
+        "field": "browser_caches"
+      },
+      "mb": {
+        "source": "zero"
+      },
       "notes": "browser_caches is an array; the current predicate_ops cannot match a single browser element, so this is gated on any browser cache present and its per-browser mb is not bounded (it is subsumed by clear_all_browser_caches, which is preferred). Clearing an absent browser is a harmless 0-byte no-op in Repair.cs."
     },
     "clear_edge_cache": {
-      "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "nonempty", "field": "browser_caches" },
-      "mb": { "source": "zero" },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "nonempty",
+        "field": "browser_caches"
+      },
+      "mb": {
+        "source": "zero"
+      },
       "notes": "See clear_chrome_cache: subsumed; per-element match not expressible in v0.1 predicate_ops."
     },
     "clear_firefox_cache": {
-      "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "nonempty", "field": "browser_caches" },
-      "mb": { "source": "zero" },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "nonempty",
+        "field": "browser_caches"
+      },
+      "mb": {
+        "source": "zero"
+      },
       "notes": "See clear_chrome_cache."
     },
     "clear_brave_cache": {
-      "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "nonempty", "field": "browser_caches" },
-      "mb": { "source": "zero" },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "nonempty",
+        "field": "browser_caches"
+      },
+      "mb": {
+        "source": "zero"
+      },
       "notes": "See clear_chrome_cache."
     },
     "clear_opera_cache": {
-      "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "nonempty", "field": "browser_caches" },
-      "mb": { "source": "zero" },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "nonempty",
+        "field": "browser_caches"
+      },
+      "mb": {
+        "source": "zero"
+      },
       "notes": "See clear_chrome_cache."
     },
     "clear_windows_caches": {
-      "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "always" },
-      "mb": { "source": "zero" },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "always"
+      },
+      "mb": {
+        "source": "zero"
+      },
       "notes": "Thumbcache/iconcache/prefetch; not pre-measured in diagnostics, so estimated_mb_recovered forced to 0."
     },
     "empty_recycle_bin": {
-      "risk": "low", "requires_restart": false, "outcome": "done",
-      "precondition": { "op": "gt", "field": "recycle_bin.size_mb", "value": 0 },
-      "mb": { "source": "field", "field": "recycle_bin.size_mb", "unit": "mb", "fallback": 0 },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "done",
+      "precondition": {
+        "op": "gt",
+        "field": "recycle_bin.size_mb",
+        "value": 0
+      },
+      "mb": {
+        "source": "field",
+        "field": "recycle_bin.size_mb",
+        "unit": "mb",
+        "fallback": 0
+      },
       "notes": "Engine reports done, not a freed byte count; mb estimate comes from diagnostics."
     },
     "disk_cleanup": {
-      "risk": "low", "requires_restart": false, "outcome": "done",
-      "precondition": { "op": "always" },
-      "mb": { "source": "zero" },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "done",
+      "precondition": {
+        "op": "always"
+      },
+      "mb": {
+        "source": "zero"
+      },
       "notes": "cleanmgr /sagerun:1 — amount not pre-measurable."
     },
     "clear_windows_store_cache": {
-      "risk": "low", "requires_restart": false, "outcome": "done",
-      "precondition": { "op": "always" },
-      "mb": { "source": "zero" },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "done",
+      "precondition": {
+        "op": "always"
+      },
+      "mb": {
+        "source": "zero"
+      },
       "notes": "wsreset.exe."
     },
     "clean_windows_update_cache": {
-      "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "gt", "field": "update_leftovers.windows_update_cache_mb", "value": 0 },
-      "mb": { "source": "field", "field": "update_leftovers.windows_update_cache_mb", "unit": "mb", "fallback": 0 },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "gt",
+        "field": "update_leftovers.windows_update_cache_mb",
+        "value": 0
+      },
+      "mb": {
+        "source": "field",
+        "field": "update_leftovers.windows_update_cache_mb",
+        "unit": "mb",
+        "fallback": 0
+      },
       "notes": "Field verified in Diagnostics.cs (int mb). gt 0 so an empty cache is not offered. Stops/starts wuauserv+bits; services restored, no reboot."
     },
     "clean_component_store": {
-      "risk": "low", "requires_restart": false, "outcome": "done",
-      "precondition": { "op": "always" },
-      "mb": { "source": "zero" },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "done",
+      "precondition": {
+        "op": "always"
+      },
+      "mb": {
+        "source": "zero"
+      },
       "notes": "DISM StartComponentCleanup — safe periodic maintenance; amount not pre-measured (matches system-prompt guidance)."
     },
     "clean_delivery_optimization": {
-      "risk": "low", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "gt", "field": "update_leftovers.delivery_optimization_mb", "value": 0 },
-      "mb": { "source": "field", "field": "update_leftovers.delivery_optimization_mb", "unit": "mb", "fallback": 0 }
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "gt",
+        "field": "update_leftovers.delivery_optimization_mb",
+        "value": 0
+      },
+      "mb": {
+        "source": "field",
+        "field": "update_leftovers.delivery_optimization_mb",
+        "unit": "mb",
+        "fallback": 0
+      }
     },
     "remove_windows_old": {
-      "risk": "medium", "requires_restart": false, "outcome": "freed",
-      "precondition": { "op": "eq", "field": "update_leftovers.windows_old_present", "value": true },
-      "mb": { "source": "field", "field": "update_leftovers.windows_old_gb", "unit": "gb", "fallback": 0 },
+      "kind": "maintenance",
+      "risk": "medium",
+      "requires_restart": false,
+      "outcome": "freed",
+      "precondition": {
+        "op": "eq",
+        "field": "update_leftovers.windows_old_present",
+        "value": true
+      },
+      "mb": {
+        "source": "field",
+        "field": "update_leftovers.windows_old_gb",
+        "unit": "gb",
+        "fallback": 0
+      },
       "notes": "Repair.cs RemoveWindowsOld() SKIPS when C:\\Windows.old is absent — the precondition mirrors that exactly. Often the single largest reclaim."
     },
     "flush_dns": {
-      "risk": "low", "requires_restart": false, "outcome": "done",
-      "precondition": { "op": "or", "of": [ { "op": "gt", "field": "dns_cache.entries", "value": 0 }, { "op": "eq", "field": "network.connectivity.internet_reachable", "value": false } ] },
-      "mb": { "source": "none" },
+      "kind": "maintenance",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "done",
+      "precondition": {
+        "op": "or",
+        "of": [
+          {
+            "op": "gt",
+            "field": "dns_cache.entries",
+            "value": 0
+          },
+          {
+            "op": "eq",
+            "field": "network.connectivity.internet_reachable",
+            "value": false
+          }
+        ]
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "diag.dns_cache is an object {entries:N} (verified in Diagnostics.cs), so gate on entries>0, not object-nonempty."
     },
     "optimize_power_plan": {
-      "risk": "low", "requires_restart": false, "outcome": "done",
-      "precondition": { "op": "always" },
-      "mb": { "source": "none" },
+      "kind": "repair",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "done",
+      "precondition": {
+        "op": "always"
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "powercfg SCHEME_BALANCED."
     },
     "optimize_visual_effects": {
-      "risk": "medium", "requires_restart": true, "outcome": "done",
-      "precondition": { "op": "gte", "field": "memory.percent_used", "value": 80 },
-      "mb": { "source": "none" },
+      "kind": "repair",
+      "risk": "medium",
+      "requires_restart": true,
+      "outcome": "done",
+      "precondition": {
+        "op": "gte",
+        "field": "memory.percent_used",
+        "value": 80
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "In Repair.RestartActions. Gate to memory-pressured machines where it helps."
     },
     "sfc_scan": {
-      "risk": "medium", "requires_restart": true, "outcome": "done",
-      "precondition": { "op": "or", "of": [ { "op": "nonempty", "field": "bsod_history" }, { "op": "nonempty", "field": "device_errors" } ] },
-      "mb": { "source": "none" },
+      "kind": "repair",
+      "risk": "medium",
+      "requires_restart": true,
+      "outcome": "done",
+      "precondition": {
+        "op": "or",
+        "of": [
+          {
+            "op": "nonempty",
+            "field": "bsod_history"
+          },
+          {
+            "op": "nonempty",
+            "field": "device_errors"
+          }
+        ]
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "In Repair.RestartActions. Gate to corruption indicators, not healthy machines."
     },
     "dism_restore": {
-      "risk": "medium", "requires_restart": true, "outcome": "done",
-      "precondition": { "op": "or", "of": [ { "op": "nonempty", "field": "bsod_history" }, { "op": "nonempty", "field": "device_errors" } ] },
-      "mb": { "source": "none" },
+      "kind": "repair",
+      "risk": "medium",
+      "requires_restart": true,
+      "outcome": "done",
+      "precondition": {
+        "op": "or",
+        "of": [
+          {
+            "op": "nonempty",
+            "field": "bsod_history"
+          },
+          {
+            "op": "nonempty",
+            "field": "device_errors"
+          }
+        ]
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "In Repair.RestartActions. Companion to sfc_scan for image corruption."
     },
     "chkdsk_scan": {
-      "risk": "medium", "requires_restart": false, "outcome": "done",
-      "precondition": { "op": "or", "of": [ { "op": "nonempty", "field": "bsod_history" }, { "op": "nonempty", "field": "device_errors" } ] },
-      "mb": { "source": "none" },
+      "kind": "repair",
+      "risk": "medium",
+      "requires_restart": false,
+      "outcome": "done",
+      "precondition": {
+        "op": "or",
+        "of": [
+          {
+            "op": "nonempty",
+            "field": "bsod_history"
+          },
+          {
+            "op": "nonempty",
+            "field": "device_errors"
+          }
+        ]
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "chkdsk C: /scan is online (NOT in RestartActions). diag.smart_health is an ARRAY whose per-drive 'healthy' leaf is not yet confirmed, so this is gated on crash/device-error indicators; TIGHTEN to a SMART-warning predicate once the smart_health leaf schema is confirmed."
     },
     "reset_network_stack": {
-      "risk": "medium", "requires_restart": true, "outcome": "done",
-      "precondition": { "op": "eq", "field": "network.connectivity.internet_reachable", "value": false },
-      "mb": { "source": "none" },
+      "kind": "repair",
+      "risk": "medium",
+      "requires_restart": true,
+      "outcome": "done",
+      "precondition": {
+        "op": "eq",
+        "field": "network.connectivity.internet_reachable",
+        "value": false
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "In Repair.RestartActions. Gate to an actual connectivity failure."
     },
     "reset_windows_update": {
-      "risk": "medium", "requires_restart": true, "outcome": "done",
-      "precondition": { "op": "gt", "field": "update_leftovers.windows_update_cache_mb", "value": 1024 },
-      "mb": { "source": "none" },
+      "kind": "repair",
+      "risk": "medium",
+      "requires_restart": true,
+      "outcome": "done",
+      "precondition": {
+        "op": "gt",
+        "field": "update_leftovers.windows_update_cache_mb",
+        "value": 1024
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "In Repair.RestartActions. Renames SoftwareDistribution/catroot2 — gated to a large stuck update cache (>1 GB), not routine cleanup. Add a windows_update failure predicate if the diagnostics expose one."
     },
     "disable_startup_item": {
-      "risk": "medium", "requires_restart": true, "outcome": "done",
-      "precondition": { "op": "nonempty", "field": "startup_programs" },
-      "required_params": ["target_name", "target_hive"],
-      "param_domains": {
-        "target_name": { "source": "must match a name in diagnostics.startup_programs" },
-        "target_hive": { "enum": ["HKCU", "HKLM"] }
+      "kind": "repair",
+      "risk": "medium",
+      "requires_restart": true,
+      "outcome": "done",
+      "precondition": {
+        "op": "nonempty",
+        "field": "startup_programs"
       },
-      "mb": { "source": "none" },
+      "required_params": [
+        "target_name",
+        "target_hive"
+      ],
+      "param_domains": {
+        "target_name": {
+          "source": "must match a name in diagnostics.startup_programs"
+        },
+        "target_hive": {
+          "enum": [
+            "HKCU",
+            "HKLM"
+          ]
+        }
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "Repair.DisableStartupItem errors without target_name; hive defaults HKCU. Missing/invalid params => drop the action."
     },
     "driver_report": {
-      "risk": "low", "requires_restart": false, "outcome": "noted",
-      "precondition": { "op": "or", "of": [ { "op": "nonempty", "field": "drivers.unsigned" }, { "op": "nonempty", "field": "drivers.outdated" } ] },
-      "mb": { "source": "none" },
+      "kind": "report",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "noted",
+      "precondition": {
+        "op": "or",
+        "of": [
+          {
+            "op": "nonempty",
+            "field": "drivers.unsigned"
+          },
+          {
+            "op": "nonempty",
+            "field": "drivers.outdated"
+          }
+        ]
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "Report-only ('noted'); the engine takes no destructive action."
     },
     "hardware_report": {
-      "risk": "low", "requires_restart": false, "outcome": "noted",
-      "precondition": { "op": "or", "of": [ { "op": "nonempty", "field": "device_errors" }, { "op": "nonempty", "field": "bsod_history" } ] },
-      "mb": { "source": "none" },
+      "kind": "report",
+      "risk": "low",
+      "requires_restart": false,
+      "outcome": "noted",
+      "precondition": {
+        "op": "or",
+        "of": [
+          {
+            "op": "nonempty",
+            "field": "device_errors"
+          },
+          {
+            "op": "nonempty",
+            "field": "bsod_history"
+          }
+        ]
+      },
+      "mb": {
+        "source": "none"
+      },
       "notes": "Report-only ('noted'). May recommend physical service. Add a smart_health-unhealthy predicate once that array's leaf schema is confirmed."
     }
+  },
+  "action_kinds": {
+    "maintenance": "Routine cleanup — reclaims space / clears caches that naturally build back up with normal use; a point-in-time benefit, NOT covered by the 30-day repair guarantee.",
+    "repair": "A persistent fix or configuration change that should stay fixed; covered by the 30-day repair guarantee if it recurs.",
+    "report": "Informational only — changes nothing on the PC."
   }
 }
