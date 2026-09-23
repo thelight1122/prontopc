@@ -108,10 +108,15 @@ sealed class Orchestrator
                     if (!IsTransientDecline(lastDecline)) break;       // deterministic — a retry cannot change it
                 }
 
-                // Brief settle before the next attempt (lets a warm-up / transient inference error clear).
+                // Brief settle before the next attempt. A first model load can fail under
+                // temporary memory pressure; OnnxGenAiInference then applies a 2s load
+                // cooldown, so retrying sooner just burns attempts inside the cooldown.
                 if (attempt < MaxAuthorAttempts)
                 {
-                    try { await Task.Delay(200, ct); }
+                    int settleMs = lastDecline is "local_completion_empty" or "local_inference_failed"
+                        ? 2500
+                        : 200;
+                    try { await Task.Delay(settleMs, ct); }
                     catch (OperationCanceledException) { return PlanOutcome.Unavailable("local_inference_cancelled"); }
                 }
             }

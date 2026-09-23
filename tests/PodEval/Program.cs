@@ -145,6 +145,18 @@ var rGood = await gated.AuthorAsync(messyAudit, admissibleForCount, Cancellation
 Check(rGood != null && rGood.Provider == "local-model", "VALID audit -> author proceeds to the local model");
 Check(counter.Calls == 1, "valid audit invoked the model exactly once");
 
+// A first local load/completion can miss under temporary memory pressure. The
+// orchestrator must wait long enough for the model-load cooldown to clear before
+// burning the next automatic attempt; otherwise a transient load miss becomes the
+// customer-visible Retry screen.
+Console.WriteLine("\n== Orchestrator transient retry settle ==");
+var transientOrch = new Orchestrator(new IPlanAuthor[] { new CooldownAuthor() });
+var sw = System.Diagnostics.Stopwatch.StartNew();
+var transientOutcome = await transientOrch.AuthorPlanAsync(messyAudit, new CancellationTokenSource(TimeSpan.FromSeconds(15)).Token);
+sw.Stop();
+Check(transientOutcome.IsOk, "transient local completion miss recovers on automatic retry");
+Check(sw.ElapsedMilliseconds >= 2400, "automatic retry waits through the model-load cooldown before retrying");
+
 Console.WriteLine($"\n{(failures == 0 ? "ALL PASS" : failures + " FAILURE(S)")}");
 Environment.Exit(failures == 0 ? 0 : 1);
 
@@ -176,4 +188,26 @@ sealed class CountingInference : ILocalInference
         return "{\"summary\":\"ok\",\"actions\":[{\"id\":\"clear_temp_files\",\"friendly_name\":\"Temp\",\"category\":\"cleanup\",\"estimated_mb_recovered\":500}]}";
     }
     public string? Chat(System.Collections.Generic.IReadOnlyList<ChatTurn> history, CancellationToken ct) => null;
+}
+
+sealed class CooldownAuthor : IPlanAuthor, IPlanAuthorDiagnostics
+{
+    int _calls;
+    public string LastDeclineReason { get; private set; } = "local_not_started";
+
+    public Task<PlanResult?> AuthorAsync(SystemAudit audit, IReadOnlySet<string> admissible, CancellationToken ct)
+    {
+        _calls++;
+        if (_calls == 1)
+        {
+            LastDeclineReason = "local_completion_empty";
+            return Task.FromResult<PlanResult?>(null);
+        }
+
+        LastDeclineReason = "";
+        var plan = JsonDocument.Parse(
+            "{\"summary\":\"ok\",\"actions\":[{\"id\":\"disk_cleanup\",\"friendly_name\":\"Disk Cleanup\",\"category\":\"Cleanup\",\"estimated_mb_recovered\":0}]}")
+            .RootElement.Clone();
+        return Task.FromResult<PlanResult?>(new PlanResult(plan, "local-model", "cooldown-fake"));
+    }
 }

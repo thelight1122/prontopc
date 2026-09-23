@@ -13,6 +13,6 @@ No network is used at any point — you may run the entire test with the machine
 
 PRICING (policy 10.8.4): one-time purchase, $9.99, via the Microsoft Store. No subscription, no in-app purchases, no add-ons, no trial, no randomized purchases. Unlimited runs are included.
 
-Package submitted: ProntoPC.msix version __.__.__.__ (the one-time paid Store build). WACK passed on this exact package.
+Package candidate: ProntoPC.msix version 1.2.12.0 (the one-time paid Store build). WACK must be run and pass on this exact package before submission.
 
 Support: support@prontopc.online

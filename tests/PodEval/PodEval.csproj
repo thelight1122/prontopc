@@ -9,14 +9,17 @@
     <RootNamespace>ProntoPC.Eval</RootNamespace>
   </PropertyGroup>
 
-  <!-- Compile the real plan logic directly (engine-free files only), so the eval runs the
-       shipping code, not a copy. Orchestrator.cs/Repair.cs are excluded on purpose (Windows). -->
+  <!-- Compile the real plan logic directly, so the eval runs the shipping code, not a copy. -->
   <ItemGroup>
     <Compile Include="..\..\StoreApp\Envelope.cs" />
     <Compile Include="..\..\StoreApp\PlanContracts.cs" />
     <Compile Include="..\..\StoreApp\SystemAudit.cs" />
     <Compile Include="..\..\StoreApp\LocalPlanner.cs" />
+    <Compile Include="..\..\StoreApp\NatureLayerContext.cs" />
+    <Compile Include="..\..\StoreApp\Orchestrator.cs" />
+    <Compile Include="..\..\StoreApp\Repair.cs" />
     <Compile Include="..\..\StoreApp\CustodianChat.cs" />
+    <EmbeddedResource Include="..\..\pod\orbs\repair-engine\action-envelope.json" Link="action-envelope.json" />
   </ItemGroup>
 
 </Project>

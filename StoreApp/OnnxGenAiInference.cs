@@ -22,7 +22,7 @@ sealed class OnnxGenAiInference : ILocalInference
     readonly object _lock = new();
     Model? _model;
     Tokenizer? _tokenizer;
-    bool _loadFailed;
+    DateTime _lastLoadFailureUtc = DateTime.MinValue;
 
     OnnxGenAiInference(string dir, string modelName) { _dir = dir; _modelName = modelName; }
 
@@ -42,7 +42,7 @@ sealed class OnnxGenAiInference : ILocalInference
            ? new OnnxGenAiInference(dir, modelName)
            : new AbsentInference();
 
-    public bool Available => !_loadFailed && File.Exists(Path.Combine(_dir, "genai_config.json"));
+    public bool Available => File.Exists(Path.Combine(_dir, "genai_config.json"));
     public string ModelName => _modelName;
 
     public string? Complete(string prompt, string jsonSchema, CancellationToken ct)
@@ -158,12 +158,24 @@ sealed class OnnxGenAiInference : ILocalInference
 
     void EnsureLoaded()
     {
-        if (_model != null || _loadFailed) return;
+        if (_model != null) return;
         lock (_lock)
         {
-            if (_model != null || _loadFailed) return;
-            try { _model = new Model(_dir); _tokenizer = new Tokenizer(_model); }
-            catch { _loadFailed = true; _model = null; _tokenizer = null; }
+            if (_model != null) return;
+
+            // A first load can fail under temporary memory pressure. Do not mark the
+            // bundled model permanently unavailable; the retry UI asks the customer to
+            // close heavy apps, and the next attempt must be able to load again.
+            if ((DateTime.UtcNow - _lastLoadFailureUtc) < TimeSpan.FromSeconds(2)) return;
+            try { GC.Collect(); GC.WaitForPendingFinalizers(); _model = new Model(_dir); _tokenizer = new Tokenizer(_model); }
+            catch
+            {
+                _lastLoadFailureUtc = DateTime.UtcNow;
+                _model?.Dispose();
+                _model = null;
+                _tokenizer = null;
+                GC.Collect();
+            }
         }
     }
 }

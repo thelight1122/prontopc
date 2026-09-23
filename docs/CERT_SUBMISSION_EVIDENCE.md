@@ -9,18 +9,18 @@ verification before submission, tied to the exact tree state it attests to.
 | --- | --- |
 | Product | ProntoPC |
 | Store / Product ID | `9P1K9QJXKND8` |
-| Package version | `1.2.10.0` |
-| Verified at | 2026-09-18 (UTC) — see §0 current status |
+| Package version | `1.2.12.0` |
+| Verified at | 2026-09-22 (America/Phoenix) — see §0 current status |
 | Unsigned submission artifact | `StoreApp/ProntoPC.msix` |
-| SHA-256 | `71CA9235E92D68460D76DCACAEC75DCBFA9DF1384A61C62A8BFC2CC434182E5B` (771.2 MB, **unsigned** — Microsoft signs) |
+| SHA-256 | `F14941E951419D85509A5D80B55091CB73895074AE0FBD11E676679FFD45D364` (771.2 MB, **unsigned** — Microsoft signs) |
 | Package architecture | `x64` (was `neutral`) |
 | Re-verify with | `python pod/totems/verify_totems.py` · `python certification_preflight.py` (v3) |
 
 ---
 
-## 0. Current submission status — 2026-09-18 (supersedes the version + payment details in §1 and §4)
+## 0. Current submission status — 2026-09-22 (supersedes the version + payment details in §1 and §4)
 
-**Candidate cleared to resubmit: v1.2.10.0.** This is the one-time-paid **Microsoft Store** build. The
+**Candidate built, WACK pending: v1.2.12.0.** This is the one-time-paid **Microsoft Store** build. The
 Store-app pivot (TOTEM-X-0117..X-0121) retired the Cloud Run backend / Stripe / website-first checkout
 to `archive/cloudrun-backend/`; the installed app now runs scan, plan, repair, and report **entirely
 on-device**. The Stripe / `$29` / Cloud Run / `MSCERT26` references in §1, §1a–c and §4 below are
@@ -29,16 +29,18 @@ describe the current one-time-paid Store submission (price `$9.99`, no account, 
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
-| Package (PKG-001) | **PASS** — v1.2.10.0 == source; 822 MB model inside | `StoreApp/ProntoPC.msix`, sha `71CA9235…`, 771.2 MB |
-| Certification preflight (v3) | **16/16 machine checks PASS** (WACK + ModelSmoke recorded separately) | `docs/CERTIFICATION_PREFLIGHT_EVIDENCE.json` |
-| WACK | **PASS** — `OVERALL_RESULT="PASS"`, `APP_VERSION="1.2.10.0"` | `wack-report-1210.xml` (= `wack-report-current.xml`), 2026-09-17 |
-| ModelSmoke (on-device authoring) | **PASS** — `MODEL SMOKE PASS`; plan + admissible action + grounded 2-turn chat | `dotnet run --project tests/ModelSmoke -c Release`, 2026-09-18 |
+| Package (PKG-001) | **PASS** — v1.2.12.0 == source; 822 MB model inside | `StoreApp/ProntoPC.msix`, sha `F14941E9…`, 771.2 MB |
+| Certification preflight (v3) | **DO_NOT_SUBMIT** — 17/18 checks PASS; WACK remains manual and blocking | `docs/CERTIFICATION_PREFLIGHT_EVIDENCE.json` |
+| WACK | **PENDING** — must be run against `APP_VERSION="1.2.12.0"` | `run-wack-1212.ps1` writes `wack-report-1212.xml` |
+| ModelSmoke (on-device authoring) | **PASS** — `MODEL SMOKE PASS`; plan + admissible action + grounded 2-turn chat | `dotnet run --project tests/ModelSmoke -c Release`, 2026-09-22 |
 | Reviewer-facing notes | **PASS** — one-time `$9.99` via Microsoft Store, no account, offline, on-device AI | `docs/CERT_NOTES_SHORT.txt` (preflight `[4]`) |
 | 1.2.9.0 → 1.2.10.0 delta | on-device model-load reliability fix — `OnnxGenAiInference`: permanent load-fail flag → 2s cooldown + `GC.Collect` retry | TOTEM-X-0123 |
+| 1.2.10.0 → 1.2.11.0 delta | packages the multi-drive plan-authoring fix — compact drive report, actions-first schema/prompt, short summary cap | TOTEM-C-0185 / TOTEM-C-0186 |
+| 1.2.11.0 → 1.2.12.0 delta | waits through the local model-load cooldown before retrying plan authoring, preventing rapid retries from reusing the same transient first-load failure | TOTEM-X-0127 / TOTEM-X-0128 |
 
-**Upload artifact:** `StoreApp/ProntoPC.msix` (v1.2.10.0, unsigned — Microsoft signs on ingestion). Cleared
-to resubmit; remaining owner steps are the Partner Center upload plus the product-declaration / listing
-metadata selections (see §4's owner list, adjusted for the one-time-paid Store model).
+**Upload artifact after WACK passes:** `StoreApp/ProntoPC.msix` (v1.2.12.0, unsigned — Microsoft signs on ingestion).
+Remaining owner steps are WACK on this exact package, then Partner Center upload plus the product-declaration /
+listing metadata selections (see §4's owner list, adjusted for the one-time-paid Store model).
 
 ---
 

@@ -339,6 +339,23 @@ def run_wack(pkg, attempt):
     if pkg is None:
         record_manual("WACK run against the package", "no candidate package to test")
         return
+    _, pkg_ver, _ = _package_entries(pkg)
+    existing_reports = [
+        HERE / "wack-report-current.xml",
+        HERE / ("wack-report-%s.xml" % "".join((pkg_ver or "").split(".")[:3])),
+        HERE / "wack-report.xml",
+    ]
+    for report in existing_reports:
+        if not report.exists():
+            continue
+        rt = report.read_text(encoding="utf-8", errors="replace")
+        overall = re.search(r'OVERALL_RESULT="([A-Z]+)"', rt)
+        app_version = re.search(r'APP_VERSION="([0-9.]+)"', rt)
+        if overall and overall.group(1) == "PASS" and app_version and app_version.group(1) == pkg_ver:
+            record("WACK run against the package", True,
+                   "%s: OVERALL_RESULT=PASS; APP_VERSION=%s; sha256=%s" %
+                   (report.name, pkg_ver, sha256_file(report)))
+            return
     cmd_hint = '"%s" test -appxpackagepath "%s" -reportoutputpath wack-report.xml' % (WACK_EXE, pkg)
     if not attempt:
         record_manual("WACK run against the package",

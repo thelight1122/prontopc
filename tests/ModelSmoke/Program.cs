@@ -82,6 +82,35 @@ if (r != null)
         "plan summary grounds itself in a supplied diagnostic observation");
 }
 
+// Reviewer VMs can be comparatively clean. Prove the authoring path still builds a
+// plan when there is little measured cleanup and the admissible set is mostly safe
+// maintenance/report actions.
+var cleanDiagDict = JsonSerializer.Deserialize<Dictionary<string, object?>>(@"{
+ ""os"":{""edition"":""Windows 11 Pro"",""build"":""26200"",""hostname"":""CERT-VM""},
+ ""memory"":{""used_gb"":3,""total_gb"":8,""percent_used"":37},
+ ""disk"":[{""device"":""C:"",""percent_used"":22,""free_gb"":180,""total_gb"":256}],
+ ""temp_files"":[], ""browser_caches"":[],
+ ""recycle_bin"":{""size_mb"":0},
+ ""update_leftovers"":{""windows_old_present"":false,""windows_old_gb"":0,""windows_update_cache_mb"":0,""delivery_optimization_mb"":0},
+ ""network"":{""connectivity"":{""internet_reachable"":true}},""dns_cache"":{""entries"":0},""bsod_history"":[],""device_errors"":[],""startup_programs"":[]
+}")!;
+foreach (var key in SystemAuditor.ExpectedKeys)
+    if (!cleanDiagDict.ContainsKey(key)) cleanDiagDict[key] = new Dictionary<string, object?>();
+var cleanAudit = SystemAuditor.Assess(cleanDiagDict);
+var cleanDiag = cleanAudit.Diagnostics;
+var cleanPlanner = new GemmaLocalPlanner(inf);
+var cleanResult = await cleanPlanner.AuthorAsync(
+    cleanAudit,
+    env.AdmissibleSet(cleanDiag),
+    new CancellationTokenSource(TimeSpan.FromSeconds(180)).Token);
+Check(cleanAudit.IsValid, "clean reviewer-style audit completed + validated (25/25 sections)");
+Check(cleanResult != null, "clean reviewer-style on-device author returned a plan");
+if (cleanResult != null)
+{
+    var (cleanPlan, _) = env.Validate(cleanResult.Plan, cleanDiag);
+    Check(cleanPlan["actions"]!.AsArray().Count > 0, "clean reviewer-style plan has >=1 admissible action after validation");
+}
+
 // ── Phase 2: conversational Custodian — prove a 2-turn on-device exchange ──
 Console.WriteLine("\nCUSTODIAN CHAT (Phase 2 — multi-turn inference):");
 // Minimal role framing (Phase 2 placeholder — the Canon seed + Reflective Boundary
