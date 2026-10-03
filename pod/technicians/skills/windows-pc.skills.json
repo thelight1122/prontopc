@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "skill_pack_id": "windows-pc-skills",
+  "technician_profile_id": "windows-pc-technician",
+  "domain": "windows-pc",
+  "skills": [
+    {
+      "skill_id": "collect-windows-health",
+      "satellite_id": "windows-diagnostics-satellite",
+      "purpose": "Collect installed Windows health, storage, update, network, startup, and event evidence.",
+      "read_only_capable": true,
+      "mutation_boundary": "none"
+    },
+    {
+      "skill_id": "repair-windows-maintenance-items",
+      "satellite_id": "windows-startup-satellite",
+      "purpose": "Propose and perform envelope-admissible maintenance or startup repairs after consent.",
+      "read_only_capable": true,
+      "mutation_boundary": "actuator-only"
+    }
+  ]
+}

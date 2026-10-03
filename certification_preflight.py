@@ -46,13 +46,19 @@ CLAIMED_CATEGORIES = 25      # "25-category diagnostic scan" (listing)
 CLAIMED_REPAIRS = 18         # "18 repair capabilities" (listing)
 STORE_PRICE = "$9.99"        # one-time base price (10.8.4)
 
-PREFLIGHT_VERSION = "3.0"
+PREFLIGHT_VERSION = "3.4"
 MODEL_NAME = "gemma-3-1b-it-formed-v0.2.1"
 MODEL_DIR = HERE / "StoreApp" / "Assets" / "models" / MODEL_NAME
 SOURCE_MANIFEST = HERE / "StoreApp" / "Package.appxmanifest"
+SOURCE_CSPROJ = HERE / "StoreApp" / "ProntoPC.csproj"
 DEFAULT_EVIDENCE = HERE / "docs" / "CERTIFICATION_PREFLIGHT_EVIDENCE.json"
 WACK_EXE = Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) \
     / "Windows Kits" / "10" / "App Certification Kit" / "appcert.exe"
+VCLIBS_DESKTOP_NAME = "Microsoft.VCLibs.140.00.UWPDesktop"
+VCLIBS_DESKTOP_MIN_VERSION = "14.0.33728.0"
+VCLIBS_DESKTOP_PUBLISHER = "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+ONNX_NATIVE_DLLS = {"onnxruntime.dll", "onnxruntime-genai.dll", "onnxruntime_providers_shared.dll"}
+VC_RUNTIME_IMPORTS = {"MSVCP140.DLL", "MSVCP140_1.DLL", "VCRUNTIME140.DLL", "VCRUNTIME140_1.DLL"}
 
 # Historical Microsoft certification rejection references — the concrete failures this
 # preflight regresses against. Labelled HISTORICAL so nobody mistakes an old policy number
@@ -270,13 +276,14 @@ def _package_entries(path, depth=0):
             if manifest:
                 entries = {i.filename: i.file_size for i in infos}
                 version = None
+                xml = ""
                 try:
                     xml = z.read(manifest[0].filename).decode("utf-8", "replace")
                     m = re.search(r'Identity[^>]*\bVersion="([0-9.]+)"', xml)
                     version = m.group(1) if m else None
                 except Exception:
                     pass
-                return entries, version, ""
+                return entries, version, xml, ""
             if nested and depth < 3:
                 biggest = max(nested, key=lambda i: i.file_size)
                 with tempfile.TemporaryDirectory() as td:
@@ -284,9 +291,130 @@ def _package_entries(path, depth=0):
                     with z.open(biggest.filename) as src, open(inner, "wb") as dst:
                         shutil.copyfileobj(src, dst, 1 << 20)
                     return _package_entries(inner, depth + 1)
-            return {i.filename: i.file_size for i in infos}, None, "no AppxManifest found"
+            return {i.filename: i.file_size for i in infos}, None, "", "no AppxManifest found"
     except Exception as e:
-        return {}, None, "inspect error: %s" % str(e)[:80]
+        return {}, None, "", "inspect error: %s" % str(e)[:80]
+
+
+def _version_tuple(v):
+    return tuple(int(x) for x in re.findall(r"\d+", v or ""))
+
+
+def _version_parts(v):
+    parts = [int(x) for x in re.findall(r"\d+", v or "")]
+    return parts + [0] * (4 - len(parts))
+
+
+def _version_at_least(found, required):
+    a = list(_version_tuple(found))
+    b = list(_version_tuple(required))
+    width = max(len(a), len(b))
+    a += [0] * (width - len(a))
+    b += [0] * (width - len(b))
+    return tuple(a) >= tuple(b)
+
+
+def _package_dependencies(manifest_xml):
+    deps = []
+    for m in re.finditer(r"<PackageDependency\b([^>]*)/?\s*>", manifest_xml or "", re.I):
+        attrs = {k: v for k, v in re.findall(r'(\w+)="([^"]*)"', m.group(1))}
+        deps.append(attrs)
+    return deps
+
+
+def _has_vclibs_dependency(manifest_xml):
+    for dep in _package_dependencies(manifest_xml):
+        if dep.get("Name") != VCLIBS_DESKTOP_NAME:
+            continue
+        min_version = dep.get("MinVersion", "")
+        publisher = dep.get("Publisher", "")
+        version_ok = _version_at_least(min_version, VCLIBS_DESKTOP_MIN_VERSION)
+        publisher_ok = publisher == VCLIBS_DESKTOP_PUBLISHER
+        return version_ok and publisher_ok, "Name=%s MinVersion=%s Publisher=%s" % (
+            dep.get("Name", ""), min_version or "(missing)", publisher or "(missing)")
+    return False, "missing %s PackageDependency" % VCLIBS_DESKTOP_NAME
+
+
+def _wack_package_for(pkg, pkg_ver):
+    if pkg is None:
+        return None
+    if str(pkg).lower().endswith((".msixupload", ".appxupload")):
+        sibling = pkg.with_suffix(".msix")
+        if sibling.exists():
+            _, sibling_ver, _, _ = _package_entries(sibling)
+            if sibling_ver == pkg_ver:
+                return sibling
+    return pkg
+
+
+def check_vclibs_runtime_coverage(entries, manifest_xml):
+    basenames = {Path(name.replace("\\", "/")).name.upper() for name in entries}
+    has_onnx_native = any(name.upper() in {d.upper() for d in ONNX_NATIVE_DLLS} for name in basenames)
+    if not has_onnx_native:
+        record("ONNX native VC++ runtime dependency covered", True,
+               "no ONNX Runtime native DLLs detected in package")
+        return
+
+    packaged_imports = sorted(VC_RUNTIME_IMPORTS.intersection(basenames))
+    missing_packaged = sorted(VC_RUNTIME_IMPORTS.difference(basenames))
+    if not missing_packaged:
+        record("ONNX native VC++ runtime dependency covered", True,
+               "VC runtime DLLs packaged: %s" % ", ".join(packaged_imports))
+        return
+
+    dep_ok, dep_evidence = _has_vclibs_dependency(manifest_xml)
+    record("ONNX native VC++ runtime dependency covered", False,
+           ("%s; package must include clean-machine VC runtime DLLs beside ProntoPC.exe; missing: %s" %
+            (dep_evidence if dep_ok else dep_evidence, ", ".join(missing_packaged))))
+
+
+def _declared_wpf_resources():
+    if not SOURCE_CSPROJ.exists():
+        return []
+    text = SOURCE_CSPROJ.read_text(encoding="utf-8", errors="replace")
+    found = []
+    for item in ("SplashScreen", "Resource"):
+        for match in re.finditer(r"<%s\b[^>]*\bInclude=\"([^\"]+)\"" % item, text, re.I):
+            found.append((item, match.group(1).replace("\\", "/").lower()))
+    return found
+
+
+def check_wpf_compiled_resources():
+    declared = _declared_wpf_resources()
+    if not declared:
+        record("WPF compiled resources contain declared images", True,
+               "no WPF SplashScreen/Resource image declarations found")
+        return
+
+    obj_root = HERE / "StoreApp" / "obj"
+    resources = sorted(obj_root.glob("**/ProntoPC.g.resources"),
+                       key=lambda p: p.stat().st_mtime if p.exists() else 0,
+                       reverse=True)
+    if not resources:
+        record("WPF compiled resources contain declared images", False,
+               "MISSING ProntoPC.g.resources; run StoreApp/build.ps1 before packaging")
+        return
+
+    ps = (
+        "$reader = [System.Resources.ResourceReader]::new('%s'); "
+        "$names = @(); foreach ($entry in $reader) { $names += $entry.Key }; "
+        "$reader.Close(); $names"
+    ) % str(resources[0]).replace("'", "''")
+    try:
+        proc = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
+                              cwd=str(HERE), text=True, capture_output=True, timeout=30)
+        names = {line.strip().lower() for line in proc.stdout.splitlines() if line.strip()}
+        reader_note = proc.stderr.strip() if proc.returncode else ""
+    except Exception as exc:
+        names = set()
+        reader_note = str(exc)
+
+    missing = [path for _item, path in declared if path not in names]
+    record("WPF compiled resources contain declared images", not missing,
+           ("found %d declared resource path(s) in %s" % (len(declared), resources[0])) if not missing else
+           ("MISSING in %s: %s%s" % (
+               resources[0], ", ".join(missing),
+               ("; reader=%s" % reader_note) if reader_note else "")))
 
 
 def check_package(pkg):
@@ -301,7 +429,7 @@ def check_package(pkg):
     print("         path: %s" % pkg)
     print("         sha256: %s" % sha)
 
-    entries, pkg_ver, note = _package_entries(pkg)
+    entries, pkg_ver, manifest_xml, note = _package_entries(pkg)
     if note:
         record("package is a readable app package", False, note)
         return pkg, sha
@@ -313,6 +441,11 @@ def check_package(pkg):
         src_ver = mm.group(1) if mm else None
     record("package version matches source manifest", bool(pkg_ver) and pkg_ver == src_ver,
            "package=%s source=%s" % (pkg_ver, src_ver))
+    parts = _version_parts(pkg_ver)
+    fourth_ok = bool(pkg_ver) and len(parts) >= 4 and parts[3] == 0
+    record("Store package version leaves fourth section reserved",
+           fourth_ok,
+           "package=%s; Windows 10/11 Store packages must end in .0" % (pkg_ver or "(missing)"))
 
     def has(suffix, min_size=0):
         for name, sz in entries.items():
@@ -326,6 +459,8 @@ def check_package(pkg):
     w = has("model.onnx.data", 100_000_000)
     record("model weights (>100MB) inside package", w is not None,
            "%.0f MB" % (w / 1e6) if w else "MISSING/too small inside %s" % pkg.name)
+    check_wpf_compiled_resources()
+    check_vclibs_runtime_coverage(entries, manifest_xml)
     return pkg, sha
 
 
@@ -339,12 +474,15 @@ def run_wack(pkg, attempt):
     if pkg is None:
         record_manual("WACK run against the package", "no candidate package to test")
         return
-    _, pkg_ver, _ = _package_entries(pkg)
+    _, pkg_ver, _, _ = _package_entries(pkg)
+    wack_pkg = _wack_package_for(pkg, pkg_ver)
     existing_reports = [
         HERE / "wack-report-current.xml",
         HERE / ("wack-report-%s.xml" % "".join((pkg_ver or "").split(".")[:3])),
         HERE / "wack-report.xml",
     ]
+    pkg_mtime = wack_pkg.stat().st_mtime if wack_pkg else pkg.stat().st_mtime
+    stale_reports = []
     for report in existing_reports:
         if not report.exists():
             continue
@@ -352,17 +490,24 @@ def run_wack(pkg, attempt):
         overall = re.search(r'OVERALL_RESULT="([A-Z]+)"', rt)
         app_version = re.search(r'APP_VERSION="([0-9.]+)"', rt)
         if overall and overall.group(1) == "PASS" and app_version and app_version.group(1) == pkg_ver:
+            if report.stat().st_mtime < pkg_mtime:
+                stale_reports.append(report.name)
+                continue
             record("WACK run against the package", True,
                    "%s: OVERALL_RESULT=PASS; APP_VERSION=%s; sha256=%s" %
                    (report.name, pkg_ver, sha256_file(report)))
             return
-    cmd_hint = '"%s" test -appxpackagepath "%s" -reportoutputpath wack-report.xml' % (WACK_EXE, pkg)
+    if stale_reports:
+        record_manual("WACK run against the package",
+                      "existing PASS report(s) predate the rebuilt package and must be rerun: " + ", ".join(stale_reports))
+        return
+    cmd_hint = '"%s" test -appxpackagepath "%s" -reportoutputpath wack-report.xml' % (WACK_EXE, wack_pkg or pkg)
     if not attempt:
         record_manual("WACK run against the package",
                       "appcert present but NOT auto-run (needs an ELEVATED shell + minutes). Run: " + cmd_hint)
         return
     try:
-        out = subprocess.run([str(WACK_EXE), "test", "-appxpackagepath", str(pkg),
+        out = subprocess.run([str(WACK_EXE), "test", "-appxpackagepath", str(wack_pkg or pkg),
                               "-reportoutputpath", str(HERE / "wack-report.xml")],
                              capture_output=True, text=True, timeout=1800)
         report = HERE / "wack-report.xml"

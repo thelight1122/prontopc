@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prontopc.local/schemas/technician-skill-pack.schema.json",
+  "title": "Technician Skill Pack Manifest",
+  "type": "object",
+  "required": ["schema_version", "skill_pack_id", "technician_profile_id", "domain", "skills"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "skill_pack_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "technician_profile_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "domain": { "type": "string" },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["skill_id", "satellite_id", "purpose", "read_only_capable", "mutation_boundary"],
+        "properties": {
+          "skill_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "satellite_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "purpose": { "type": "string", "minLength": 1 },
+          "read_only_capable": { "type": "boolean" },
+          "mutation_boundary": { "enum": ["none", "actuator-only"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

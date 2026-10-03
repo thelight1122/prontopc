@@ -25,6 +25,9 @@ interface ILocalInference
     // Run the model. `jsonSchema` is passed through to model runtimes that support
     // guided decoding. Returns the completion text, or null on any failure.
     string? Complete(string prompt, string jsonSchema, CancellationToken ct);
+    // Load the model/tokenizer ahead of first generation when the caller has a long
+    // non-model phase available. This must not execute a prompt or change any plan output.
+    void WarmUp(CancellationToken ct);
 
     // Multi-turn free-form chat (the conversational Custodian — SPEC Phase 2). `history`
     // ends on the latest user turn; render it through the model's chat template and
@@ -40,6 +43,7 @@ sealed class AbsentInference : ILocalInference
     public string ModelName => "none";
     public string? Complete(string prompt, string jsonSchema, CancellationToken ct) => null;
     public string? Chat(IReadOnlyList<ChatTurn> history, CancellationToken ct) => null;
+    public void WarmUp(CancellationToken ct) { }
 }
 
 sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
@@ -66,13 +70,30 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         try { text = await Task.Run(() => _model.Complete(prompt, schema, ct), ct); }
         catch (OperationCanceledException) { LastDeclineReason = "local_inference_cancelled"; return null; }
         catch { LastDeclineReason = "local_inference_failed"; return null; }
-        if (string.IsNullOrWhiteSpace(text)) { LastDeclineReason = "local_completion_empty"; return null; }
+        if (string.IsNullOrWhiteSpace(text)) { LastDeclineReason = DetailReason("local_completion_empty"); return null; }
 
-        if (!TryExtractJson(text, out var plan)) { LastDeclineReason = "local_plan_json_invalid"; return null; }
+        if (!TryExtractJson(text, out var plan)) { LastDeclineReason = DetailReason("local_plan_json_invalid"); return null; }
         // The Orchestrator re-validates against the envelope (catalogue, admissibility,
         // mb clamp, risk stamp), so a slightly off plan is still made safe downstream.
         LastDeclineReason = "";
         return new PlanResult(plan, "local-model", _model.ModelName);
+    }
+
+    string DetailReason(string reason)
+    {
+        if (_model is OnnxGenAiInference onnx)
+        {
+            var error = string.IsNullOrWhiteSpace(onnx.LastError) ? "none" : onnx.LastError;
+            return $"{reason};tokens_in={onnx.LastInputTokens};tokens_out={onnx.LastGeneratedTokens};ms={onnx.LastGenerateMs};error={error};preview={Sanitize(onnx.LastOutputPreview)}";
+        }
+        return reason;
+    }
+
+    static string Sanitize(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "empty";
+        value = value.Replace("\r", " ").Replace("\n", " ").Replace("|", "/").Trim();
+        return value.Length <= 180 ? value : value.Substring(0, 180);
     }
 
     // Prompt uses the same compact diagnostic wording across local model builds, then
@@ -175,3 +196,5 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
     static double NumOf(JsonElement o, string k) => Get(o, k) is JsonElement v && v.TryGetDouble(out var d) ? d : 0;
     static string Num(JsonElement o, string k) { double v = NumOf(o, k); return v == Math.Floor(v) ? ((long)v).ToString() : v.ToString("0.#"); }
 }
+
+

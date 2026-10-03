@@ -14,7 +14,7 @@ public partial class App : Application
             LogStartupFailure(e.Exception);
             e.Handled = true;
             MessageBox.Show(
-                "ProntoPC could not finish starting. Please close it and try again, or contact support@prontopc.online.",
+                "ProntoPC could not finish starting. Please close it and open it again, or contact support@prontopc.online.",
                 "ProntoPC",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);

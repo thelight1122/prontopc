@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prontopc.local/schemas/technician-session-memory.schema.json",
+  "title": "Technician Session Memory Record",
+  "description": "Temporary working memory for a technician tool. This is session evidence, not continuity infrastructure.",
+  "type": "object",
+  "required": ["schema_version", "memory_id", "technician_profile_id", "scope", "retention", "export_allowed", "boundary", "records"],
+  "not": {
+    "anyOf": [
+      { "required": ["dataquad"] },
+      { "required": ["persistent_identity"] },
+      { "required": ["persistent_continuity"] },
+      { "required": ["experiential_memory"] },
+      { "required": ["locus"] }
+    ]
+  },
+  "properties": {
+    "schema_version": { "type": "string" },
+    "memory_id": { "type": "string", "minLength": 1 },
+    "technician_profile_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "scope": { "const": "session-only" },
+    "retention": { "enum": ["discard-at-session-end", "export-report-only"] },
+    "export_allowed": { "type": "boolean" },
+    "boundary": {
+      "type": "object",
+      "required": ["no_dataquad", "no_persistent_continuity", "no_locus_seed"],
+      "properties": {
+        "no_dataquad": { "const": true },
+        "no_persistent_continuity": { "const": true },
+        "no_locus_seed": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "value", "source", "created_utc"],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "value": {},
+          "source": { "type": "string", "minLength": 1 },
+          "created_utc": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "envelope_id": "python-code-actuator-envelope",
+  "technician_profile_id": "python-code-technician",
+  "domain": "python-code",
+  "read_only_default": true,
+  "actions": {
+    "inspect_traceback_and_environment": {
+      "domain": "python-code",
+      "satellite_id": "traceback-diagnostics-satellite",
+      "preconditions": ["Traceback, test output, dependency manifest, or environment evidence is available"],
+      "permissions": ["repository-read"],
+      "risk": "none",
+      "rollback_or_backup": "No mutation performed.",
+      "consent_requirement": "never",
+      "verification_method": "Failure mechanism and observed files are named in the report.",
+      "read_only_safe": true,
+      "mutates_system": false
+    },
+    "repair_virtual_environment_dependency": {
+      "domain": "python-code",
+      "satellite_id": "python-environment-satellite",
+      "preconditions": ["Dependency mismatch is evidenced", "Lockfile or environment change is scoped", "User consents to dependency mutation"],
+      "permissions": ["user-consent", "environment-write"],
+      "risk": "low",
+      "rollback_or_backup": "Record package versions before mutation; preserve lockfile diff or environment rollback note.",
+      "consent_requirement": "required",
+      "verification_method": "Re-run the failing import or test command and record the result.",
+      "read_only_safe": false,
+      "mutates_system": true
+    }
+  }
+}

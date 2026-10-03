@@ -4,13 +4,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading;
 using Microsoft.Win32;
 
 namespace ProntoPC;
 
 // Native repair executor. Runs the client-approved repair actions using .NET
 // APIs (file/registry work) and by spawning the ordinary Windows system tools
-// (sfc, DISM, chkdsk, netsh, cleanmgr, wsreset, powercfg) — NOT PowerShell, and
+// (sfc, DISM, chkdsk, netsh, wsreset, powercfg) — NOT PowerShell, and
 // nothing downloaded or executed from the network. Each action returns a result
 // row matching what the local report writer expects:
 //   { action, name, status: done|noted|skipped|error, mb_freed, detail }
@@ -20,6 +22,35 @@ static class Repair
 {
     static readonly HashSet<string> RestartActions = new(StringComparer.OrdinalIgnoreCase)
     { "sfc_scan", "dism_restore", "reset_network_stack", "disable_startup_item", "reset_windows_update", "optimize_visual_effects" };
+
+    // Observe-only live detail for the repair screen: which folder is being cleared (with a
+    // running file count) or which Windows tool is running. Folder paths and counts only;
+    // no file contents are read. Throttled so the UI thread is never flooded.
+    [ThreadStatic] static Action<string>? _detail;
+    [ThreadStatic] static long _lastDetailTicks;
+    [ThreadStatic] static int _filesCleared;
+
+    static void Detail(string text, bool force = false)
+    {
+        if (_detail is null) return;
+        long now = Environment.TickCount64;
+        if (!force && now - _lastDetailTicks < 150) return;
+        _lastDetailTicks = now;
+        try { _detail(text); } catch { }
+    }
+
+    static void FileCleared(string file)
+    {
+        _filesCleared++;
+        Detail($"Clearing {Path.GetDirectoryName(file)}  ·  {_filesCleared:N0} files cleared");
+    }
+
+    public static Dictionary<string, object?> Execute(Dictionary<string, object?> action, Action<string>? detail)
+    {
+        _detail = detail; _lastDetailTicks = 0; _filesCleared = 0;
+        try { return Execute(action); }
+        finally { _detail = null; }
+    }
 
     public static Dictionary<string, object?> Execute(Dictionary<string, object?> action)
     {
@@ -48,7 +79,9 @@ static class Repair
                 case "dism_restore":
                     Done(result, RunExe("DISM", "/Online /Cleanup-Image /RestoreHealth", 900)); break;
                 case "disk_cleanup":
-                    RunExe("cleanmgr", "/sagerun:1", 600); Done(result, "Windows Disk Cleanup completed"); break;
+                    Freed(result, RunBoundedDiskCleanup());
+                    result["detail"] = $"ProntoPC cleared safe temporary files directly; Windows Disk Cleanup UI was not launched. {result["mb_freed"]} MB freed.";
+                    break;
                 case "chkdsk_scan":
                     Done(result, RunExe("chkdsk", "C: /scan", 900)); break;
                 case "reset_network_stack":
@@ -64,7 +97,11 @@ static class Repair
                 case "reset_windows_update":
                     ResetWindowsUpdate(); Done(result, "Windows Update components reset"); break;
                 case "clear_windows_store_cache":
-                    RunExe("wsreset.exe", "", 120); Done(result, "Windows Store cache cleared"); break;
+                    // wsreset opens the Microsoft Store when it finishes; on a PC without the Store
+                    // (e.g. Windows Sandbox, some managed images) it raises a "can't open this link"
+                    // dialog instead, so the action is skipped there.
+                    if (!StoreAppInstalled()) { result["status"] = "skipped"; result["detail"] = "Microsoft Store isn't installed on this PC"; break; }
+                    RunExe("wsreset.exe", "", 120); Done(result, "Microsoft Store cache reset (the Store opens when it finishes)"); break;
                 case "clean_windows_update_cache":
                     Freed(result, CleanWindowsUpdateCache()); break;
                 case "clean_component_store":
@@ -83,6 +120,24 @@ static class Repair
         return result;
     }
 
+    // True when something handles the ms-windows-store: protocol, i.e. the Microsoft Store app
+    // is present. wsreset hands off to that protocol when it finishes.
+    public static bool StoreAppInstalled()
+    {
+        try
+        {
+            uint size = 260; var sb = new System.Text.StringBuilder((int)size);
+            const uint ASSOCF_IS_PROTOCOL = 0x1000, ASSOCSTR_FRIENDLYAPPNAME = 4;
+            return AssocQueryString(ASSOCF_IS_PROTOCOL, ASSOCSTR_FRIENDLYAPPNAME, "ms-windows-store", null, sb, ref size) == 0
+                && sb.Length > 0;
+        }
+        catch { return true; }   // unknown: keep the action; wsreset itself is harmless
+    }
+
+    [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
+    static extern int AssocQueryString(uint flags, uint str, string pszAssoc, string? pszExtra,
+        System.Text.StringBuilder pszOut, ref uint pcchOut);
+
     public static bool NeedsRestart(IEnumerable<Dictionary<string, object?>> results) =>
         results.Any(r => (r.GetValueOrDefault("status")?.ToString() == "done") && RestartActions.Contains(r.GetValueOrDefault("action")?.ToString() ?? ""));
 
@@ -96,7 +151,7 @@ static class Repair
         long freed = 0;
         foreach (var root in roots.Where(p => !string.IsNullOrEmpty(p) && Directory.Exists(p)).Distinct(StringComparer.OrdinalIgnoreCase))
             foreach (var f in SafeFiles(root!))
-            { try { long len = new FileInfo(f).Length; File.Delete(f); freed += len; } catch { } }
+            { try { long len = new FileInfo(f).Length; File.Delete(f); freed += len; FileCleared(f); } catch { } }
         return freed;
     }
     static IEnumerable<string> SafeFiles(string root)
@@ -156,11 +211,20 @@ static class Repair
             if (!Directory.Exists(dir)) continue;
             string[] files = Array.Empty<string>();
             try { files = Directory.GetFiles(dir, pattern); } catch { }
-            foreach (var f in files) { try { long len = new FileInfo(f).Length; File.Delete(f); freed += len; } catch { } }
+            foreach (var f in files) { try { long len = new FileInfo(f).Length; File.Delete(f); freed += len; FileCleared(f); } catch { } }
         }
         return freed;
     }
 
+    static long RunBoundedDiskCleanup()
+    {
+        Detail("Clearing safe temporary files without opening Windows Disk Cleanup", force: true);
+        long freed = 0;
+        freed += DeleteRecursive(new[] { Environment.GetEnvironmentVariable("TEMP"), @"C:\Windows\Temp" });
+        freed += ClearWindowsCaches();
+        freed += DeleteAllIn(@"C:\Windows\SoftwareDistribution\DeliveryOptimization");
+        return freed;
+    }
     // ── registry actions ─────────────────────────────────────────────────────
     static void DisableStartupItem(Dictionary<string, object?> action, Dictionary<string, object?> result)
     {
@@ -206,7 +270,7 @@ static class Repair
     {
         if (!Directory.Exists(dir)) return 0;
         long freed = 0;
-        foreach (var f in SafeFiles(dir)) { try { long len = new FileInfo(f).Length; File.Delete(f); freed += len; } catch { } }
+        foreach (var f in SafeFiles(dir)) { try { long len = new FileInfo(f).Length; File.Delete(f); freed += len; FileCleared(f); } catch { } }
         return freed;
     }
     static long CleanWindowsUpdateCache()
@@ -216,7 +280,7 @@ static class Repair
         foreach (var s in new[] { "wuauserv", "bits" }) RunExe("net", "stop " + s, 60);
         if (Directory.Exists(sd))
         {
-            foreach (var f in SafeFiles(sd)) { try { File.Delete(f); } catch { } }
+            foreach (var f in SafeFiles(sd)) { try { File.Delete(f); FileCleared(f); } catch { } }
             foreach (var d in Directory.GetDirectories(sd)) { try { Directory.Delete(d, true); } catch { } }
         }
         foreach (var s in new[] { "wuauserv", "bits" }) RunExe("net", "start " + s, 60);
@@ -229,24 +293,71 @@ static class Repair
         long freed = DirBytes(wo);
         RunExe("takeown", $"/f \"{wo}\" /r /d y", 600);
         RunExe("icacls", $"\"{wo}\" /grant *S-1-5-32-544:F /t /c", 600);
+        Detail(@"Removing C:\Windows.old", force: true);
         try { Directory.Delete(wo, true); } catch { }
         if (!Directory.Exists(wo)) { result["status"] = "done"; result["mb_freed"] = (int)Math.Round(freed / 1048576.0); result["detail"] = "Previous Windows installation removed"; }
         else { result["status"] = "error"; result["detail"] = "Windows.old could not be fully removed"; }
     }
 
     // ── process helper (system tools only — never powershell) ─────────────────
-    static string RunExe(string file, string args, int timeoutSec = 120)
+    internal static string RunExe(string file, string args, int timeoutSec = 120)
     {
+        Detail($"Running Windows tool: {file} {args}".TrimEnd(), force: true);
+        var output = new StringBuilder();
+        var error = new StringBuilder();
+        using var outputDone = new ManualResetEventSlim(false);
+        using var errorDone = new ManualResetEventSlim(false);
+        using var p = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = file,
+                Arguments = args,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            },
+            EnableRaisingEvents = true
+        };
+
+        p.OutputDataReceived += (_, e) =>
+        {
+            if (e.Data is null) outputDone.Set();
+            else output.AppendLine(e.Data);
+        };
+        p.ErrorDataReceived += (_, e) =>
+        {
+            if (e.Data is null) errorDone.Set();
+            else error.AppendLine(e.Data);
+        };
+
         try
         {
-            var psi = new ProcessStartInfo { FileName = file, Arguments = args, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
-            using var p = Process.Start(psi);
-            if (p == null) return "";
-            string outp = p.StandardOutput.ReadToEnd();
-            p.WaitForExit(timeoutSec * 1000);
-            outp = outp.Trim();
-            return outp.Length > 300 ? outp.Substring(outp.Length - 300) : outp;
+            if (!p.Start())
+                return "";
+
+            p.BeginOutputReadLine();
+            p.BeginErrorReadLine();
+
+            int timeoutMs = Math.Max(1, timeoutSec) * 1000;
+            if (!p.WaitForExit(timeoutMs))
+            {
+                try { p.Kill(entireProcessTree: true); }
+                catch { }
+                throw new TimeoutException($"{file} stopped after {timeoutSec} seconds so ProntoPC could continue.");
+            }
+
+            p.WaitForExit();
+            outputDone.Wait(TimeSpan.FromSeconds(2));
+            errorDone.Wait(TimeSpan.FromSeconds(2));
+
+            string combined = string.Join(Environment.NewLine, new[] { output.ToString().Trim(), error.ToString().Trim() }.Where(s => s.Length > 0)).Trim();
+            if (combined.Length == 0)
+                combined = $"{file} completed";
+            return combined.Length > 300 ? combined.Substring(combined.Length - 300) : combined;
         }
+        catch (TimeoutException) { throw; }
         catch (Exception ex) { return ex.Message; }
     }
 

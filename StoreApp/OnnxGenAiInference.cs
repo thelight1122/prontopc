@@ -34,6 +34,8 @@ sealed class OnnxGenAiInference : ILocalInference
     public int LastInputTokens { get; private set; }
     public int LastGeneratedTokens { get; private set; }
     public long LastGenerateMs { get; private set; }
+    public string LastError { get; private set; } = "";
+    public string LastOutputPreview { get; private set; } = "";
 
     // A GenAI model folder is identified by its genai_config.json. Actual weights load
     // lazily on first use (off the UI thread), so this stays cheap.
@@ -45,12 +47,23 @@ sealed class OnnxGenAiInference : ILocalInference
     public bool Available => File.Exists(Path.Combine(_dir, "genai_config.json"));
     public string ModelName => _modelName;
 
+    public void WarmUp(CancellationToken ct)
+    {
+        if (ct.IsCancellationRequested) return;
+        try { EnsureLoaded(); } catch { }
+    }
+
     public string? Complete(string prompt, string jsonSchema, CancellationToken ct)
     {
+        LastError = "";
+        LastOutputPreview = "";
+        LastInputTokens = 0;
+        LastGeneratedTokens = 0;
+        LastGenerateMs = 0;
         try
         {
             EnsureLoaded();
-            if (_model is null || _tokenizer is null) return null;
+            if (_model is null || _tokenizer is null) { LastError = string.IsNullOrWhiteSpace(LastError) ? "model_not_loaded" : LastError; return null; }
 
             // Gemma is instruction-tuned and expects its chat template; without the
             // <start_of_turn> framing the raw prompt yields garbage. ORT GenAI's Encode
@@ -68,7 +81,7 @@ sealed class OnnxGenAiInference : ILocalInference
             // is also unavailable, sends a paid customer to make-good.  Greedy decoding
             // keeps the local plan repeatable and parseable on every supported device.
             gp.SetSearchOption("do_sample", false);
-            gp.SetSearchOption("max_length", (double)(inputLen + 1024));
+            gp.SetSearchOption("max_length", (double)(inputLen + 768));
             if (!string.IsNullOrEmpty(jsonSchema))
             {
                 // Guided decoding: constrain the output to the JSON schema (which pins
@@ -94,9 +107,20 @@ sealed class OnnxGenAiInference : ILocalInference
             LastInputTokens = inputLen;
             LastGeneratedTokens = generated.Length;
             LastGenerateMs = swGen.ElapsedMilliseconds;
-            return _tokenizer.Decode(generated);
+            var decoded = _tokenizer.Decode(generated);
+            LastOutputPreview = decoded.Length <= 240 ? decoded : decoded.Substring(0, 240);
+            return decoded;
         }
-        catch { return null; }
+        catch (OperationCanceledException)
+        {
+            LastError = "cancelled";
+            return null;
+        }
+        catch (Exception ex)
+        {
+            LastError = ex.GetType().Name;
+            return null;
+        }
     }
 
     // Multi-turn conversational reply (SPEC Phase 2). Renders the whole history through
@@ -127,7 +151,7 @@ sealed class OnnxGenAiInference : ILocalInference
             // (temperature 0.5, top_p 0.9, max_new_tokens 512) — not the genai_config
             // default (temperature 1.0), which over-randomises the reply.
             using var gp = new GeneratorParams(_model);
-            gp.SetSearchOption("max_length", (double)(inputLen + 512));
+            gp.SetSearchOption("max_length", (double)(inputLen + 768));
             gp.SetSearchOption("do_sample", true);
             gp.SetSearchOption("temperature", 0.5);
             gp.SetSearchOption("top_p", 0.9);
@@ -179,3 +203,5 @@ sealed class OnnxGenAiInference : ILocalInference
         }
     }
 }
+
+

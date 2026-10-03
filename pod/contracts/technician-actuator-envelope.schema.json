@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prontopc.local/schemas/technician-actuator-envelope.schema.json",
+  "title": "Technician Actuator Envelope",
+  "description": "The bounded executable authority for one technician profile. Mutating actions require consent, rollback or backup behavior, and verification. This is an execution boundary, not an ethical-force layer.",
+  "type": "object",
+  "required": ["schema_version", "envelope_id", "technician_profile_id", "domain", "read_only_default", "actions"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "envelope_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "technician_profile_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "domain": { "type": "string" },
+    "read_only_default": { "const": true },
+    "actions": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "domain",
+          "satellite_id",
+          "preconditions",
+          "permissions",
+          "risk",
+          "rollback_or_backup",
+          "consent_requirement",
+          "verification_method",
+          "read_only_safe",
+          "mutates_system"
+        ],
+        "properties": {
+          "domain": { "type": "string" },
+          "satellite_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "preconditions": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "permissions": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "risk": { "enum": ["none", "low", "medium", "high"] },
+          "rollback_or_backup": { "type": "string", "minLength": 1 },
+          "consent_requirement": { "enum": ["never", "required"] },
+          "verification_method": { "type": "string", "minLength": 1 },
+          "read_only_safe": { "type": "boolean" },
+          "mutates_system": { "type": "boolean" }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "mutates_system": { "const": true } }, "required": ["mutates_system"] },
+            "then": {
+              "properties": {
+                "consent_requirement": { "const": "required" },
+                "read_only_safe": { "const": false }
+              }
+            }
+          },
+          {
+            "if": { "properties": { "mutates_system": { "const": false } }, "required": ["mutates_system"] },
+            "then": {
+              "properties": {
+                "consent_requirement": { "const": "never" },
+                "read_only_safe": { "const": true }
+              }
+            }
+          }
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -37,3 +37,24 @@ assets/characters/PRONTO_AUDITOR_GOOD.png
 assets/characters/PRONTO_THUMBS_UP_NO_BACK.png
 assets/characters/REPAIR_NO_BACK.png
 assets/characters/pronto-builder-transparent.png
+
+# Local caches, scratch and build/package output (2026-10-03 rollup): large binaries, kept on disk only
+.claude/
+.hf-cache/
+node_modules/
+.playwright-cli/
+.verification-msix-*/
+StoreApp/AppPackages/
+StoreApp/local-test-*/
+*.msixupload
+*.appx
+release-candidates/
+scratch-*/
+tmp/
+tests/InstalledModelProbe/bin/
+tests/InstalledModelProbe/obj/
+# WACK XML reports are 8-110MB each; their PASS/version/hash are bound in Totems and evidence docs
+wack-report*.xml
+tests/InstalledModelProbe/publish/
+tests/CertVM/*.zip
+tests/CertVM/out/

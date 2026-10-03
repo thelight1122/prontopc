@@ -10,8 +10,8 @@
     <SelfContained>false</SelfContained>
     <AssemblyName>ProntoPC</AssemblyName>
     <RootNamespace>ProntoPC</RootNamespace>
-    <ApplicationDisplayVersion>1.2.12</ApplicationDisplayVersion>
-    <ApplicationVersion>12</ApplicationVersion>
+    <ApplicationDisplayVersion>1.2.20.0</ApplicationDisplayVersion>
+    <ApplicationVersion>12200</ApplicationVersion>
     <!-- Embed the app manifest so ProntoPC.exe declares PerMonitorV2 DPI awareness. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
@@ -42,6 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <SplashScreen Include="Assets\SplashScreen.png" />
     <!-- Character AI presence across the phases (transparent PNGs):
          pronto-auditor  → scanning / building the plan
          pronto-repair   → running the repairs
@@ -62,3 +63,6 @@
   </ItemGroup>
 
 </Project>
+
+
+

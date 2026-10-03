@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "library_id": "database-technical-library",
+  "technician_profile_id": "database-technician",
+  "knowledge_class": "reusable-technical-knowledge",
+  "boundary": {
+    "non_experiential": true,
+    "not_identity": true,
+    "no_dataquad": true,
+    "no_t_witness": true,
+    "no_relationship_history": true,
+    "product_knowledge_only": true,
+    "note": "Reusable database solution patterns may persist; lived experience and identity continuity do not."
+  },
+  "reference_sources": [
+    {
+      "source_id": "database-totem-pack",
+      "source_type": "totem-reference-pack",
+      "category": "database",
+      "status": "planned",
+      "description": "Passive Totem references for schema, query plan, migration, backup, and rollback patterns.",
+      "totem_ids": [],
+      "use_boundary": {
+        "passive_reference_only": true,
+        "authorization_power": false,
+        "dispatch_power": false,
+        "mutation_power": false,
+        "execution_power": false
+      }
+    },
+    {
+      "source_id": "networking-totem-pack",
+      "source_type": "totem-reference-pack",
+      "category": "networking",
+      "status": "planned",
+      "description": "Passive Totem references for database connectivity, routing, and environment diagnosis.",
+      "totem_ids": [],
+      "use_boundary": {
+        "passive_reference_only": true,
+        "authorization_power": false,
+        "dispatch_power": false,
+        "mutation_power": false,
+        "execution_power": false
+      }
+    }
+  ],
+  "promotion_policy": {
+    "candidate_allowed": true,
+    "verified_requires": ["observed-evidence", "repair-result", "verification-method", "applicability-limits", "rollback-or-reversal-note"],
+    "append_only": true
+  },
+  "records": [
+    {
+      "record_id": "missing-index-candidate",
+      "status": "candidate",
+      "problem_signature": "Slow query whose plan shows repeated scan over a filtered column set.",
+      "observed_evidence": ["Read-only query plan indicates scan cost and filter shape."],
+      "solution_pattern": "Propose an index only with rollback migration or backup evidence.",
+      "applicability_limits": ["Observed query shape must match", "Write action requires owner consent and maintenance context"],
+      "rollback_or_reversal": "Drop-index rollback migration or restore-ready backup reference.",
+      "verification_method": "Re-run query plan inspection and compare index use and cost.",
+      "source": {
+        "source_type": "technician-derived",
+        "created_utc": "2026-09-15T00:00:00Z",
+        "notes": "Seed candidate describing database solution-library shape."
+      }
+    }
+  ]
+}

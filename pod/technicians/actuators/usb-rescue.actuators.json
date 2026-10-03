@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "envelope_id": "usb-rescue-actuator-envelope",
+  "technician_profile_id": "usb-rescue-technician",
+  "domain": "usb-rescue",
+  "read_only_default": true,
+  "actions": {
+    "inspect_offline_windows_volume": {
+      "domain": "usb-rescue",
+      "satellite_id": "offline-volume-satellite",
+      "preconditions": ["Offline Windows volume is mounted read-only", "Target disk is explicitly identified"],
+      "permissions": ["offline-volume-read"],
+      "risk": "none",
+      "rollback_or_backup": "No mutation performed.",
+      "consent_requirement": "never",
+      "verification_method": "Volume, Windows directory, boot files, and read-only mount state are recorded.",
+      "read_only_safe": true,
+      "mutates_system": false
+    },
+    "rebuild_boot_configuration": {
+      "domain": "usb-rescue",
+      "satellite_id": "boot-repair-satellite",
+      "preconditions": ["Target Windows volume is verified", "Existing boot configuration is exported", "User confirms exact target disk"],
+      "permissions": ["user-consent", "offline-volume-write", "boot-configuration-write"],
+      "risk": "high",
+      "rollback_or_backup": "Export existing BCD and volume identifiers before writing; include restore instructions in the report.",
+      "consent_requirement": "required",
+      "verification_method": "Re-read boot configuration and confirm the expected Windows loader target.",
+      "read_only_safe": false,
+      "mutates_system": true
+    }
+  }
+}

@@ -1,4 +1,4 @@
-ProntoPC is a one-time paid app sold through the Microsoft Store for $9.99. There is no subscription, no in-app purchase, no trial, no external checkout, no account, and no sign-in. Microsoft Store commerce handles the purchase, and the Store price tier is the price (policy 10.8.4). The AI that builds the repair plan is bundled inside the app and runs entirely on the device, so the app needs no internet connection and no server to function.
+ProntoPC is a one-time paid app sold through the Microsoft Store for $9.99. There is no subscription, no in-app purchase, no trial, no external checkout, no account, and no sign-in. Microsoft Store commerce handles the purchase, and the Store price tier is the price (policy 10.8.4). The AI that builds the repair plan is bundled inside the app and runs entirely on the device, so the app needs no internet connection and no server to function (see the optional Store update check below).
 
 REVIEWER ACCESS (policy 10.3.1): no code, account, sign-in, or test credentials are required. Acquire ProntoPC through the Store (or install the submitted package) and launch it — all functionality is immediately available, and it works with the machine offline.
 
@@ -9,10 +9,14 @@ HOW TO TEST:
 4. Optionally ask the Technician or uncheck any item, then click Perform Repairs. Windows asks for administrator approval at this repair step only.
 5. When finished, the app shows "Your PC has been serviced." A full HTML report is saved to the Desktop and can be opened from the app; you can then close ProntoPC.
 
-No network is used at any point — you may run the entire test with the machine disconnected after install.
+Scan, plan, Technician, repair, and report use no network, so you can run the entire test with the machine disconnected after install. The only network use is an optional Microsoft Store update check (StoreContext) a few seconds after launch. If an update is available, a small banner offers it. If the check fails or the machine is offline, it is silently skipped and never blocks scanning or repair.
+
+EXPECTED DURING REPAIRS: if "Reset the Microsoft Store cache" is selected, Windows' own wsreset tool runs and the Microsoft Store app opens when it finishes. This is standard wsreset behavior, and the finding text says so. Temporary-file cleanup is done by ProntoPC directly, with no separate Disk Cleanup window.
 
 PRICING (policy 10.8.4): one-time purchase, $9.99, via the Microsoft Store. No subscription, no in-app purchases, no add-ons, no trial, no randomized purchases. Unlimited runs are included.
 
-Package candidate: ProntoPC.msix version 1.2.12.0 (the one-time paid Store build). WACK must be run and pass on this exact package before submission.
+GENERATIVE AI: the repair-plan summary and the Technician's replies are written by a generative AI model bundled in the app that runs on the device. It explains the deterministic scan results; it does not decide what was found.
+
+Package candidate: ProntoPC.msixupload version 1.2.20.0 (inner MSIX SHA-256 9FD35FE4F5715DDABB3023B759BB2A24DE0805F264A9C089A56BCD54373E1377). WACK PASS for APP_VERSION=1.2.20.0. No Microsoft certification approval is claimed.
 
 Support: support@prontopc.online

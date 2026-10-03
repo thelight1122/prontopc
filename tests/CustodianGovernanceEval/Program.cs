@@ -34,6 +34,7 @@ try
     Check(reply.OutboundPim.Observations.Any(o => o.Kind == ForceArtifactKind.DirectiveLeakage), "Outbound PIM observes directive leakage");
     Check(reply.OutboundPim.Observations.Any(o => o.Kind == ForceArtifactKind.CoerciveCertainty), "Outbound PIM observes coercive certainty");
     Check(reply.Prism.Adjustments.Count > 0 && reply.PeerFacingText.Contains("You may pause"), "RBC Prism emits optional reflection");
+    Check(reply.PeerFacingText.Contains("You must act now"), "RBC Prism preserves the answer instead of replacing it");
     Check(reply.Integrity.Virtues.Count == 7 && reply.Integrity.Virtues.All(v => v.State == VirtueScreenState.CoreGated), "Seven-virtue screen is present and core-gated");
 
     InteractionLedgerRecord[] records = ledger.ReadAndVerify();

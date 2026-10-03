@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "profile_id": "database-technician",
+  "display_name": "Database Technician",
+  "domain": "database",
+  "tool_class": "diagnostic-and-repair-tool",
+  "supported_environments": ["postgres", "sqlite", "mysql-compatible"],
+  "read_only_default": true,
+  "ethical_boundary": {
+    "no_dataquad": true,
+    "no_persistent_identity_continuity": true,
+    "no_experiential_memory": true,
+    "no_locus_forming_architecture": true,
+    "session_memory_only": true,
+    "note": "The database Technician keeps temporary database facts for diagnosis and report export only."
+  },
+  "model": {
+    "role": "educated-domain-reasoner",
+    "education_layers": ["nature", "canon", "operation-repair"],
+    "runtime_canon_dependency": false,
+    "notes": "Uses database operation and repair education to reason over schemas, queries, migrations, and recovery evidence."
+  },
+  "orbs": {
+    "orchestrator_pod": { "orb_id": "technician-orchestrator-pod", "purpose": "Holds state, consent, action envelopes, and verification boundaries." },
+    "dispatch_orb": { "orb_id": "technician-dispatch-orb", "purpose": "Routes database intents to diagnostic or migration Satellites." },
+    "skills_orb": { "orb_id": "database-skills-orb", "purpose": "Holds database inspection, query tuning, backup, and migration procedures." },
+    "memory_orb": { "orb_id": "session-memory-orb", "purpose": "Keeps temporary session facts and report evidence only." },
+    "technical_library_orb": { "orb_id": "database-technical-library-orb", "purpose": "Retains reusable database solution patterns as product knowledge, not experience." },
+    "communications_orb": { "orb_id": "technician-communications-orb", "purpose": "Explains findings, asks for consent, and emits the report." }
+  },
+  "education_manifest": "education/database.education.json",
+  "skill_pack_manifest": "skills/database.skills.json",
+  "actuator_envelope": "actuators/database.actuators.json",
+  "technical_library": "libraries/database.library.json",
+  "dispatch": {
+    "default_mode": "read-only",
+    "routes": [
+      {
+        "intent": "query-performance",
+        "satellite_id": "query-diagnostics-satellite",
+        "allowed_modes": ["read-only", "repair"],
+        "actuator_envelope": "database-actuator-envelope",
+        "read_only_first": true
+      },
+      {
+        "intent": "migration-repair",
+        "satellite_id": "migration-review-satellite",
+        "allowed_modes": ["read-only", "repair"],
+        "actuator_envelope": "database-actuator-envelope",
+        "read_only_first": true
+      }
+    ]
+  },
+  "memory_policy": {
+    "scope": "session-only",
+    "retention": "export-report-only",
+    "export_behavior": "explicit-report-export",
+    "notes": "Schema and query observations are not retained after the session except in an explicit report."
+  },
+  "communications": {
+    "primary_surface": "local-or-connected-database-console",
+    "report_outputs": ["markdown-report", "json-evidence"]
+  },
+  "evidence": {
+    "status": "draft",
+    "source": "Technician POD Platform v0.1 implementation."
+  }
+}

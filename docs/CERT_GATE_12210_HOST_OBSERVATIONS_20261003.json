@@ -1,0 +1,21 @@
+{
+  "observed_utc": "2026-10-03T07:17:52.994440+00:00",
+  "unsigned_path": "release-candidates\\disclaimer-enhancements-20261002\\ProntoPC.msix",
+  "signed_path": "C:\\ProntoPC-Sandbox\\update-12210-20261002-122613-043\\ProntoPC-test.msix",
+  "signed_sha256": "01BD00F53C4E4ABFCBEB0FB4835A19DC381ABBA24C8D560A6EBBC8DC65097464",
+  "unsigned_upload_sha256": "8D2FF6B1867FE22BE1612A239B906F80E931EBD9BBB6ED48993DC1B36CFD82C3",
+  "unsigned_only": [],
+  "signed_only": [
+    "AppxMetadata/CodeIntegrity.cat",
+    "AppxSignature.p7x"
+  ],
+  "changed_common_entries": [
+    "[Content_Types].xml"
+  ],
+  "identical_common_entries": 505,
+  "host_hyperv_access": "permission denied",
+  "outlook_support_mailbox_access": "404 ErrorInvalidUser; does not prove delivery failure",
+  "installed_reporting": "unverified",
+  "mailbox_receipt": "unverified",
+  "mailbox_monitoring": "unverified"
+}

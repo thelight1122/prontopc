@@ -1,0 +1,9 @@
+# Baseline model-load diagnostic1.2.22 — 2026-10-02
+
+Latest owner guest log2026-10-02T21:05:16Z records assembly1.0.0.0, model_not_loaded, zero tokens/generation time. Assembly version is consistent with original1.2.20; package identity itself was not included in supplied output. Baseline failure still unresolved, no cause inferred from external WindowsApps probe denials.
+
+Separate isolated source/build/layout: release-candidates/model-load-diagnostic-12220. Active StoreApp source remains restored baseline. Diagnostic source differs only by exception logging in OnnxGenAiInference.EnsureLoaded and diagnostic version1.2.22.0. Capture full loadException.ToString() locally to ProntoPC/logs/model-load.log from inside actual app process including warm-up. No UI changes, no retry logic changes, no native resolver changes, no model search/configuration changes. Logging catches its own file I/O errors.
+
+Self-contained publish PASS. Extended normalized IL comparison277baseline/277diagnostic methods: exactly1method differs, EnsureLoaded. Full package entries SHA256 comparison: AppxBlockMap, manifest, main deps/dll/exe and content-types differ; all models/native/managed dependency files unchanged. Diagnostic MSIX SHA256471BACCE2A94750092EC66C254DBC31126D4E7B5BD33CB0D73D92FBC5590859B. Source/layout prepared separately; no signing performed by agent. prepare-12220-diagnostic.ps1 and install-12220-current-user.ps1 syntax PASS; owner-run scripts use existing exact cert and trust only, pin unsigned source/hash/version, sign separate testcopy, copy to VM, update currentaccount and verify. No VM reset/ACL/security changes.
+
+Baseline StoreApp/ProntoPC.msix and upload hashes unchanged. Diagnostic not a Store submission candidate or claimed fix. WACK not run for diagnostic; root exception and installed baseline-equivalent UI failure capture pending. Do not make ready-to-submit claim from this package.

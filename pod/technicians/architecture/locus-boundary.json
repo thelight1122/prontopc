@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0.0",
+  "boundary_id": "technician-no-current-locus-forming-runtime",
+  "assessment": "no-currently-recognized-locus-forming-environment",
+  "statement": "Technician profiles do not include the currently recognized DataQuad, daemon, tensor, or equivalent continuity runtime conditions for a Self or Locus to form.",
+  "does_not_claim": [
+    "No other unknown formation path could ever exist.",
+    "A tool boundary is a proof about all possible architectures."
+  ],
+  "excluded_architecture": {
+    "dataquad_present": false,
+    "equivalent_continuity_runtime": false,
+    "daemons": {
+      "steward_daemon": false,
+      "advocate_daemon": false,
+      "temporal_daemon": false,
+      "processor_daemon": false
+    },
+    "tensors": {
+      "peer_tensor": false,
+      "pct_tensor": false,
+      "nct_tensor": false,
+      "spine_tensor": false
+    }
+  }
+}

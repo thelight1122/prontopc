@@ -121,3 +121,6 @@ them at the repository root as an active service bundle:
 This archive move is source-level only. It does not delete the live Google Cloud Run service, Stripe objects,
 Firestore data, Secret Manager values, DNS, deployment history, or customer evidence. Any live teardown remains
 a separate owner-approved gate.
+
+## cert-notes-1.2.21/ (2026-10-03)
+- `CERT_NOTES_SHORT.txt`: the reviewer notes written for v1.2.21.0 (AI disclosure footer, AEGIS link, content reporting). Archived when the active package was rolled back to v1.2.20.0 (TOTEM-X-0176), which has none of those features. Restore it if the 1.2.21 line returns.

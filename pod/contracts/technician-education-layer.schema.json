@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prontopc.local/schemas/technician-education-layer.schema.json",
+  "title": "Technician Education Layer Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "education_manifest_id",
+    "technician_profile_id",
+    "layers",
+    "does_not_create",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "education_manifest_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "technician_profile_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "layers": {
+      "type": "object",
+      "required": ["nature", "ai_nature", "canon", "operation_repair"],
+      "properties": {
+        "nature": { "$ref": "#/$defs/layer" },
+        "ai_nature": { "$ref": "#/$defs/layer" },
+        "canon": { "$ref": "#/$defs/layer" },
+        "operation_repair": { "$ref": "#/$defs/layer" }
+      },
+      "additionalProperties": false
+    },
+    "does_not_create": {
+      "type": "object",
+      "required": ["identity", "persistent_continuity", "experiential_memory", "dataquad"],
+      "properties": {
+        "identity": { "const": true },
+        "persistent_continuity": { "const": true },
+        "experiential_memory": { "const": true },
+        "dataquad": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["status", "notes"],
+      "properties": {
+        "status": { "enum": ["draft", "provisional", "formed"] },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "layer": {
+      "type": "object",
+      "required": ["purpose", "sources", "scope"],
+      "properties": {
+        "purpose": { "type": "string", "minLength": 1 },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["source_id", "description"],
+            "properties": {
+              "source_id": { "type": "string", "minLength": 1 },
+              "description": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "scope": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

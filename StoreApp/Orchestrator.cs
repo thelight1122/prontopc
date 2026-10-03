@@ -141,7 +141,9 @@ sealed class Orchestrator
             i++;
             string name = action.GetValueOrDefault("friendly_name")?.ToString() ?? "";
             progress?.Report(new RepairProgress(i, total, name));
-            var r = await Task.Run(() => Repair.Execute(action), ct);
+            int index = i;
+            var r = await Task.Run(() => Repair.Execute(action,
+                detail => progress?.Report(new RepairProgress(index, total, name, detail))), ct);
             results.Add(r);
         }
 
@@ -161,6 +163,8 @@ sealed class Orchestrator
 }
 
 // Repair-phase progress + outcome (the "repair" and "verify" phases).
-sealed record RepairProgress(int Index, int Total, string Name);
+// Detail is an optional observe-only line (current folder + running file count, or the
+// Windows tool being run); null on the per-action tick.
+sealed record RepairProgress(int Index, int Total, string Name, string? Detail = null);
 sealed record RepairOutcome(
     List<Dictionary<string, object?>> Results, int Done, int FreedMb, bool NeedsRestart, string Message);

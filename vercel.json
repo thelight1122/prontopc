@@ -1,6 +1,7 @@
 {
   "version": 2,
   "routes": [
+    { "src": "/ai-aegis", "dest": "/ai-aegis.html" },
     { "src": "/privacy", "dest": "/privacy.html" },
     { "src": "/terms", "dest": "/terms.html" },
     { "src": "/(.*\\.(html|png|js|css|ico|svg))", "dest": "/$1" },

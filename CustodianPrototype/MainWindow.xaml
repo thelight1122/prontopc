@@ -1,0 +1,74 @@
+<Window x:Class="CustodianPrototype.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:CustodianPrototype"
+        Title="ProntoPC — Custodian Technician (prototype)"
+        Width="620" Height="720" WindowStartupLocation="CenterScreen"
+        Background="#051424">
+
+    <Window.Resources>
+        <Style x:Key="Pill" TargetType="Button">
+            <Setter Property="Foreground" Value="#CFE2F7"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="14" Padding="{TemplateBinding Padding}"
+                                Background="#12213A" BorderBrush="#263E63" BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#1B3055"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FFB95F"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,24,0,0" HorizontalAlignment="Center">
+            <TextBlock Text="ProntoPC" Foreground="#FFB95F" FontFamily="Segoe UI Light"
+                       FontSize="30" HorizontalAlignment="Center"/>
+            <TextBlock Text="Your Custodian Technician" Foreground="#7C9AC0" FontFamily="Segoe UI"
+                       FontSize="12.5" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+        </StackPanel>
+
+        <local:Custodian x:Name="Tech" Grid.Row="1" Margin="0,6,0,0"/>
+
+        <Separator Grid.Row="2" Background="#16293F" Margin="40,4,40,10"/>
+
+        <StackPanel Grid.Row="3" Margin="16,0,16,18">
+            <TextBlock Text="PROTOTYPE HARNESS — in the app these fire from real pipeline events"
+                       Foreground="#5A7AA0" FontFamily="Consolas" FontSize="10"
+                       HorizontalAlignment="Center" Margin="0,0,0,8"/>
+            <WrapPanel HorizontalAlignment="Center">
+                <Button Style="{StaticResource Pill}" Content="Greeting"   Click="Greeting_Click"/>
+                <Button Style="{StaticResource Pill}" Content="Scanning"   Click="Scanning_Click"/>
+                <Button Style="{StaticResource Pill}" Content="Analysing"  Click="Thinking_Click"/>
+                <Button Style="{StaticResource Pill}" Content="Findings"   Click="Presenting_Click"/>
+                <Button Style="{StaticResource Pill}" Content="Repairing"  Click="Repairing_Click"/>
+                <Button Style="{StaticResource Pill}" Content="Complete"   Click="Complete_Click"/>
+                <Button Style="{StaticResource Pill}" Content="Blocked"    Click="Blocked_Click"/>
+            </WrapPanel>
+            <WrapPanel HorizontalAlignment="Center" Margin="0,2,0,0">
+                <Button Style="{StaticResource Pill}" Content="+ one repair finished" Click="Stroke_Click"/>
+                <Button Style="{StaticResource Pill}" Content="Play full sequence"    Click="Sequence_Click"/>
+            </WrapPanel>
+        </StackPanel>
+    </Grid>
+</Window>

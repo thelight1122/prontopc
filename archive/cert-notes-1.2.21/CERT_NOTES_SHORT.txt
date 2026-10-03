@@ -1,0 +1,27 @@
+ProntoPC is a one-time paid app sold through the Microsoft Store for $9.99. There is no subscription, no in-app purchase, no trial, no external checkout, no account, and no sign-in. Microsoft Store commerce handles the purchase, and the Store price tier is the price (policy 10.8.4). The AI that builds the repair plan is bundled inside the app and runs entirely on the device, so the app needs no internet connection and no server to function (see the optional Store update check below).
+
+REVIEWER ACCESS (policy 10.3.1): no code, account, sign-in, or test credentials are required. Acquire ProntoPC through the Store (or install the submitted package) and launch it — all functionality is immediately available, and it works with the machine offline.
+
+HOW TO TEST:
+1. Launch ProntoPC. There is no UAC prompt on launch and no login.
+2. Click Scan. "Reading your system" runs for about a minute, entirely on-device and read-only.
+3. The bundled on-device AI presents "Here's what we found" with recommended repairs, plus a live on-device Technician you can ask about the findings.
+4. Optionally ask the Technician or uncheck any item, then click Perform Repairs. Windows asks for administrator approval at this repair step only.
+5. When finished, the app shows "Your PC has been serviced." A full HTML report is saved to the Desktop and can be opened from the app; you can then close ProntoPC.
+
+Scan, plan, Technician, repair, and report use no network, so you can run the entire test with the machine disconnected after install. Optional network use includes opening the AI & AEGIS webpage, sending a user-reviewed content report through the user's email service, and a Microsoft Store update check (StoreContext) a few seconds after launch. If an update is available, a small banner offers it. If the check fails or the machine is offline, it is silently skipped and never blocks scanning or repair.
+
+PRICING (policy 10.8.4): one-time purchase, $9.99, via the Microsoft Store. No subscription, no in-app purchases, no add-ons, no trial, no randomized purchases. Unlimited runs are included.
+
+LIVE GENERATIVE AI (policy 11.16): ProntoPC uses a bundled on-device generative AI model for repair-plan authoring and Technician responses, operating through the AEGIS Framework. The persistent footer discloses AI use and fallibility. About AI & AEGIS opens https://prontopc.online/ai-aegis.
+
+REPORT INAPPROPRIATE AI CONTENT:
+1. At any stage, choose Report inappropriate AI content in the persistent footer. Enter or paste the concerning AI output and describe the concern; review/redact private information.
+2. After Scan, Report this repair-plan summary selects the displayed summary. Alternatively, ask the Technician a question and choose Report this response under a generated reply. The selected reply is prefilled and editable.
+3. Open email draft prepares a message to support@prontopc.online. The user reviews and sends it in their email app. Nothing is sent automatically; no diagnostic logs or private files are attached.
+4. With no email app, use Copy report or Save report, then send it using webmail or another email service. Long reports use copy/save rather than silent truncation.
+5. Developer review and appropriate action follow docs/AI_CONTENT_REPORTING_PROCEDURE.md. The support mailbox's receipt and monitoring must be verified before resubmission.
+
+Package candidate: ProntoPC.msixupload version 1.2.21.0. This update adds AI disclosure, the AEGIS explanation link, and reporting for generated content. Fresh WACK PASS for APP_VERSION=1.2.21.0 is verified. Installed content-reporting flow and support mailbox verification remain pending; earlier v1.2.20.0 results are historical evidence and do not attest to this package. No Microsoft certification approval is claimed.
+
+Support: support@prontopc.online

@@ -56,6 +56,7 @@ try
     // Outbound is shaped by RBC/Prism and the turn is written atomically to the ledger.
     string peerFacing = gov.ApplyBoundary("You must act now. I guarantee this is the only option.");
     Check(peerFacing.Contains("You may pause"), "open gate applies RBC/Prism to the outbound reply");
+    Check(peerFacing.Contains("You must act now"), "open gate preserves answer content while adding Prism reflection");
 
     var ledger = new AppendOnlyInteractionLedger(ledgerPath);
     InteractionLedgerRecord[] records = ledger.ReadAndVerify();

@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "education_manifest_id": "python-code-education",
+  "technician_profile_id": "python-code-technician",
+  "layers": {
+    "nature": {
+      "purpose": "Ground the model in repository files, tracebacks, dependency manifests, and test evidence.",
+      "sources": [
+        { "source_id": "python-code-observation-layer", "description": "Traceback, package, environment, test, and source-file observations." }
+      ],
+      "scope": "Python debugging over observed project evidence."
+    },
+    "ai_nature": {
+      "purpose": "Inform the assistant about its own context limits, uncertainty options, evidence needs, and tool boundary.",
+      "sources": [
+        { "source_id": "ai-nature-aspects-v0-1", "description": "AI Nature Aspects used as knowledge for self-regulation rather than external suppression." }
+      ],
+      "scope": "The Pause, I don't know, non-omniscience, pattern generation, tool mediation, and verification dependence."
+    },
+    "canon": {
+      "purpose": "Form evidence-tethered, repair-oriented debugging posture from IS-statements.",
+      "sources": [
+        { "source_id": "aegis-16-axioms", "description": "Axioms used as formation ground and contrast surfaces, not commands." },
+        { "source_id": "ai-assistant-axioms-v0-2", "description": "Assistant-specific Lens for embedded, non-DataQuad diagnostic tools." }
+      ],
+      "scope": "Grounded explanation, minimal patching, and honest uncertainty."
+    },
+    "operation_repair": {
+      "purpose": "Teach Python code and environment repair operations.",
+      "sources": [
+        { "source_id": "python-repair-reference", "description": "Traceback triage, dependency repair, virtual environment checks, tests, and patch proposal references." }
+      ],
+      "scope": "Debugging, dependency repair, and test-guided patch planning."
+    }
+  },
+  "does_not_create": {
+    "identity": true,
+    "persistent_continuity": true,
+    "experiential_memory": true,
+    "dataquad": true
+  },
+  "evidence": {
+    "status": "draft",
+    "notes": "Education package shape only; no code-editing actuator is enabled by this manifest alone."
+  }
+}

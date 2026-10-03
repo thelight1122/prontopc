@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "envelope_id": "windows-pc-actuator-envelope",
+  "technician_profile_id": "windows-pc-technician",
+  "domain": "windows-pc",
+  "read_only_default": true,
+  "actions": {
+    "collect_system_inventory": {
+      "domain": "windows-pc",
+      "satellite_id": "windows-diagnostics-satellite",
+      "preconditions": ["Windows session is running", "User starts a diagnostic session"],
+      "permissions": ["standard-user-read"],
+      "risk": "none",
+      "rollback_or_backup": "No mutation performed.",
+      "consent_requirement": "never",
+      "verification_method": "Collected sections are present in the diagnostic report.",
+      "read_only_safe": true,
+      "mutates_system": false
+    },
+    "clear_temp_files": {
+      "domain": "windows-pc",
+      "satellite_id": "windows-startup-satellite",
+      "preconditions": ["Diagnostic evidence reports reclaimable temporary files"],
+      "permissions": ["user-consent", "filesystem-write"],
+      "risk": "low",
+      "rollback_or_backup": "Delete only temp/cache paths declared by the envelope; preserve report evidence of paths and byte counts.",
+      "consent_requirement": "required",
+      "verification_method": "Re-scan target paths and report reclaimed bytes.",
+      "read_only_safe": false,
+      "mutates_system": true
+    }
+  }
+}

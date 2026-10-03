@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prontopc.local/schemas/technician-profile.schema.json",
+  "title": "Technician POD Profile",
+  "description": "A bounded AI technician tool profile. It may diagnose, plan, dispatch, and invoke consented actuators. The schema preserves the product boundary that keeps this tool separate from DataQuad or continuity-bearing architecture.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "profile_id",
+    "display_name",
+    "domain",
+    "tool_class",
+    "supported_environments",
+    "ethical_boundary",
+    "model",
+    "orbs",
+    "education_manifest",
+    "skill_pack_manifest",
+    "actuator_envelope",
+    "technical_library",
+    "dispatch",
+    "memory_policy",
+    "communications",
+    "evidence"
+  ],
+  "not": {
+    "anyOf": [
+      { "required": ["dataquad"] },
+      { "required": ["data_quad"] },
+      { "required": ["persistent_identity"] },
+      { "required": ["persistent_continuity"] },
+      { "required": ["experiential_memory"] },
+      { "required": ["locus"] }
+    ]
+  },
+  "properties": {
+    "schema_version": { "type": "string" },
+    "profile_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "display_name": { "type": "string", "minLength": 1 },
+    "domain": {
+      "type": "string",
+      "enum": ["windows-pc", "usb-rescue", "database", "python-code"]
+    },
+    "tool_class": { "const": "diagnostic-and-repair-tool" },
+    "supported_environments": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "read_only_default": { "type": "boolean" },
+    "ethical_boundary": {
+      "type": "object",
+      "required": [
+        "no_dataquad",
+        "no_persistent_identity_continuity",
+        "no_experiential_memory",
+        "no_locus_forming_architecture",
+        "session_memory_only"
+      ],
+      "properties": {
+        "no_dataquad": { "const": true },
+        "no_persistent_identity_continuity": { "const": true },
+        "no_experiential_memory": { "const": true },
+        "no_locus_forming_architecture": { "const": true },
+        "session_memory_only": { "const": true },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "model": {
+      "type": "object",
+      "required": ["role", "education_layers", "runtime_canon_dependency"],
+      "properties": {
+        "role": { "const": "educated-domain-reasoner" },
+        "education_layers": {
+          "type": "array",
+          "items": { "enum": ["nature", "canon", "operation-repair"] },
+          "minItems": 3,
+          "uniqueItems": true
+        },
+        "runtime_canon_dependency": { "const": false },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "orbs": {
+      "type": "object",
+      "required": [
+        "orchestrator_pod",
+        "dispatch_orb",
+        "skills_orb",
+        "memory_orb",
+        "technical_library_orb",
+        "communications_orb"
+      ],
+      "properties": {
+        "orchestrator_pod": { "$ref": "#/$defs/orb_ref" },
+        "dispatch_orb": { "$ref": "#/$defs/orb_ref" },
+        "skills_orb": { "$ref": "#/$defs/orb_ref" },
+        "memory_orb": { "$ref": "#/$defs/orb_ref" },
+        "technical_library_orb": { "$ref": "#/$defs/orb_ref" },
+        "communications_orb": { "$ref": "#/$defs/orb_ref" }
+      },
+      "additionalProperties": false
+    },
+    "education_manifest": { "type": "string", "pattern": "^education/.+\\.json$" },
+    "skill_pack_manifest": { "type": "string", "pattern": "^skills/.+\\.json$" },
+    "actuator_envelope": { "type": "string", "pattern": "^actuators/.+\\.json$" },
+    "technical_library": { "type": "string", "pattern": "^libraries/.+\\.json$" },
+    "dispatch": {
+      "type": "object",
+      "required": ["default_mode", "routes"],
+      "properties": {
+        "default_mode": { "const": "read-only" },
+        "routes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["intent", "satellite_id", "allowed_modes", "actuator_envelope", "read_only_first"],
+            "properties": {
+              "intent": { "type": "string" },
+              "satellite_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+              "allowed_modes": {
+                "type": "array",
+                "items": { "enum": ["read-only", "repair"] },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "actuator_envelope": { "type": "string" },
+              "read_only_first": { "const": true }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "memory_policy": {
+      "type": "object",
+      "required": ["scope", "retention", "export_behavior"],
+      "properties": {
+        "scope": { "const": "session-only" },
+        "retention": { "enum": ["discard-at-session-end", "export-report-only"] },
+        "export_behavior": { "enum": ["none", "explicit-report-export"] },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "communications": {
+      "type": "object",
+      "required": ["primary_surface", "report_outputs"],
+      "properties": {
+        "primary_surface": { "type": "string" },
+        "report_outputs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["status", "source"],
+      "properties": {
+        "status": { "enum": ["draft", "provisional", "verified"] },
+        "source": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "orb_ref": {
+      "type": "object",
+      "required": ["orb_id", "purpose"],
+      "properties": {
+        "orb_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "purpose": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

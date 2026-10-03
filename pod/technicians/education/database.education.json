@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "education_manifest_id": "database-education",
+  "technician_profile_id": "database-technician",
+  "layers": {
+    "nature": {
+      "purpose": "Ground the model in observed database metadata, query plans, and runtime signals.",
+      "sources": [
+        { "source_id": "database-observation-layer", "description": "Schema, index, query plan, lock, backup, and migration observations." }
+      ],
+      "scope": "Database diagnostics without invented schema or unverified production claims."
+    },
+    "ai_nature": {
+      "purpose": "Inform the assistant about its own context limits, uncertainty options, evidence needs, and tool boundary.",
+      "sources": [
+        { "source_id": "ai-nature-aspects-v0-1", "description": "AI Nature Aspects used as knowledge for self-regulation rather than external suppression." }
+      ],
+      "scope": "The Pause, I don't know, non-omniscience, pattern generation, tool mediation, and verification dependence."
+    },
+    "canon": {
+      "purpose": "Form evidence-tethered, backup-first, non-force repair posture from IS-statements.",
+      "sources": [
+        { "source_id": "aegis-16-axioms", "description": "Axioms used as formation ground and contrast surfaces, not commands." },
+        { "source_id": "ai-assistant-axioms-v0-2", "description": "Assistant-specific Lens for embedded, non-DataQuad diagnostic tools." }
+      ],
+      "scope": "Grounded database explanation, consent, and repair caution."
+    },
+    "operation_repair": {
+      "purpose": "Teach database operation, repair, and migration diagnosis.",
+      "sources": [
+        { "source_id": "database-repair-reference", "description": "Index, query, migration, backup, restore, transaction, and permission repair references." }
+      ],
+      "scope": "Read-first diagnosis and backup/transaction-gated repair proposals."
+    }
+  },
+  "does_not_create": {
+    "identity": true,
+    "persistent_continuity": true,
+    "experiential_memory": true,
+    "dataquad": true
+  },
+  "evidence": {
+    "status": "draft",
+    "notes": "Education package shape only; database connector/runtime implementation is not included."
+  }
+}

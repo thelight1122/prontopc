@@ -1,3 +1,24 @@
+## Current candidate: 1.2.21.0 — AI disclosure and content reporting (2026-10-02)
+
+This candidate adds the persistent AI/AEGIS disclosure and reporting controls for
+policy 11.16. The model operates through the AEGIS Framework; the detailed public
+explanation is live at https://prontopc.online/ai-aegis. Users can report content
+from the footer at any stage, select the displayed repair-plan summary, or select
+a generated Technician reply. The editable reporting dialog offers Open email
+ draft, Copy report, and Save report to support@prontopc.online. Email drafts are
+reviewed and sent by the user; reports contain only reviewed text and app version,
+with no automatic logs, attachments, credentials, or full conversation collection.
+
+The AI disclosure page and user-sent email are optional external actions; the
+core scan, on-device AI, repair, and local report flow remains offline. No test
+account or credentials are required. Developer handling is documented in
+AI_CONTENT_REPORTING_PROCEDURE.md. Exact-package WACK PASS for 1.2.21.0 is verified. Installed reporting-flow
+and support mailbox receipt/monitoring remain pending verification. Previous package
+PASS results below are historical and do not attest to 1.2.21.0. Use the current
+CERT_NOTES_SHORT.txt for the reviewer-facing paste.
+
+---
+
 # ProntoPC — Microsoft Store Certification Notes
 
 Product: ProntoPC

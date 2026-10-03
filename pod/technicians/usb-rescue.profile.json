@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "profile_id": "usb-rescue-technician",
+  "display_name": "Bootable USB Rescue Technician",
+  "domain": "usb-rescue",
+  "tool_class": "diagnostic-and-repair-tool",
+  "supported_environments": ["winpe", "offline-windows-volume"],
+  "read_only_default": true,
+  "ethical_boundary": {
+    "no_dataquad": true,
+    "no_persistent_identity_continuity": true,
+    "no_experiential_memory": true,
+    "no_locus_forming_architecture": true,
+    "session_memory_only": true,
+    "note": "The rescue Technician inspects offline systems as a tool; it does not accumulate identity or continuity."
+  },
+  "model": {
+    "role": "educated-domain-reasoner",
+    "education_layers": ["nature", "canon", "operation-repair"],
+    "runtime_canon_dependency": false,
+    "notes": "Uses rescue-media education for offline Windows and boot recovery reasoning."
+  },
+  "orbs": {
+    "orchestrator_pod": { "orb_id": "technician-orchestrator-pod", "purpose": "Holds state, consent, action envelopes, and verification boundaries." },
+    "dispatch_orb": { "orb_id": "technician-dispatch-orb", "purpose": "Routes boot-media observations to rescue Satellites." },
+    "skills_orb": { "orb_id": "usb-rescue-skills-orb", "purpose": "Holds offline volume, boot, and recovery procedures." },
+    "memory_orb": { "orb_id": "session-memory-orb", "purpose": "Keeps temporary session facts and report evidence only." },
+    "technical_library_orb": { "orb_id": "usb-rescue-technical-library-orb", "purpose": "Retains reusable rescue-media solution patterns as product knowledge, not experience." },
+    "communications_orb": { "orb_id": "technician-communications-orb", "purpose": "Explains findings, asks for consent, and emits the report." }
+  },
+  "education_manifest": "education/usb-rescue.education.json",
+  "skill_pack_manifest": "skills/usb-rescue.skills.json",
+  "actuator_envelope": "actuators/usb-rescue.actuators.json",
+  "technical_library": "libraries/usb-rescue.library.json",
+  "dispatch": {
+    "default_mode": "read-only",
+    "routes": [
+      {
+        "intent": "offline-volume-inspection",
+        "satellite_id": "offline-volume-satellite",
+        "allowed_modes": ["read-only", "repair"],
+        "actuator_envelope": "usb-rescue-actuator-envelope",
+        "read_only_first": true
+      },
+      {
+        "intent": "boot-repair",
+        "satellite_id": "boot-repair-satellite",
+        "allowed_modes": ["read-only", "repair"],
+        "actuator_envelope": "usb-rescue-actuator-envelope",
+        "read_only_first": true
+      }
+    ]
+  },
+  "memory_policy": {
+    "scope": "session-only",
+    "retention": "export-report-only",
+    "export_behavior": "explicit-report-export",
+    "notes": "Offline host details are held for the rescue session and may be exported into the repair report."
+  },
+  "communications": {
+    "primary_surface": "boot-media-local-ui",
+    "report_outputs": ["html-report", "json-evidence", "support-handoff-package"]
+  },
+  "evidence": {
+    "status": "draft",
+    "source": "Technician POD Platform v0.1 implementation."
+  }
+}

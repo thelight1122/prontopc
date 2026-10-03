@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "reference_set_id": "technician-totem-reference-categories",
+  "description": "Category plan for passive Totem technical references used by Technician Technical Library Orbs.",
+  "use_boundary": {
+    "passive_reference_only": true,
+    "authorization_power": false,
+    "dispatch_power": false,
+    "mutation_power": false,
+    "execution_power": false,
+    "note": "Totems can inform and illuminate technical work; they do not authorize or perform work."
+  },
+  "categories": [
+    {
+      "category": "windows-environment",
+      "status": "planned",
+      "description": "Installed Windows environment diagnostics, recovery limits, rollback notes, and verification patterns.",
+      "totem_ids": []
+    },
+    {
+      "category": "usb-rescue",
+      "status": "planned",
+      "description": "Bootable rescue media, offline disk inspection, WinPE-style constraints, and backup-first repair patterns.",
+      "totem_ids": []
+    },
+    {
+      "category": "database",
+      "status": "planned",
+      "description": "Database schema, query, migration, backup, restore, and rollback patterns.",
+      "totem_ids": []
+    },
+    {
+      "category": "networking",
+      "status": "planned",
+      "description": "Adapter, DNS, routing, connectivity, service reachability, and environment-boundary patterns.",
+      "totem_ids": []
+    },
+    {
+      "category": "python-code",
+      "status": "planned",
+      "description": "Python tracebacks, dependency environments, test repair, packaging, and verification patterns.",
+      "totem_ids": []
+    }
+  ]
+}

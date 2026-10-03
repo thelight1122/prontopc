@@ -1,0 +1,7 @@
+﻿{
+    "TimeCreated":  "\/Date(1790858505240)\/",
+    "ProviderName":  "Windows Error Reporting",
+    "Id":  1001,
+    "LevelDisplayName":  "Information",
+    "Message":  "Fault bucket 1727068691646373748, type 5\r\nEvent Name: RADAR_PRE_LEAK_64\r\nResponse: Not available\r\nCab Id: 0\r\n\r\nProblem signature:\r\nP1: ProntoPC.exe\r\nP2: 1.0.0.0\r\nP3: 10.0.26300.2.0.0\r\nP4: \r\nP5: \r\nP6: \r\nP7: \r\nP8: \r\nP9: \r\nP10: \r\n\r\nAttached files:\r\n\\\\?\\C:\\Users\\PreFlight\\AppData\\Local\\Temp\\RDRFD9E.tmp\\empty.txt\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.21aa7fd8-29dc-4321-a4c6-2e54ee691c53.tmp.WERInternalMetadata.xml\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.2f2fb8c8-db61-40af-80db-40e7bc1bf971.tmp.csv\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.8bdfb0e9-9928-478d-89f0-b2b808f4f6ac.tmp.txt\r\n\\\\?\\C:\\ProgramData\\Microsoft\\Windows\\WER\\Temp\\WER.c3e0df0c-53aa-4497-a5e9-54d7510f7b1f.tmp.xml\r\n\r\nThese files may be available here:\r\nNULL\r\n\r\nAnalysis symbol: \r\nRechecking for solution: 0\r\nReport Id: b4ba175b-18ec-49e9-8a42-6131a5028e64\r\nReport Status: 268435456\r\nHashed bucket: 9390335d43e36c8dc7f7c7d31c47df74\r\nCab Guid: 0"
+}

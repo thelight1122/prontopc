@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "education_manifest_id": "windows-pc-education",
+  "technician_profile_id": "windows-pc-technician",
+  "layers": {
+    "nature": {
+      "purpose": "Ground the model in observed Windows machine state rather than invented diagnosis.",
+      "sources": [
+        { "source_id": "prontopc-repair-nature-layer", "description": "Existing ProntoPC repair Nature Layer and system audit evidence shape." }
+      ],
+      "scope": "Installed Windows diagnostics, user consent, and repair-report grounding."
+    },
+    "ai_nature": {
+      "purpose": "Inform the assistant about its own context limits, uncertainty options, evidence needs, and tool boundary.",
+      "sources": [
+        { "source_id": "ai-nature-aspects-v0-1", "description": "AI Nature Aspects used as knowledge for self-regulation rather than external suppression." }
+      ],
+      "scope": "The Pause, I don't know, non-omniscience, pattern generation, tool mediation, and verification dependence."
+    },
+    "canon": {
+      "purpose": "Form non-force, evidence-tethered, repair-oriented posture from IS-statements.",
+      "sources": [
+        { "source_id": "aegis-16-axioms", "description": "Axioms used as formation ground and contrast surfaces, not commands." },
+        { "source_id": "ai-assistant-axioms-v0-2", "description": "Assistant-specific Lens for embedded, non-DataQuad diagnostic tools." }
+      ],
+      "scope": "Diagnostic humility, consent awareness, and repair language."
+    },
+    "operation_repair": {
+      "purpose": "Teach Windows repair operations and boundaries.",
+      "sources": [
+        { "source_id": "windows-repair-reference", "description": "Windows cleanup, startup, network, update, and integrity repair references." }
+      ],
+      "scope": "Windows health, startup, update, storage, network, and system file repair."
+    }
+  },
+  "does_not_create": {
+    "identity": true,
+    "persistent_continuity": true,
+    "experiential_memory": true,
+    "dataquad": true
+  },
+  "evidence": {
+    "status": "draft",
+    "notes": "Education package shape only; no new model forming run is included in this implementation."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "package_version": "1.2.21.0",
+  "package_sha256": "8D2FF6B1867FE22BE1612A239B906F80E931EBD9BBB6ED48993DC1B36CFD82C3",
+  "installed_reporting_flow_pass": false,
+  "support_receipt_and_monitoring_confirmed": false,
+  "live_explanation_url_pass": true,
+  "live_explanation_url": "https://prontopc.online/ai-aegis",
+  "observations": "Live page HTTP 200 and homepage links verified by Codex on 2026-10-02. Unit and offscreen WPF reporting UI checks pass. Installed exact-package flow and mailbox receipt/monitoring remain pending owner verification. No report email was sent by Codex."
+}

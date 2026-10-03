@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "skill_pack_id": "usb-rescue-skills",
+  "technician_profile_id": "usb-rescue-technician",
+  "domain": "usb-rescue",
+  "skills": [
+    {
+      "skill_id": "inspect-offline-windows-volume",
+      "satellite_id": "offline-volume-satellite",
+      "purpose": "Inspect offline Windows installations, mounted volumes, boot files, logs, and recovery markers.",
+      "read_only_capable": true,
+      "mutation_boundary": "none"
+    },
+    {
+      "skill_id": "repair-offline-boot",
+      "satellite_id": "boot-repair-satellite",
+      "purpose": "Propose and perform backup-first boot repairs after consent.",
+      "read_only_capable": true,
+      "mutation_boundary": "actuator-only"
+    }
+  ]
+}

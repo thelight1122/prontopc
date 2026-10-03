@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "profile_id": "windows-pc-technician",
+  "display_name": "Windows PC Technician",
+  "domain": "windows-pc",
+  "tool_class": "diagnostic-and-repair-tool",
+  "supported_environments": ["installed-windows"],
+  "read_only_default": true,
+  "ethical_boundary": {
+    "no_dataquad": true,
+    "no_persistent_identity_continuity": true,
+    "no_experiential_memory": true,
+    "no_locus_forming_architecture": true,
+    "session_memory_only": true,
+    "note": "The Technician is a repair tool. Axioms and education form posture; continuity-bearing architecture is intentionally absent."
+  },
+  "model": {
+    "role": "educated-domain-reasoner",
+    "education_layers": ["nature", "canon", "operation-repair"],
+    "runtime_canon_dependency": false,
+    "notes": "Uses the formed disposition plus Windows repair education to reason over observed diagnostics."
+  },
+  "orbs": {
+    "orchestrator_pod": { "orb_id": "technician-orchestrator-pod", "purpose": "Holds state, consent, action envelopes, and verification boundaries." },
+    "dispatch_orb": { "orb_id": "technician-dispatch-orb", "purpose": "Routes observed Windows intents to the correct repair Satellite." },
+    "skills_orb": { "orb_id": "windows-skills-orb", "purpose": "Holds Windows diagnostic and repair procedures." },
+    "memory_orb": { "orb_id": "session-memory-orb", "purpose": "Keeps temporary session facts and report evidence only." },
+    "technical_library_orb": { "orb_id": "windows-technical-library-orb", "purpose": "Retains reusable Windows solution patterns as product knowledge, not experience." },
+    "communications_orb": { "orb_id": "technician-communications-orb", "purpose": "Explains findings, asks for consent, and emits the report." }
+  },
+  "education_manifest": "education/windows-pc.education.json",
+  "skill_pack_manifest": "skills/windows-pc.skills.json",
+  "actuator_envelope": "actuators/windows-pc.actuators.json",
+  "technical_library": "libraries/windows-pc.library.json",
+  "dispatch": {
+    "default_mode": "read-only",
+    "routes": [
+      {
+        "intent": "system-health",
+        "satellite_id": "windows-diagnostics-satellite",
+        "allowed_modes": ["read-only", "repair"],
+        "actuator_envelope": "windows-pc-actuator-envelope",
+        "read_only_first": true
+      },
+      {
+        "intent": "startup-repair",
+        "satellite_id": "windows-startup-satellite",
+        "allowed_modes": ["read-only", "repair"],
+        "actuator_envelope": "windows-pc-actuator-envelope",
+        "read_only_first": true
+      }
+    ]
+  },
+  "memory_policy": {
+    "scope": "session-only",
+    "retention": "export-report-only",
+    "export_behavior": "explicit-report-export",
+    "notes": "Machine observations are held only for the active repair/debug session unless the user exports a report."
+  },
+  "communications": {
+    "primary_surface": "local-technician-ui",
+    "report_outputs": ["html-report", "json-evidence"]
+  },
+  "evidence": {
+    "status": "draft",
+    "source": "Technician POD Platform v0.1 implementation."
+  }
+}

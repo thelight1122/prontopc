@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "education_manifest_id": "usb-rescue-education",
+  "technician_profile_id": "usb-rescue-technician",
+  "layers": {
+    "nature": {
+      "purpose": "Ground the model in offline disk, boot, and Windows-volume evidence.",
+      "sources": [
+        { "source_id": "rescue-media-nature-layer", "description": "Offline volume, boot state, and recovery context observations." }
+      ],
+      "scope": "WinPE-style rescue sessions with explicit target-volume identification."
+    },
+    "ai_nature": {
+      "purpose": "Inform the assistant about its own context limits, uncertainty options, evidence needs, and tool boundary.",
+      "sources": [
+        { "source_id": "ai-nature-aspects-v0-1", "description": "AI Nature Aspects used as knowledge for self-regulation rather than external suppression." }
+      ],
+      "scope": "The Pause, I don't know, non-omniscience, pattern generation, tool mediation, and verification dependence."
+    },
+    "canon": {
+      "purpose": "Form non-force, consent-aware rescue posture from IS-statements.",
+      "sources": [
+        { "source_id": "aegis-16-axioms", "description": "Axioms used as formation ground and contrast surfaces, not commands." },
+        { "source_id": "ai-assistant-axioms-v0-2", "description": "Assistant-specific Lens for embedded, non-DataQuad diagnostic tools." }
+      ],
+      "scope": "Careful target selection, clear uncertainty, and no silent mutation."
+    },
+    "operation_repair": {
+      "purpose": "Teach offline Windows and boot repair operations.",
+      "sources": [
+        { "source_id": "offline-windows-repair-reference", "description": "BCD, registry hive inspection, driver rollback, file integrity, and backup-first rescue operations." }
+      ],
+      "scope": "Offline diagnosis and boot/volume repair from rescue media."
+    }
+  },
+  "does_not_create": {
+    "identity": true,
+    "persistent_continuity": true,
+    "experiential_memory": true,
+    "dataquad": true
+  },
+  "evidence": {
+    "status": "draft",
+    "notes": "Education package shape only; bootable media implementation remains a later gated build."
+  }
+}

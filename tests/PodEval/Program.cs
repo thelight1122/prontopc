@@ -157,6 +157,20 @@ sw.Stop();
 Check(transientOutcome.IsOk, "transient local completion miss recovers on automatic retry");
 Check(sw.ElapsedMilliseconds >= 2400, "automatic retry waits through the model-load cooldown before retrying");
 
+// Any Windows tool can stall. RunExe must enforce its timeout before output reads
+// can block forever, kill the process tree, and surface an honest timeout.
+Console.WriteLine("\n== Repair tool timeout ==");
+var timeoutWatch = System.Diagnostics.Stopwatch.StartNew();
+bool timedOut = false;
+try { Repair.RunExe("ping", "127.0.0.1 -n 6", 1); }
+catch (TimeoutException ex)
+{
+    timedOut = ex.Message.Contains("stopped after", StringComparison.OrdinalIgnoreCase);
+}
+timeoutWatch.Stop();
+Check(timedOut, "RunExe reports timeout honestly");
+Check(timeoutWatch.ElapsedMilliseconds < 5000, "RunExe returns promptly instead of waiting for child exit");
+
 Console.WriteLine($"\n{(failures == 0 ? "ALL PASS" : failures + " FAILURE(S)")}");
 Environment.Exit(failures == 0 ? 0 : 1);
 
@@ -169,6 +183,7 @@ sealed class FakeInference : ILocalInference
         "Sure!\n{\"summary\":\"500 MB temp, 8 GB Windows.old.\",\"actions\":[" +
         "{\"id\":\"clear_temp_files\",\"friendly_name\":\"Temp\",\"category\":\"cleanup\",\"estimated_mb_recovered\":500}," +
         "{\"id\":\"reset_network_stack\",\"friendly_name\":\"Net\",\"category\":\"network\",\"estimated_mb_recovered\":0}]}";
+    public void WarmUp(CancellationToken ct) { }
     // Multi-turn surface (TOTEM-0026): the plan-authoring eval never calls it, but the
     // fake must satisfy the interface. Echo the last user turn so it stays deterministic.
     public string? Chat(System.Collections.Generic.IReadOnlyList<ChatTurn> history, CancellationToken ct) =>
@@ -187,6 +202,7 @@ sealed class CountingInference : ILocalInference
         Calls++;
         return "{\"summary\":\"ok\",\"actions\":[{\"id\":\"clear_temp_files\",\"friendly_name\":\"Temp\",\"category\":\"cleanup\",\"estimated_mb_recovered\":500}]}";
     }
+    public void WarmUp(CancellationToken ct) { }
     public string? Chat(System.Collections.Generic.IReadOnlyList<ChatTurn> history, CancellationToken ct) => null;
 }
 

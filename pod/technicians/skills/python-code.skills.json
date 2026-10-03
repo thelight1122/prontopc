@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "skill_pack_id": "python-code-skills",
+  "technician_profile_id": "python-code-technician",
+  "domain": "python-code",
+  "skills": [
+    {
+      "skill_id": "inspect-python-failure",
+      "satellite_id": "traceback-diagnostics-satellite",
+      "purpose": "Read tracebacks, package metadata, source snippets, and test output to identify failure mechanisms.",
+      "read_only_capable": true,
+      "mutation_boundary": "none"
+    },
+    {
+      "skill_id": "repair-python-environment",
+      "satellite_id": "python-environment-satellite",
+      "purpose": "Propose and perform consented dependency or environment repairs through the actuator envelope.",
+      "read_only_capable": true,
+      "mutation_boundary": "actuator-only"
+    }
+  ]
+}

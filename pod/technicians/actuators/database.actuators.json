@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "envelope_id": "database-actuator-envelope",
+  "technician_profile_id": "database-technician",
+  "domain": "database",
+  "read_only_default": true,
+  "actions": {
+    "inspect_schema_and_query_plan": {
+      "domain": "database",
+      "satellite_id": "query-diagnostics-satellite",
+      "preconditions": ["Database connection is available with read-only inspection permissions"],
+      "permissions": ["database-read"],
+      "risk": "none",
+      "rollback_or_backup": "No mutation performed.",
+      "consent_requirement": "never",
+      "verification_method": "Schema snapshot and query plan evidence are present in the report.",
+      "read_only_safe": true,
+      "mutates_system": false
+    },
+    "create_reviewed_index": {
+      "domain": "database",
+      "satellite_id": "migration-review-satellite",
+      "preconditions": ["Slow query evidence identifies missing index", "Backup or rollback migration exists", "Maintenance window or owner consent is recorded"],
+      "permissions": ["user-consent", "database-ddl-write"],
+      "risk": "medium",
+      "rollback_or_backup": "Require a reversible migration or backup reference before DDL execution.",
+      "consent_requirement": "required",
+      "verification_method": "Re-run query plan inspection and record index existence.",
+      "read_only_safe": false,
+      "mutates_system": true
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "skill_pack_id": "database-skills",
+  "technician_profile_id": "database-technician",
+  "domain": "database",
+  "skills": [
+    {
+      "skill_id": "inspect-database-health",
+      "satellite_id": "query-diagnostics-satellite",
+      "purpose": "Inspect schema, indexes, query plans, locks, and runtime health without mutation.",
+      "read_only_capable": true,
+      "mutation_boundary": "none"
+    },
+    {
+      "skill_id": "repair-database-migration",
+      "satellite_id": "migration-review-satellite",
+      "purpose": "Propose backup-first index or migration repairs through the actuator envelope.",
+      "read_only_capable": true,
+      "mutation_boundary": "actuator-only"
+    }
+  ]
+}

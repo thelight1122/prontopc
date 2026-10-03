@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "profile_id": "python-code-technician",
+  "display_name": "Python Code Technician",
+  "domain": "python-code",
+  "tool_class": "diagnostic-and-repair-tool",
+  "supported_environments": ["local-repository", "virtual-environment", "ci-log"],
+  "read_only_default": true,
+  "ethical_boundary": {
+    "no_dataquad": true,
+    "no_persistent_identity_continuity": true,
+    "no_experiential_memory": true,
+    "no_locus_forming_architecture": true,
+    "session_memory_only": true,
+    "note": "The Python Technician debugs code as a bounded tool and retains only active-session observations."
+  },
+  "model": {
+    "role": "educated-domain-reasoner",
+    "education_layers": ["nature", "canon", "operation-repair"],
+    "runtime_canon_dependency": false,
+    "notes": "Uses Python operation and repair education to reason over tracebacks, dependencies, tests, and environments."
+  },
+  "orbs": {
+    "orchestrator_pod": { "orb_id": "technician-orchestrator-pod", "purpose": "Holds state, consent, action envelopes, and verification boundaries." },
+    "dispatch_orb": { "orb_id": "technician-dispatch-orb", "purpose": "Routes Python debugging intents to the right Satellite." },
+    "skills_orb": { "orb_id": "python-skills-orb", "purpose": "Holds Python diagnostics, environment repair, and test-guided patch procedures." },
+    "memory_orb": { "orb_id": "session-memory-orb", "purpose": "Keeps temporary session facts and report evidence only." },
+    "technical_library_orb": { "orb_id": "python-technical-library-orb", "purpose": "Retains reusable Python solution patterns as product knowledge, not experience." },
+    "communications_orb": { "orb_id": "technician-communications-orb", "purpose": "Explains findings, asks for consent, and emits the report." }
+  },
+  "education_manifest": "education/python-code.education.json",
+  "skill_pack_manifest": "skills/python-code.skills.json",
+  "actuator_envelope": "actuators/python-code.actuators.json",
+  "technical_library": "libraries/python-code.library.json",
+  "dispatch": {
+    "default_mode": "read-only",
+    "routes": [
+      {
+        "intent": "traceback-analysis",
+        "satellite_id": "traceback-diagnostics-satellite",
+        "allowed_modes": ["read-only", "repair"],
+        "actuator_envelope": "python-code-actuator-envelope",
+        "read_only_first": true
+      },
+      {
+        "intent": "environment-repair",
+        "satellite_id": "python-environment-satellite",
+        "allowed_modes": ["read-only", "repair"],
+        "actuator_envelope": "python-code-actuator-envelope",
+        "read_only_first": true
+      }
+    ]
+  },
+  "memory_policy": {
+    "scope": "session-only",
+    "retention": "export-report-only",
+    "export_behavior": "explicit-report-export",
+    "notes": "Repository findings are kept only for the debugging session unless exported into a report."
+  },
+  "communications": {
+    "primary_surface": "local-debug-console",
+    "report_outputs": ["markdown-report", "json-evidence", "patch-summary"]
+  },
+  "evidence": {
+    "status": "draft",
+    "source": "Technician POD Platform v0.1 implementation."
+  }
+}

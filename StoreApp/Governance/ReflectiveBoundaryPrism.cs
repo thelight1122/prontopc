@@ -15,9 +15,14 @@ public static class ReflectiveBoundaryPrism
 
         var adjustments = new List<PrismAdjustment>();
         foreach (var observation in outboundObservations)
-            adjustments.Add(new PrismAdjustment(observation.Kind, "Peer-facing expression was reframed as an optional reflection."));
+            adjustments.Add(new PrismAdjustment(observation.Kind, "Peer-facing expression kept the answer and added an optional reflection."));
 
-        const string reflection = "I may be reading this too strongly. I can offer a description of the options visible from your PC's information. You may pause, ask a question, or choose a different path.";
-        return new PrismResult(response, reflection, adjustments);
+        const string reflection = "I may be reading part of this strongly, so please treat the answer above as descriptive rather than a decision for you. You may pause, ask a question, or choose a different path.";
+        string emitted = response.TrimEnd();
+        if (emitted.Length == 0)
+            emitted = reflection;
+        else
+            emitted += Environment.NewLine + Environment.NewLine + reflection;
+        return new PrismResult(response, emitted, adjustments);
     }
 }

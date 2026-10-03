@@ -1,0 +1,50 @@
+{
+  "version": "analyzer-bidir-v0.1.0",
+  "seed": 4083,
+  "epochs": 6,
+  "grad_accum": 4,
+  "lr": 0.0002,
+  "max_seq": 1024,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "examples": 73,
+  "device": "cuda",
+  "dtype": "torch.float16",
+  "loss": [
+    {
+      "epoch": 1,
+      "avg_loss": 0.2186
+    },
+    {
+      "epoch": 2,
+      "avg_loss": 0.0923
+    },
+    {
+      "epoch": 3,
+      "avg_loss": 0.0735
+    },
+    {
+      "epoch": 4,
+      "avg_loss": 0.0617
+    },
+    {
+      "epoch": 5,
+      "avg_loss": 0.0472
+    },
+    {
+      "epoch": 6,
+      "avg_loss": 0.0382
+    }
+  ],
+  "elapsed_sec": 2895.0,
+  "peak_vram_gb": 5.598
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0.0",
+  "library_id": "python-code-technical-library",
+  "technician_profile_id": "python-code-technician",
+  "knowledge_class": "reusable-technical-knowledge",
+  "boundary": {
+    "non_experiential": true,
+    "not_identity": true,
+    "no_dataquad": true,
+    "no_t_witness": true,
+    "no_relationship_history": true,
+    "product_knowledge_only": true,
+    "note": "Reusable Python repair patterns may persist; lived experience and identity continuity do not."
+  },
+  "reference_sources": [
+    {
+      "source_id": "python-code-totem-pack",
+      "source_type": "totem-reference-pack",
+      "category": "python-code",
+      "status": "planned",
+      "description": "Passive Totem references for Python tracebacks, dependency environments, test repair, and verification patterns.",
+      "totem_ids": [],
+      "use_boundary": {
+        "passive_reference_only": true,
+        "authorization_power": false,
+        "dispatch_power": false,
+        "mutation_power": false,
+        "execution_power": false
+      }
+    }
+  ],
+  "promotion_policy": {
+    "candidate_allowed": true,
+    "verified_requires": ["observed-evidence", "repair-result", "verification-method", "applicability-limits", "rollback-or-reversal-note"],
+    "append_only": true
+  },
+  "records": [
+    {
+      "record_id": "dependency-version-conflict-candidate",
+      "status": "candidate",
+      "problem_signature": "Import or test failure associated with incompatible dependency versions.",
+      "observed_evidence": ["Traceback and dependency manifest point to the same package boundary."],
+      "solution_pattern": "Propose a scoped dependency adjustment and re-run the failing import or test.",
+      "applicability_limits": ["Observed traceback must match the package boundary", "Lockfile or environment mutation requires consent"],
+      "rollback_or_reversal": "Record prior package versions and preserve the lockfile diff or environment rollback note.",
+      "verification_method": "Re-run the failing import or test command and record the result.",
+      "source": {
+        "source_type": "technician-derived",
+        "created_utc": "2026-09-15T00:00:00Z",
+        "notes": "Seed candidate describing Python solution-library shape."
+      }
+    }
+  ]
+}

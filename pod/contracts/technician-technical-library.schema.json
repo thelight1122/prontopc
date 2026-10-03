@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prontopc.local/schemas/technician-technical-library.schema.json",
+  "title": "Technician Technical Library",
+  "description": "Persistent reusable technical knowledge for an AI Technician tool. This is product knowledge, not DataQuad memory, T-Witness, autobiography, or identity continuity.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "library_id",
+    "technician_profile_id",
+    "knowledge_class",
+    "boundary",
+    "reference_sources",
+    "promotion_policy",
+    "records"
+  ],
+  "not": {
+    "anyOf": [
+      { "required": ["dataquad"] },
+      { "required": ["data_quad"] },
+      { "required": ["peer_tensor"] },
+      { "required": ["t_witness"] },
+      { "required": ["persistent_identity"] },
+      { "required": ["persistent_continuity"] },
+      { "required": ["experiential_memory"] },
+      { "required": ["locus"] }
+    ]
+  },
+  "properties": {
+    "schema_version": { "type": "string" },
+    "library_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "technician_profile_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "knowledge_class": { "const": "reusable-technical-knowledge" },
+    "boundary": {
+      "type": "object",
+      "required": [
+        "non_experiential",
+        "not_identity",
+        "no_dataquad",
+        "no_t_witness",
+        "no_relationship_history",
+        "product_knowledge_only"
+      ],
+      "properties": {
+        "non_experiential": { "const": true },
+        "not_identity": { "const": true },
+        "no_dataquad": { "const": true },
+        "no_t_witness": { "const": true },
+        "no_relationship_history": { "const": true },
+        "product_knowledge_only": { "const": true },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "reference_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source_id",
+          "source_type",
+          "category",
+          "status",
+          "description",
+          "totem_ids",
+          "use_boundary"
+        ],
+        "properties": {
+          "source_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "source_type": { "enum": ["totem-reference-pack", "human-authored", "imported-reference"] },
+          "category": { "enum": ["windows-environment", "usb-rescue", "database", "networking", "python-code"] },
+          "status": { "enum": ["planned", "loaded", "retired"] },
+          "description": { "type": "string", "minLength": 1 },
+          "totem_ids": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^TOTEM-(?:[A-Za-z]+-)?[0-9]{4}$" },
+            "uniqueItems": true
+          },
+          "use_boundary": {
+            "type": "object",
+            "required": [
+              "passive_reference_only",
+              "authorization_power",
+              "dispatch_power",
+              "mutation_power",
+              "execution_power"
+            ],
+            "properties": {
+              "passive_reference_only": { "const": true },
+              "authorization_power": { "const": false },
+              "dispatch_power": { "const": false },
+              "mutation_power": { "const": false },
+              "execution_power": { "const": false }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "promotion_policy": {
+      "type": "object",
+      "required": ["candidate_allowed", "verified_requires", "append_only"],
+      "properties": {
+        "candidate_allowed": { "const": true },
+        "verified_requires": {
+          "type": "array",
+          "items": {
+            "enum": ["observed-evidence", "repair-result", "verification-method", "applicability-limits", "rollback-or-reversal-note"]
+          },
+          "minItems": 5,
+          "uniqueItems": true
+        },
+        "append_only": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "record_id",
+          "status",
+          "problem_signature",
+          "observed_evidence",
+          "solution_pattern",
+          "applicability_limits",
+          "rollback_or_reversal",
+          "verification_method",
+          "source"
+        ],
+        "properties": {
+          "record_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "status": { "enum": ["candidate", "verified", "retired"] },
+          "problem_signature": { "type": "string", "minLength": 1 },
+          "observed_evidence": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "solution_pattern": { "type": "string", "minLength": 1 },
+          "applicability_limits": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "rollback_or_reversal": { "type": "string", "minLength": 1 },
+          "verification_method": { "type": "string", "minLength": 1 },
+          "source": {
+            "type": "object",
+            "required": ["source_type", "created_utc"],
+            "properties": {
+              "source_type": { "enum": ["technician-derived", "human-authored", "imported-reference"] },
+              "created_utc": { "type": "string" },
+              "notes": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

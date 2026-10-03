@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "library_id": "windows-pc-technical-library",
+  "technician_profile_id": "windows-pc-technician",
+  "knowledge_class": "reusable-technical-knowledge",
+  "boundary": {
+    "non_experiential": true,
+    "not_identity": true,
+    "no_dataquad": true,
+    "no_t_witness": true,
+    "no_relationship_history": true,
+    "product_knowledge_only": true,
+    "note": "Reusable Windows repair patterns may persist; lived experience and identity continuity do not."
+  },
+  "reference_sources": [
+    {
+      "source_id": "windows-environment-totem-pack",
+      "source_type": "totem-reference-pack",
+      "category": "windows-environment",
+      "status": "planned",
+      "description": "Passive Totem references for installed Windows diagnostics, repair limits, rollback notes, and verification patterns.",
+      "totem_ids": [],
+      "use_boundary": {
+        "passive_reference_only": true,
+        "authorization_power": false,
+        "dispatch_power": false,
+        "mutation_power": false,
+        "execution_power": false
+      }
+    },
+    {
+      "source_id": "networking-totem-pack",
+      "source_type": "totem-reference-pack",
+      "category": "networking",
+      "status": "planned",
+      "description": "Passive Totem references for adapter, DNS, routing, and connectivity diagnostics.",
+      "totem_ids": [],
+      "use_boundary": {
+        "passive_reference_only": true,
+        "authorization_power": false,
+        "dispatch_power": false,
+        "mutation_power": false,
+        "execution_power": false
+      }
+    }
+  ],
+  "promotion_policy": {
+    "candidate_allowed": true,
+    "verified_requires": ["observed-evidence", "repair-result", "verification-method", "applicability-limits", "rollback-or-reversal-note"],
+    "append_only": true
+  },
+  "records": [
+    {
+      "record_id": "windows-temp-cache-candidate",
+      "status": "candidate",
+      "problem_signature": "Low disk space with measured temporary-file cache growth.",
+      "observed_evidence": ["Diagnostic report names temp/cache paths and measured reclaimable bytes."],
+      "solution_pattern": "Offer cleanup only for envelope-declared temp/cache locations after consent.",
+      "applicability_limits": ["Installed Windows session", "Does not apply to unknown user data directories"],
+      "rollback_or_reversal": "Cleanup paths are listed in the report; no registry or boot mutation is included.",
+      "verification_method": "Re-scan the paths and compare reclaimed byte count.",
+      "source": {
+        "source_type": "technician-derived",
+        "created_utc": "2026-09-15T00:00:00Z",
+        "notes": "Seed candidate describing the shape of reusable solution knowledge."
+      }
+    }
+  ]
+}

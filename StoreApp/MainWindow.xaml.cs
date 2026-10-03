@@ -12,6 +12,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Interop;
+using System.Windows.Threading;
 
 namespace ProntoPC;
 
@@ -21,7 +23,9 @@ public partial class MainWindow : Window
     readonly string _repairRequestPath;
     readonly List<(Dictionary<string, object?> action, CheckBox box)> _rows = new();
     readonly Orchestrator _orch;
+    readonly ILocalInference _localInference;
     readonly bool _modelPresent;
+    int _modelWarmupStarted;
 
     // ── Technician → Communications relay seam (append-only, hash-bound) ───────
     // The inter-Orb seam made an APPEND-ONLY message rather than a mutable call. The
@@ -53,6 +57,7 @@ public partial class MainWindow : Window
     string? _reportPath;   // set when the repair report is saved; opened by the Open Report button
     SystemAudit? _lastAudit;
     string? _lastDecline;
+    StoreUpdateChecker? _updateChecker;
 
     public MainWindow(string repairRequestPath = "")
     {
@@ -64,14 +69,34 @@ public partial class MainWindow : Window
         // envelope or a local decline is presented honestly and does not enable repairs.
         string modelDir = ProductModel.DirectoryPath;
         _modelPresent = ProductModel.IsPresentAndBound();
+        _localInference = OnnxGenAiInference.CreateOrAbsent(modelDir, ProductModel.Name);
         _orch = new Orchestrator(new IPlanAuthor[]
         {
-            new GemmaLocalPlanner(OnnxGenAiInference.CreateOrAbsent(modelDir, ProductModel.Name)),
+            new GemmaLocalPlanner(_localInference),
         });
         _findingsRelay = BuildFindingsRelay();
-        Loaded += async (_, __) => await Start();
+        Loaded += async (_, __) =>
+        {
+            Cust.SetState(CustodianState.Scanning, "Reading your system… nothing on your PC is changed.");
+            CollapseAllPanels();
+            ShowWorkingArt("pronto-auditor.png");
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            _ = CheckForUpdatesAfterFirstPaintAsync();
+            await Start();
+        };
     }
 
+
+    void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        // Certification devices can have smaller work areas or higher display scaling.
+        // Keep the window inside the visible desktop so the title bar and bottom action
+        // buttons remain reachable, and let terminal panels scroll when content is taller.
+        var maxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 32);
+        MaxHeight = maxHeight;
+        if (Height > maxHeight) Height = maxHeight;
+        if (Top < SystemParameters.WorkArea.Top) Top = SystemParameters.WorkArea.Top;
+    }
     // Compose the Technician→Communications relay. The relay file (Local app data) and its
     // head anchor (Roaming app data) sit in SEPARATE failure domains, so tail-truncation or
     // whole-file replacement is illuminated rather than silent (TOTEM-C-0110). Both are
@@ -106,12 +131,69 @@ public partial class MainWindow : Window
         await RunScan();
     }
 
+    async Task CheckForUpdatesOnLaunchAsync()
+    {
+        try
+        {
+            var handle = new WindowInteropHelper(this).Handle;
+            _updateChecker = new StoreUpdateChecker(handle);
+            var result = await _updateChecker.CheckAsync();
+            if (!result.IsUpdateAvailable)
+                return;
+
+            UpdateBannerText.Text = result.Message;
+            UpdateBanner.Visibility = Visibility.Visible;
+        }
+        catch
+        {
+            // Update checks are informational. Scan and repair must remain available offline.
+        }
+    }
+
+    async Task CheckForUpdatesAfterFirstPaintAsync()
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            await Dispatcher.InvokeAsync(
+                () => CheckForUpdatesOnLaunchAsync(),
+                DispatcherPriority.Background).Task.Unwrap();
+        }
+        catch
+        {
+            // Update checks are informational. Scan and repair must remain available offline.
+        }
+    }
+
+    async void InstallUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        if (_updateChecker is null)
+            return;
+
+        InstallUpdateButton.IsEnabled = false;
+        InstallUpdateButton.Content = "Updating...";
+        try
+        {
+            UpdateBannerText.Text = await _updateChecker.RequestInstallAsync();
+        }
+        catch
+        {
+            UpdateBannerText.Text = "Update could not be started right now.";
+        }
+        finally
+        {
+            InstallUpdateButton.Content = "Update";
+            InstallUpdateButton.IsEnabled = true;
+        }
+    }
+
     // ── Scan ─────────────────────────────────────────────────────────────────
     async Task RunScan()
     {
         Cust.SetState(CustodianState.Scanning, "Reading your system… nothing on your PC is changed.");
         CollapseAllPanels();
         ShowWorkingArt("pronto-auditor.png");   // auditor present through scan + plan authoring
+        StartModelWarmupDuringScan();
         var diag = await Task.Run(() => Diagnostics.Collect());
 
         // System Audit precondition (TOTEM-X-0074): the application (not the model)
@@ -130,9 +212,27 @@ public partial class MainWindow : Window
         await AuthorPlanAndProceed();
     }
 
+    void StartModelWarmupDuringScan()
+    {
+        if (!_localInference.Available) return;
+        if (Interlocked.Exchange(ref _modelWarmupStarted, 1) != 0) return;
+
+        var thread = new Thread(() =>
+        {
+            try { _localInference.WarmUp(CancellationToken.None); }
+            catch { }
+        })
+        {
+            IsBackground = true,
+            Name = "ProntoPC model warm-up",
+            Priority = ThreadPriority.BelowNormal
+        };
+        thread.Start();
+    }
+
     // Plan phase (retryable): the bundled local model authors a plan from the validated audit and
     // the Action Envelope validates it before it reaches consent. No cloud AI fallback. Runs on the
-    // first pass and again when the customer taps "Try Again" on the Retry screen.
+    // first pass and again when the customer taps "Yes, Attempt Again" on the Retry screen.
     async Task AuthorPlanAndProceed()
     {
         if (_lastAudit is null || _lastDiag is null)
@@ -160,9 +260,23 @@ public partial class MainWindow : Window
         // The orchestrator already auto-retried the on-device author; a miss here is rarer.
         // Offer an explicit Retry screen (with self-help tips) before the make-good / refund routes.
         _lastDecline = outcome.DeclineReason;
+        RecordPlanDecline(outcome.DeclineReason);
         ShowRetry();
     }
 
+
+    void RecordPlanDecline(string reason)
+    {
+        try
+        {
+            var logDir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ProntoPC", "logs");
+            System.IO.Directory.CreateDirectory(logDir);
+            var version = typeof(MainWindow).Assembly.GetName().Version?.ToString() ?? "unknown";
+            var line = $"{DateTimeOffset.UtcNow:O}|version={version}|reason={(reason ?? "unknown").Replace("\r", " ").Replace("\n", " ")}|model_present={System.IO.File.Exists(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "Models", "ProntoPlan", "genai_config.json"))}";
+            System.IO.File.AppendAllText(System.IO.Path.Combine(logDir, "plan-authoring.log"), line + Environment.NewLine);
+        }
+        catch { }
+    }
     void ShowRetry()
     {
         Cust.SetState(CustodianState.Blocked, "The repair plan did not build that time.");
@@ -242,17 +356,41 @@ public partial class MainWindow : Window
             foreach (var el in actions.EnumerateArray())
             {
                 var action = JsonToDict(el);
-                string name = action.GetValueOrDefault("friendly_name")?.ToString() ?? action.GetValueOrDefault("id")?.ToString() ?? "Repair";
+                // The Store-cache reset needs the Microsoft Store app; don't offer it where it's absent.
+                if (string.Equals(action.GetValueOrDefault("id")?.ToString(), "clear_windows_store_cache", StringComparison.OrdinalIgnoreCase)
+                    && !Repair.StoreAppInstalled())
+                    continue;
+                // The row reads from the deterministic FindingCatalog keyed by action id, never the
+                // model-authored friendly_name. The title is written back into the action so the
+                // repair progress line and the report use the same name the customer approved.
+                string id = action.GetValueOrDefault("id")?.ToString() ?? "";
+                var entry = FindingCatalog.For(id);
+                action["friendly_name"] = entry.Title;
+                string evidence = _lastDiagnostics is JsonElement diagEl ? FindingCatalog.Evidence(id, diagEl, action) : "";
+                action["finding_evidence"] = evidence;
                 int mb = Mb(action.GetValueOrDefault("estimated_mb_recovered"));
 
-                var box = new CheckBox { IsChecked = true, VerticalAlignment = VerticalAlignment.Center };
-                var text = new TextBlock
+                var box = new CheckBox { IsChecked = true, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 0, 0) };
+                var text = new StackPanel { Margin = new Thickness(10, 0, 10, 0) };
+                text.Children.Add(new TextBlock
                 {
-                    Text = name,
+                    Text = entry.Title,
                     Foreground = new SolidColorBrush(Color.FromRgb(0xee, 0xf1, 0xff)),
-                    FontSize = 14, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(10, 0, 10, 0)
-                };
+                    FontSize = 14, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap
+                });
+                text.Children.Add(new TextBlock
+                {
+                    Text = entry.What,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0xc3, 0xc8, 0xe6)),
+                    FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0)
+                });
+                if (evidence.Length > 0)
+                    text.Children.Add(new TextBlock
+                    {
+                        Text = evidence,
+                        Foreground = new SolidColorBrush(Color.FromRgb(0x8f, 0xd8, 0xb8)),
+                        FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0)
+                    });
                 var row = new DockPanel { LastChildFill = true };
                 DockPanel.SetDock(box, Dock.Left);
                 row.Children.Add(box);
@@ -319,14 +457,14 @@ public partial class MainWindow : Window
         // §8 OPEN (TOTEM-C-0142): the findings step IS the live on-device Technician. Seed the
         // Canon-formed chat grounded in THIS session's findings (via the relay), then post a
         // factual grounded opening (no model call). The customer can ask real questions before
-        // choosing Start Repair / Skip Repair; model inference happens only on an actual question,
+        // choosing Perform Repairs / Skip Repair; model inference happens only on an actual question,
         // and every turn is PIM-screened inbound and RBC/Prism-shaped outbound.
         ChatLog.Children.Clear();
         _chat = new CustodianChat(
             OnnxGenAiInference.CreateOrAbsent(ProductModel.DirectoryPath, ProductModel.Name),
             ComposeCommsSeed(_gov.SystemPrompt));
         AppendChat("Technician", FindingsSummary.Text
-            + " Ask me anything about what I found, or choose Start Repair to run the checked items — or Skip Repair.");
+            + " Ask me anything about what I found, or choose Perform Repairs to run the checked items — or Skip Repair.");
         ShowPanel(FindingsPanel);
     }
 
@@ -363,7 +501,7 @@ public partial class MainWindow : Window
                 return;
             }
             ProceedButton.IsEnabled = true;
-            ShowError("Windows did not allow ProntoPC to start the repair step as administrator. No repairs have been run — please try again.");
+            ShowError("Windows did not allow ProntoPC to start the repair step as administrator. No repairs have been run. Choose Perform Repairs to attempt it again.");
             return;
         }
 
@@ -386,7 +524,7 @@ public partial class MainWindow : Window
         }
         catch
         {
-            ShowError("ProntoPC could not read the approved repair list. No repairs have been run — please return to the app and try again.");
+            ShowError("ProntoPC could not read the approved repair list. No repairs have been run — please return to the app and attempt it again.");
             return;
         }
         finally
@@ -396,7 +534,7 @@ public partial class MainWindow : Window
 
         if (request is null)
         {
-            ShowError("ProntoPC could not verify the approved repair list. No repairs have been run — please return to the app and try again.");
+            ShowError("ProntoPC could not verify the approved repair list. No repairs have been run — please return to the app and attempt it again.");
             return;
         }
 
@@ -474,9 +612,28 @@ public partial class MainWindow : Window
         // Repair + verify phases: the Orchestrator invokes the engine and summarizes.
         // Each real progress tick fires ONE angular stroke on the Custodian — the visual
         // record of a unit of work actually being done, never decoration on a timer.
+        // Detail ticks (folder / tool, observe-only) update the live detail box without firing a
+        // stroke, so a stroke still means one repair action started.
+        RepairDetailBox.Visibility = Visibility.Visible;
+        RepairDetailTitle.Text = "Starting repairs…";
+        RepairDetailText.Text = "";
         var progress = new Progress<RepairProgress>(p =>
-            Cust.ReportRepairComplete(p.Total > 0 ? $"[{p.Index}/{p.Total}] {p.Name}" : p.Name));
+        {
+            string label = p.Total > 0 ? $"[{p.Index}/{p.Total}] {p.Name}" : p.Name;
+            if (p.Detail is null)
+            {
+                Cust.ReportRepairComplete(label);
+                RepairDetailTitle.Text = label;
+                RepairDetailText.Text = FindingCatalog.For(approved.ElementAtOrDefault(p.Index - 1)?.GetValueOrDefault("id")?.ToString()).What;
+            }
+            else
+            {
+                RepairDetailTitle.Text = label;
+                RepairDetailText.Text = p.Detail;
+            }
+        });
         var outcome = await _orch.RunRepairAsync(approved, progress);
+        RepairDetailBox.Visibility = Visibility.Collapsed;
 
         // Complete only after the selected local actions finish and the on-device
         // report has been atomically saved to the customer's Desktop.
@@ -525,7 +682,24 @@ public partial class MainWindow : Window
     // ── UI helpers ───────────────────────────────────────────────────────────
     // The Custodian (the Actuator) is the persistent visual across every phase; the
     // content panels below it carry the interactive controls for the current phase.
-    void ShowError(string msg) { Cust.SetState(CustodianState.Blocked, msg); ErrorText.Text = msg; ShowPanel(ErrorPanel); }
+    // Every error screen offers Close; when the customer came from a screen they can return to
+    // (e.g. the completion screen), it also offers Back to that screen.
+    UIElement? _errorBackTarget;
+    void ShowError(string msg, UIElement? backTo = null)
+    {
+        Cust.SetState(CustodianState.Blocked, msg);
+        ErrorText.Text = msg;
+        _errorBackTarget = backTo;
+        ErrorBackButton.Visibility = backTo is null ? Visibility.Collapsed : Visibility.Visible;
+        ShowPanel(ErrorPanel);
+    }
+
+    void ErrorBack_Click(object sender, RoutedEventArgs e)
+    {
+        if (_errorBackTarget is null) return;
+        if (_errorBackTarget == CompletePanel) Cust.SetState(CustodianState.Complete, "Your PC has been serviced.");
+        ShowPanel(_errorBackTarget);
+    }
 
     void CollapseAllPanels()
     {
@@ -536,6 +710,7 @@ public partial class MainWindow : Window
         RetryPanel.Visibility = Visibility.Collapsed;
         RefundPanel.Visibility = Visibility.Collapsed;
         WorkingArt.Visibility = Visibility.Collapsed;
+        RepairDetailBox.Visibility = Visibility.Collapsed;
     }
 
     // Working-phase character art. Decoded once at a capped height (the source PNGs
@@ -577,7 +752,7 @@ public partial class MainWindow : Window
     // ── Technician conversation (§8 OPEN) — every path runs through _gov ───────
     // The chat is seeded in ShowFindings (the findings step IS the live Technician). Each turn is
     // PIM-screened inbound (ScreenInbound) and RBC/Prism-shaped outbound (ApplyBoundary); nothing
-    // here executes an action — Start Repair remains the explicit consent (Manifest I2).
+    // here executes an action — Perform Repairs remains the explicit consent (Manifest I2).
 
     // Communications & Governance Orb → the append-only relay: fold THIS local session's
     // authorized findings into the Custodian seed. Reads ONLY the session this window holds;
@@ -592,11 +767,21 @@ public partial class MainWindow : Window
             var sb = new StringBuilder();
             sb.Append("Findings already established by the read-only diagnostic (explain only these; invent nothing further): ");
             sb.Append(findings.PlanSummary);
-            if (findings.Actions.Length > 0)
+            // Per-item facts from the deterministic FindingCatalog: the same title, purpose and
+            // measured evidence the customer sees in each row, so a question like "what is the
+            // Windows item?" is answered from what was measured, not guessed.
+            if (_rows.Count > 0)
             {
-                sb.Append(" Recommended repairs: ");
-                sb.Append(string.Join("; ", findings.Actions.Select(a => a.Title)));
-                sb.Append('.');
+                sb.Append(" How to read the list below: each [title] names a repair and what it DOES, not a problem that was found."
+                    + " Only the sentences starting with 'Measured:' are findings from the scan."
+                    + " The scan does not rate severity, so do not call any item critical or urgent; if asked, say what was measured.");
+                sb.Append(" Recommended repairs, each with what it does and what the scan measured:");
+                foreach (var (action, _) in _rows)
+                {
+                    var entry = FindingCatalog.For(action.GetValueOrDefault("id")?.ToString());
+                    string ev = action.GetValueOrDefault("finding_evidence")?.ToString() ?? "";
+                    sb.Append($" [{entry.Title}] {entry.What}{(ev.Length > 0 ? " " + ev : "")}");
+                }
             }
             string grounded = sb.ToString();
             return string.IsNullOrWhiteSpace(systemPrompt) ? grounded : systemPrompt + "\n\n" + grounded;
@@ -620,8 +805,15 @@ public partial class MainWindow : Window
     void OpenReport_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrEmpty(_reportPath)) return;
-        try { Process.Start(new ProcessStartInfo(_reportPath) { UseShellExecute = true }); }
-        catch { ShowError("The report couldn't be opened. You'll find it on your Desktop as an HTML file."); }
+        try { Process.Start(new ProcessStartInfo(_reportPath) { UseShellExecute = true }); return; }
+        catch { /* no default HTML handler — fall back to showing the file in File Explorer */ }
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{_reportPath}\"") { UseShellExecute = true });
+            return;
+        }
+        catch { }
+        ShowError($"The report couldn't be opened automatically. It is saved on your Desktop:\n{_reportPath}", backTo: CompletePanel);
     }
 
     async void ChatSend_Click(object sender, RoutedEventArgs e)
@@ -727,3 +919,6 @@ public partial class MainWindow : Window
         List<Dictionary<string, object?>> ApprovedActions,
         string Hostname);
 }
+
+
+
