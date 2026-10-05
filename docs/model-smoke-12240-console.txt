@@ -1,0 +1,27 @@
+Model preparation PASS: 3961ms, 1 attempt(s).
+  PASS formation manifest travels with the selected model
+  PASS formation manifest identifies the Product responder
+  PASS formation manifest binds the locked Canon fingerprint
+  PASS packaged Product Nature Layer is available as bounded evidence-domain context
+  PASS System Audit completed + validated (25/25 sections)
+  PASS on-device author returned a plan
+  PASS provenance.provider == local-model
+  PASS plan has >=1 admissible action after validation
+  PASS plan carries a non-empty summary
+  PASS plan summary grounds itself in a supplied diagnostic observation
+  PASS clean reviewer-style audit completed + validated (25/25 sections)
+  PASS clean reviewer-style on-device author returned a plan
+  PASS clean reviewer-style plan has >=1 admissible action after validation
+
+CUSTODIAN CHAT (Phase 2 — multi-turn inference):
+  PASS chat turn 1: Custodian replied
+    turn1> It reads-only and changes nothing on your PC — it checks for hardware issues in the scan's results, not a setting or performance figure.
+  PASS chat turn 1: reply is an ANSWER, not an echo of the question
+  PASS chat turn 2: Custodian replied (history carried forward)
+    turn2> The diagnostic scan is read-only: it changes nothing on your PC. I’ll show you the findings before any repair can be considered.
+  PASS chat turn 2: reply is an ANSWER, not an echo of the question
+  PASS chat turn 2: read-only scan is grounded as changing nothing
+  PASS chat turn 2: does not invent scan effects
+  PASS history holds 4 turns (2 user, 2 model)
+
+MODEL SMOKE PASS

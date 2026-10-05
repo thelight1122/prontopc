@@ -4,7 +4,7 @@ REVIEWER ACCESS (policy 10.3.1): no code, account, sign-in, or test credentials 
 
 HOW TO TEST:
 1. Launch ProntoPC. There is no UAC prompt on launch and no login.
-2. Click Scan. "Reading your system" runs for about a minute, entirely on-device and read-only.
+2. The scan starts automatically after launch. "Reading your system" runs for about a minute, entirely on-device and read-only.
 3. The bundled on-device AI presents "Here's what we found" with recommended repairs, plus a live on-device Technician you can ask about the findings.
 4. Optionally ask the Technician or uncheck any item, then click Perform Repairs. Windows asks for administrator approval at this repair step only.
 5. When finished, the app shows "Your PC has been serviced." A full HTML report is saved to the Desktop and can be opened from the app; you can then close ProntoPC.
@@ -17,6 +17,10 @@ PRICING (policy 10.8.4): one-time purchase, $9.99, via the Microsoft Store. No s
 
 GENERATIVE AI: the repair-plan summary and the Technician's replies are written by a generative AI model bundled in the app that runs on the device. It explains the deterministic scan results; it does not decide what was found.
 
-Package candidate: ProntoPC.msixupload version 1.2.20.0 (inner MSIX SHA-256 9FD35FE4F5715DDABB3023B759BB2A24DE0805F264A9C089A56BCD54373E1377). WACK PASS for APP_VERSION=1.2.20.0. No Microsoft certification approval is claimed.
+Package candidate: ProntoPC.msixupload version 1.2.25.0. Exact package hashes and current validation results are in docs/CERT_RELEASE_12250.json. No Microsoft certification approval is claimed.
 
 Support: support@prontopc.online
+
+AI CONTENT REPORTING (policy 11.16): A persistent footer offers Report inappropriate AI content, including incoherent, incorrect or harmful responses. Click it in any phase, enter the output and concern, then review/redact before choosing Copy report or Save report, then sending the copied text or saved file to support@prontopc.online. The optional Open in your email app (if installed) action requires a configured email app. Reports are addressed to support@prontopc.online. Opening a draft does not automatically send it. On findings, Report this repair-plan summary selects the displayed summary. Each generated Technician reply has Report this response, which selects that exact reply for review. Copy/Save preserve the complete report when no email client is configured or the draft is too long. No logs or diagnostic files are attached automatically.
+
+MODEL PREPARATION: The model loads silently on-device during the scan. Plan generation waits for successful preparation. No warm-up video or screen is shown.

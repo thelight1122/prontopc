@@ -1,0 +1,41 @@
+{
+  "version": "1.2.23.0",
+  "utc": "2026-10-05T04:15:58.5006072-07:00",
+  "msix_path": "H:/PRONTOPC_PRODUCTION/StoreApp/ProntoPC.msix",
+  "msix_sha256": "F12EDA72707E8785D1BFD4223C7654CB0C449CC1A79F48D5C8BBC5B929796FE3",
+  "upload_path": "H:/PRONTOPC_PRODUCTION/StoreApp/ProntoPC.msixupload",
+  "upload_sha256": "CB46C09815EA32CEE526BE9970219050FADFF4C0857E8BF0F77FDC747E2F17D1",
+  "embedded_video_sha256": "720C73BAFC6867FA03416A12C918333AB2E5105A20440EE32E01991537C11DC1",
+  "video_matches_source": true,
+  "embedded_assembly_sha256": "6CFC1AF04F6782D5B2B7B382810FA6E93A106B1298CE7E20E30BB3DE77A9A401",
+  "tested_layout_assembly_matches": true,
+  "vc_runtime_present": [
+    {
+      "present": true,
+      "file": "MSVCP140.dll"
+    },
+    {
+      "present": true,
+      "file": "MSVCP140_1.dll"
+    },
+    {
+      "present": true,
+      "file": "VCRUNTIME140.dll"
+    },
+    {
+      "present": true,
+      "file": "VCRUNTIME140_1.dll"
+    }
+  ],
+  "signed": false,
+  "reporting_composition_tests": "PASS",
+  "packaged_reporting_dialog_tests": "PASS",
+  "source_build": "PASS",
+  "model_smoke": "PASS via current full preflight",
+  "wack": "PASS",
+  "installed_cold_boot_flow": "unverified",
+  "support_receipt_monitoring": "unverified",
+  "submission": "not performed",
+  "wack_report_sha256": "A23FE37EE30F5598F4CD18D34DB3C3A999C774B969F6210546D233DCDF62CDBA",
+  "preflight": "22/23 PASS; installed reporting/support receipt remains unverified"
+}

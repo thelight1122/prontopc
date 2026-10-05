@@ -1,0 +1,13 @@
+{
+  "version": "1.2.24.0",
+  "approval": "Proceed with 1.2.24 within agreed build/validation/test-copy preparation scope",
+  "source_sha256": "F150F2982E82896F953579EDF889F73DD2E901FAF353F30E0D60DC3B2D0A2048",
+  "signed_sha256": "97FF4F3AD93B91920E5A8823735938F85610B5AE0A2C2CB1650E87FCDF35E4E4",
+  "host_test_copy": "C:/ProntoPC-Sandbox/update-12240-20261005-051531-548/ProntoPC-test.msix",
+  "guest_directory": "C:/CertTest/ProntoPC-1.2.24.0",
+  "staged": true,
+  "payload_equivalence_pass": true,
+  "guest_install_observed": false,
+  "trust_changed": false,
+  "checkpoint_restored": false
+}

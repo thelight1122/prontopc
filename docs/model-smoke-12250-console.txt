@@ -1,0 +1,37 @@
+Model preparation PASS: 3490ms, 1 attempt(s).
+  PASS formation manifest travels with the selected model
+  PASS formation manifest identifies the Product responder
+  PASS formation manifest binds the locked Canon fingerprint
+  PASS packaged Product Nature Layer is available as bounded evidence-domain context
+  PASS System Audit completed + validated (25/25 sections)
+  PASS on-device author returned a plan
+  PASS provenance.provider == local-model
+  PASS plan has >=1 admissible action after validation
+Generated summary: This action plan cleans up storage, manages caches, and optimizes power. It measures the freed space in C: at 91% used.
+  PASS plan carries a non-empty summary
+  PASS plan summary grounds itself in a supplied diagnostic observation
+  PASS clean reviewer-style audit completed + validated (25/25 sections)
+  PASS clean reviewer-style on-device author returned a plan
+  PASS clean reviewer-style plan has >=1 admissible action after validation
+  PASS many-cache regression: valid model JSON on first attempt: 
+Regression tokens: 111; generation ms: 4232
+  PASS many-cache model plan bounded to eight actions
+  PASS many-cache rendered plan bounded to eight actions after measured additions
+  PASS many-cache plan contains one combined browser cleanup
+  PASS many-cache plan omits individual browser cleanup duplicates
+  PASS many-cache cleanup has positive measured recovery
+  PASS zero measured cleanup is suppressed after envelope clamp
+  PASS non-space repair remains available at zero MB
+
+CUSTODIAN CHAT (Phase 2 — multi-turn inference):
+  PASS chat turn 1: Custodian replied
+    turn1> It reads-only — the scan only changes what's actually in the results, not something on your PC.
+  PASS chat turn 1: reply is an ANSWER, not an echo of the question
+  PASS chat turn 2: Custodian replied (history carried forward)
+    turn2> The diagnostic scan is read-only: it changes nothing on your PC. I’ll show you the findings before any repair can be considered.
+  PASS chat turn 2: reply is an ANSWER, not an echo of the question
+  PASS chat turn 2: read-only scan is grounded as changing nothing
+  PASS chat turn 2: does not invent scan effects
+  PASS history holds 4 turns (2 user, 2 model)
+
+MODEL SMOKE PASS

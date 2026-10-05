@@ -1,3 +1,26 @@
+## Current candidate: 1.2.25.0
+
+Plan output cap raised from768 to1536; prompt/schema allow at most8 actions; per-browser choices replaced by existing combined browser action. Envelope caps rendered actions at8 and drops zero measured recovery after merging, preserving non-space repairs. Summary prompt explicitly grounds a drive measurement. No video/reporting UI behavior changed. Release, ModelSmoke (normal, clean, reconstructed many-cache first attempt, genuine2-turn chat), PodEval, reporting/retry and packaged dialog PASS. Many-cache final run used111tokens. Exact guest scan fixture unavailable, so original VM first-use acceptance remains pending. Fresh exact-package WACKPASS; preflight22/23 final installed reporting/support receipt-monitoring gate remains pending. Signed payload-equivalent test copy staged; no guest install observed. Hashes docs/CERT_RELEASE_12250.json; instructions docs/CERT_VM_12250_ACCEPTANCE.md. No Partner Center submission.
+
+## Current candidate: 1.2.24.0
+
+Video and warm-up visual removed; working model preparation retained silently. Reporting Copy/Save are primary, support@prontopc.online visible, optional email-app action explicitly labeled. Release build, full real-model smoke, model-retry/composition tests, packaged dialog checks and exact-package WACK PASS. Final preflight 22/23; installed 1.2.24 reporting and support receipt/monitoring remain pending. Signed payload-equivalent test copy staged in existing CertVM; no guest install claimed. Exact hashes: docs/CERT_RELEASE_12240.json. Instructions: docs/CERT_VM_12240_ACCEPTANCE.md. No Partner Center submission.
+
+## Current candidate — 2026-10-05: 1.2.23.0 combined reporting and awaited preparation
+
+This section supersedes the historical readiness claims below. The active release
+contains the client AI-content reporting route and the owner-edited warm-up video.
+Unsigned upload and inner hashes, packaged payload checks, and WACK PASS are bound
+in docs/CERT_RELEASE_12230.json. WACK reports APP_VERSION=1.2.23.0.
+Reporting helper tests and the actual packaged-assembly WPF dialog checks PASS.
+Current source full ModelSmoke PASS. The AI explanation page returns HTTP 200.
+Installed cold-boot reporting/first-use acceptance and support receipt/monitoring
+remain unverified. No Partner Center action, test-copy signing, VM install, trust
+change, Git commit or push has been performed. See docs/CERT_VM_12230_ACCEPTANCE.md
+for the prepared exact-package acceptance path and docs/CERT_NOTES_SHORT.txt for
+reviewer paste. Use current preflight JSON; do not infer CERT_READY from WACK alone.
+
+---
 ## Current candidate — 2026-10-02: v1.2.21.0 AI reporting / AEGIS disclosure
 
 Supersedes prior candidate readiness claims below. Microsoft’s October 2 report

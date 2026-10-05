@@ -556,6 +556,32 @@ def write_evidence(path, mode, pkg, pkg_sha):
     return status, blocking, warns, manual
 
 
+def check_ai_reporting(pkg_sha):
+    print("\n[7] Live generative AI disclosure and content reporting (11.16)")
+    notes = (HERE / "docs" / "CERT_NOTES_SHORT.txt").read_text(encoding="utf-8")
+    page = HERE / "ai-aegis.html"
+    procedure = HERE / "docs" / "AI_CONTENT_REPORTING_PROCEDURE.md"
+    record("AI disclosure, reporting instructions and developer procedure present",
+           page.exists() and procedure.exists() and "11.16" in notes
+           and "Report inappropriate AI content" in notes and "support@prontopc.online" in notes,
+           "ai-aegis.html + CERT_NOTES_SHORT + AI_CONTENT_REPORTING_PROCEDURE")
+    proof = HERE / "docs" / "AI_CONTENT_REPORT_VERIFICATION.json"
+    try:
+        data = json.loads(proof.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        data = {}
+    verified = bool(pkg_sha) and data.get("package_sha256", "").lower() == pkg_sha.lower() \
+        and data.get("installed_reporting_flow_pass") is True \
+        and data.get("support_receipt_and_monitoring_confirmed") is True \
+        and data.get("live_explanation_url_pass") is True
+    if verified:
+        record("AI reporting installed flow, support receipt and live explanation verified", True,
+               str(proof))
+    else:
+        record_manual("AI reporting installed flow, support receipt and live explanation verified",
+                      "Follow docs/AI_CONTENT_REPORTING_PROCEDURE.md; record observed results and exact upload hash in " + str(proof))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="ProntoPC Store certification preflight v3")
     ap.add_argument("--mode", choices=["store"], default="store")
@@ -579,6 +605,7 @@ def main(argv=None):
     pkg = find_submission_package(args.package)
     pkg, pkg_sha = check_package(pkg)
     run_wack(pkg, args.wack)
+    check_ai_reporting(pkg_sha)
 
     status, blocking, warns, manual = write_evidence(
         Path(args.evidence_out), args.mode, pkg, pkg_sha)

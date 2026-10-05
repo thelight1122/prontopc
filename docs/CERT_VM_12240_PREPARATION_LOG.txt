@@ -1,0 +1,30 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20261005051529
+Username: AzureAD\TraceyPrutch
+RunAs User: AzureAD\TraceyPrutch
+Configuration Name: 
+Machine: DMTAI-DEV (Microsoft Windows NT 10.0.26300.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File H:\PRONTOPC_PRODUCTION\tests\CertVM\run-12240-preparation.ps1
+Process ID: 25324
+PSVersion: 5.1.26100.9549
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9549
+BuildVersion: 10.0.26100.9549
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is H:\PRONTOPC_PRODUCTION\docs\CERT_VM_12240_PREPARATION_LOG.txt
+Using existing test certificate: CCC70E625DB54A1B2CFA523B91C90C21D7D94857
+Done Adding Additional Store
+Successfully signed: C:\ProntoPC-Sandbox\update-12240-20261005-051531-548\ProntoPC-test.msix
+Prepared 1.2.24.0 test copy; unsigned WACK/Store package unchanged.
+Inside the VM, signed in as PreFlight, close ProntoPC and run:
+powershell -NoProfile -ExecutionPolicy Bypass -File C:\CertTest\ProntoPC-1.2.24.0\install-12240-current-user.ps1
+No VM checkpoint was restored and no certificate trust was changed.
+**********************
+Windows PowerShell transcript end
+End time: 20261005051554
+**********************

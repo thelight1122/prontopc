@@ -1,4 +1,4 @@
-# ProntoPC — reproducible MSIX build.
+﻿# ProntoPC — reproducible MSIX build.
 #
 #   .\build.ps1              # build package-layout + ProntoPC.msix + ProntoPC.msixupload (UNSIGNED)
 #   .\build.ps1 -Sign        # also sign with the local self-signed test cert (sideload only)
@@ -47,6 +47,12 @@ Copy-Item (Join-Path $dir 'Package.appxmanifest') $stagedManifest -Force
     Replace('$targetentrypoint$', 'Windows.FullTrustApplication') |
     Set-Content $stagedManifest -Encoding UTF8
 Copy-Item (Join-Path $dir 'Assets') $layout -Recurse -Force
+# Warm-up clips are retained in source but excluded from the shipped product.
+$warmupClips = Join-Path $layout 'Assets\warmup'
+if (Test-Path -LiteralPath $warmupClips) {
+    if ([IO.Path]::GetFullPath($warmupClips) -ne [IO.Path]::GetFullPath((Join-Path $dir 'package-layout\Assets\warmup'))) { throw 'Unexpected warm-up staging path' }
+    Remove-Item -LiteralPath $warmupClips -Recurse -Force
+}
 
 # ONNX Runtime GenAI imports the desktop VC++ runtime. Store reviewer VMs cannot be
 # assumed to have those DLLs globally, and a launch-time native load failure can

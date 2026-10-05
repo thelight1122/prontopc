@@ -1,0 +1,17 @@
+{
+  "utc": "2026-10-05T11:31:57.5716230+00:00",
+  "authorization": "Owner Approved. Please proceed to separate test-copy signing and existing CertVM update.",
+  "signed_copy": "C:/ProntoPC-Sandbox/update-12230-20261005-042826-674/ProntoPC-test.msix",
+  "signed_sha256": "D3C7C99ACC11EB05F108EE289135308065199D9A3C5CC2DD2C0D36325FED03C3",
+  "existing_certificate_thumbprint": "CCC70E625DB54A1B2CFA523B91C90C21D7D94857",
+  "staging": "PASS per elevated transcript; ProntoPC-CertVM C:/CertTest/ProntoPC-1.2.23.0",
+  "payload_equivalence": "PASS:509common entries; only content-types metadata differs; signature/catalog added",
+  "unsigned_upload_sha256": "CB46C09815EA32CEE526BE9970219050FADFF4C0857E8BF0F77FDC747E2F17D1",
+  "unsigned_package_unchanged": true,
+  "trust_changes": false,
+  "checkpoint_restore": false,
+  "guest_install": "not yet observed",
+  "guest_ui": "Fresh Computer Use screenshot shows guest login for PreFlight; CertUser selectable; auth requires user handoff",
+  "shortfall": "Computer Use cannot automate authentication; low-integrity VMConnect denied; elevated VMConnect exposes screenshot but limited accessibility",
+  "submission": false
+}

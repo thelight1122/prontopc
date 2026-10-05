@@ -1,0 +1,16 @@
+{
+  "unsigned": "StoreApp\\ProntoPC.msix",
+  "unsigned_sha256": "149F2EC38B10FB28AF026586D0290802FDF42B94E2B80797B1E59CB2C53D7535",
+  "signed": "C:\\ProntoPC-Sandbox\\update-12250-20261005-055400-067\\ProntoPC-test.msix",
+  "signed_sha256": "22C455096294D59F88CF5DE3198748DE3AD5652E7E5FC1791378BEA92C9BAB77",
+  "common_entries": 506,
+  "changed_common_entries": [
+    "[Content_Types].xml"
+  ],
+  "signed_only_entries": [
+    "AppxMetadata/CodeIntegrity.cat",
+    "AppxSignature.p7x"
+  ],
+  "removed_entries": [],
+  "payload_equivalence_pass": true
+}

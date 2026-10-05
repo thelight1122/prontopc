@@ -37,7 +37,7 @@
       </StackPanel>
     </Border>
 
-    <Grid Margin="0,46,0,0">
+    <Grid Margin="0,46,0,90">
       <Grid.RowDefinitions>
         <RowDefinition Height="298"/>
         <RowDefinition Height="*"/>
@@ -75,6 +75,7 @@
           <StackPanel>
             <TextBlock Text="Here's what we found." Foreground="#eef1ff" FontSize="21" FontWeight="Bold"/>
             <TextBlock x:Name="FindingsSummary" Foreground="#c3c8e6" FontSize="13" TextWrapping="Wrap" Margin="0,7,0,12"/>
+            <TextBlock FontSize="12" Margin="0,0,0,10"><Hyperlink Click="ReportRepairPlan_Click" Foreground="#c4b5fd">Report this repair-plan summary</Hyperlink></TextBlock>
             <TextBlock Text="Recommended repairs — uncheck anything you'd rather skip:" Foreground="#eef1ff" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8"/>
             <!-- The repair list is a clearly visible, OPEN panel: every item the app will run
                  is shown here as its own card, so the whole plan reads at a glance. No nested
@@ -252,10 +253,17 @@
         </ScrollViewer>
       </Grid>
     </Grid>
+    <Border VerticalAlignment="Bottom" Margin="24,0,24,12" Padding="10,8"
+            Background="#12142c" BorderBrush="#3a3f66" BorderThickness="1" CornerRadius="8">
+      <StackPanel>
+        <TextBlock Text="AI model operating through the AEGIS Framework. AI responses can contain errors."
+                   Foreground="#c3c8e6" FontSize="11.5" TextWrapping="Wrap"/>
+        <TextBlock Margin="0,5,0,0" FontSize="12" TextWrapping="Wrap">
+          <Hyperlink Click="OpenAiAegis_Click" Foreground="#c4b5fd">About AI &amp; AEGIS</Hyperlink>
+          <Run Text="  ·  " Foreground="#8b8fb0"/>
+          <Hyperlink Click="ReportAiContent_Click" Foreground="#c4b5fd">Report inappropriate AI content</Hyperlink>
+        </TextBlock>
+      </StackPanel>
+    </Border>
   </Grid>
 </Window>
-
-
-
-
-

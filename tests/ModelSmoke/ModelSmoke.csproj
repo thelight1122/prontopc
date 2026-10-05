@@ -18,6 +18,7 @@
     <Compile Include="..\..\StoreApp\SystemAudit.cs" />
     <Compile Include="..\..\StoreApp\LocalPlanner.cs" />
     <Compile Include="..\..\StoreApp\OnnxGenAiInference.cs" />
+    <Compile Include="..\..\StoreApp\ModelWarmup.cs" />
     <Compile Include="..\..\StoreApp\CustodianChat.cs" />
     <Compile Include="..\..\StoreApp\NatureLayerContext.cs" />
     <Compile Include="..\..\StoreApp\ProductModel.cs" />

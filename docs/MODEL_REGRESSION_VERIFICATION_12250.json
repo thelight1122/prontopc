@@ -1,0 +1,32 @@
+{
+  "version": "1.2.25.0",
+  "model_smoke": "PASS",
+  "fixture_kind": "reconstructed reported many-cache scan shape, not exact guest scan",
+  "first_attempt_valid_json": true,
+  "generated_tokens": 111,
+  "source_bindings": [
+    {
+      "path": "StoreApp/LocalPlanner.cs",
+      "sha256": "DF333A2480B72169D307C0DDAC62CC6084CED6E7A1978D5D8B855592922E777E"
+    },
+    {
+      "path": "StoreApp/OnnxGenAiInference.cs",
+      "sha256": "98C3C223473B1BEB25642C23E4A2B5DAABF20329B5A53CF9B09D5656AFF69AC9"
+    },
+    {
+      "path": "StoreApp/Envelope.cs",
+      "sha256": "239368D2F73FE17D27989326C22D513F75E2661633F402DBA3EBF1B0A97AEB0D"
+    },
+    {
+      "path": "tests/ModelSmoke/Program.cs",
+      "sha256": "917890CA11613DE3A2A3FA1992D93B13A349B0EF68D1EB71179C3D02C54FFB33"
+    },
+    {
+      "path": "tests/ModelSmoke/ModelSmoke.csproj",
+      "sha256": "9383B42584EAD1C8418F7D56785A5B3E75C2AF2D798E66E59352C89E3EF08874"
+    }
+  ],
+  "model_smoke_log_sha256": "9999F96FEF4FE18C09F75A7AF86B0983FFBA4E547D1F286C4A47272E3D835BF5",
+  "package_dll_sha256": "8901AADA46CB1757558F107085A2B95092625E0BF04CED37BAF3C1998AB433FB",
+  "source_build_log_sha256": "46E8F9527F4D38EDCC8194058D90F7DD89FE01236C51D4975B373150C7C32FCA"
+}

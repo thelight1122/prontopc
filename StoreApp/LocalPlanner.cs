@@ -19,14 +19,14 @@ namespace ProntoPC;
 
 interface ILocalInference
 {
-    // True only when a usable on-device model is loaded.
+    // True when the bundled model configuration is present; WarmUp establishes readiness.
     bool Available { get; }
     string ModelName { get; }
     // Run the model. `jsonSchema` is passed through to model runtimes that support
     // guided decoding. Returns the completion text, or null on any failure.
     string? Complete(string prompt, string jsonSchema, CancellationToken ct);
     // Load the model/tokenizer ahead of first generation when the caller has a long
-    // non-model phase available. This must not execute a prompt or change any plan output.
+    // non-model phase available. Throws on failure; does not execute a prompt or change output.
     void WarmUp(CancellationToken ct);
 
     // Multi-turn free-form chat (the conversational Custodian — SPEC Phase 2). `history`
@@ -63,8 +63,11 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         if (admissible.Count == 0) { LastDeclineReason = "no_admissible_actions"; return null; }
 
         // Only the validated audit's evidence reaches the prompt.
-        string prompt = BuildPrompt(audit.Diagnostics, admissible);
-        string schema = BuildSchema(admissible);
+        var planChoices = new HashSet<string>(admissible, StringComparer.OrdinalIgnoreCase);
+        if (planChoices.Contains("clear_all_browser_caches"))
+            planChoices.ExceptWith(new[] { "clear_chrome_cache", "clear_edge_cache", "clear_firefox_cache", "clear_brave_cache", "clear_opera_cache" });
+        string prompt = BuildPrompt(audit.Diagnostics, planChoices);
+        string schema = BuildSchema(planChoices);
 
         string? text;
         try { text = await Task.Run(() => _model.Complete(prompt, schema, ct), ct); }
@@ -103,6 +106,8 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         var sb = new StringBuilder();
         sb.AppendLine("You are ProntoPC's repair planner. From the diagnostics below, choose the");
         sb.AppendLine("repairs that will most help this PC. Choose ONLY from the allowed action ids.");
+        sb.AppendLine("List at most 8 distinct actions. Use clear_all_browser_caches for one combined browser-cache cleanup, never one action per browser.");
+        sb.AppendLine("Keep action names short. Omit cleanup actions with zero measured recovery; non-space repairs can still be recommended.");
         sb.AppendLine("Reply with ONE JSON object and nothing after it. List the actions FIRST:");
         sb.AppendLine("{\"actions\": [{\"id\": string, \"category\": string, \"friendly_name\": string, \"estimated_mb_recovered\": integer}], \"summary\": string}.");
         sb.AppendLine("Keep \"summary\" to a single short sentence that references one or two of the machine's real numbers.");
@@ -112,7 +117,14 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         sb.AppendLine("Allowed action ids: " + string.Join(", ", admissible.OrderBy(x => x)));
         sb.AppendLine();
         sb.AppendLine("Diagnostics:");
-        sb.Append(DiagnosticText(diag));
+        sb.Append(DiagnosticText(diag)); 
+        if (Get(diag, "disk") is JsonElement disks && disks.ValueKind == JsonValueKind.Array && disks.GetArrayLength() > 0)
+        {
+            var drive = disks[0];
+            sb.AppendLine();
+            sb.AppendLine($"In the summary, explicitly include this measured fact: {Str(drive, "device")} is {Num(drive, "percent_used")}% used. Then briefly explain the selected repairs. Do not replace this fact with generic storage advice.");
+        }
+
         return sb.ToString();
     }
 
@@ -171,7 +183,7 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
     {
         string ids = string.Join(",", admissible.OrderBy(x => x).Select(x => JsonSerializer.Serialize(x)));
         return "{\"type\":\"object\",\"properties\":{"
-             + "\"actions\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{"
+             + "\"actions\":{\"type\":\"array\",\"maxItems\":8,\"items\":{\"type\":\"object\",\"properties\":{"
              + "\"id\":{\"enum\":[" + ids + "]},\"category\":{\"type\":\"string\"},"
              + "\"friendly_name\":{\"type\":\"string\"},\"estimated_mb_recovered\":{\"type\":\"integer\"}},"
              + "\"required\":[\"id\",\"friendly_name\"]}},"

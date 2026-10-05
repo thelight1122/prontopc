@@ -1,0 +1,199 @@
+{
+  "timestamp": "2026-10-05T12:58:43.328387+00:00",
+  "preflight_version": "3.4",
+  "mode": "store",
+  "package_path": "StoreApp\\ProntoPC.msixupload",
+  "package_sha256": "0B437B154E39401E872ED7BD019C77573536D2EA1388228EE46F06B67FCBA1E8",
+  "checks": [
+    {
+      "claim": "served site has no Stripe/checkout/token gate",
+      "ok": true,
+      "evidence": "clean",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "app has no Stripe/checkout/token/Cloud-Run gate",
+      "ok": true,
+      "evidence": "clean",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "on-device model bundled (genai_config + weights)",
+      "ok": true,
+      "evidence": "H:\\PRONTOPC_PRODUCTION\\StoreApp\\Assets\\models\\gemma-3-1b-it-formed-v0.2.1",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "formed responder carries formation provenance",
+      "ok": true,
+      "evidence": "H:\\PRONTOPC_PRODUCTION\\StoreApp\\Assets\\models\\gemma-3-1b-it-formed-v0.2.1\\aegis-formation-manifest.json",
+      "blocking": false,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "diagnostic categories >= 25 claimed",
+      "ok": true,
+      "evidence": "95 categories found",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "repair capabilities >= 18 claimed",
+      "ok": true,
+      "evidence": "35 candidate action IDs in Envelope.cs",
+      "blocking": false,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "notes state no account/sign-in/test-account required",
+      "ok": true,
+      "evidence": "no-account + test-account addressed",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "notes state on-device AI + offline (no server/network)",
+      "ok": true,
+      "evidence": "on-device + offline stated",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "notes state one-time paid Store purchase (10.8.4)",
+      "ok": true,
+      "evidence": "one-time $9.99 via Microsoft Store",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "notes state no subscription/in-app/add-on/trial (10.8.4)",
+      "ok": true,
+      "evidence": "no subscription/IAP/add-on/trial stated",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "notes give launch -> scan -> repair-time UAC flow",
+      "ok": true,
+      "evidence": "reviewer flow present",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "reviewer paste (CERT_NOTES_SHORT) carries NO stale pay-per-run flow",
+      "ok": true,
+      "evidence": "clean",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "candidate submission package found",
+      "ok": true,
+      "evidence": "ProntoPC.msixupload (770.2 MB)",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "package version matches source manifest",
+      "ok": true,
+      "evidence": "package=1.2.25.0 source=1.2.25.0",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "Store package version leaves fourth section reserved",
+      "ok": true,
+      "evidence": "package=1.2.25.0; Windows 10/11 Store packages must end in .0",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "model genai_config.json inside package",
+      "ok": true,
+      "evidence": "found",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "model weights (>100MB) inside package",
+      "ok": true,
+      "evidence": "822 MB",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "WPF compiled resources contain declared images",
+      "ok": true,
+      "evidence": "found 6 declared resource path(s) in H:\\PRONTOPC_PRODUCTION\\StoreApp\\obj\\Release\\net8.0-windows10.0.19041.0\\win-x64\\ProntoPC.g.resources",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "ONNX native VC++ runtime dependency covered",
+      "ok": true,
+      "evidence": "VC runtime DLLs packaged: MSVCP140.DLL, MSVCP140_1.DLL, VCRUNTIME140.DLL, VCRUNTIME140_1.DLL",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "AI disclosure, reporting instructions and developer procedure present",
+      "ok": true,
+      "evidence": "ai-aegis.html + CERT_NOTES_SHORT + AI_CONTENT_REPORTING_PROCEDURE",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "AI reporting installed flow, support receipt and live explanation verified",
+      "ok": false,
+      "evidence": "Follow docs/AI_CONTENT_REPORTING_PROCEDURE.md; record observed results and exact upload hash in H:\\PRONTOPC_PRODUCTION\\docs\\AI_CONTENT_REPORT_VERIFICATION.json",
+      "blocking": true,
+      "state": "manual",
+      "manual": true
+    },
+    {
+      "claim": "ModelSmoke PASS (on-device plan + admissible action)",
+      "ok": true,
+      "evidence": "docs/model-smoke-12250-console.txt MODEL SMOKE PASS; source/hash bindings and reconstructed many-cache first-attempt replay in docs/MODEL_REGRESSION_VERIFICATION_12250.json",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "WACK run against the package",
+      "ok": true,
+      "evidence": "wack-report-current.xml: OVERALL_RESULT=PASS; APP_VERSION=1.2.25.0; sha256=FE03ED2AC5CD69CA2D49540913CCCB3721D9E0591BA2B049E8CA7726CEBA4C06",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    }
+  ],
+  "blocking_failures": [],
+  "warnings": [],
+  "manual_required": [
+    "AI reporting installed flow, support receipt and live explanation verified"
+  ],
+  "final_status": "DO_NOT_SUBMIT"
+}

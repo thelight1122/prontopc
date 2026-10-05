@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI" Version="0.15.2" />
+    <Compile Include="../../StoreApp/OnnxGenAiInference.cs" />
+    <Compile Include="../../StoreApp/ModelWarmup.cs" />
+    <Compile Include="../../StoreApp/LocalPlanner.cs" />
+    <Compile Include="../../StoreApp/PlanContracts.cs" />
+    <Compile Include="../../StoreApp/Envelope.cs" />
+    <Compile Include="../../StoreApp/SystemAudit.cs" />
+    <Compile Include="../../StoreApp/CustodianChat.cs" />
+    <Compile Include="../../StoreApp/NatureLayerContext.cs" />
+    <Compile Include="../../StoreApp/ProductModel.cs" />
+  </ItemGroup>
+</Project>

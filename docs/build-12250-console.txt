@@ -1,0 +1,1044 @@
+==> Cleaning stale WPF build intermediates
+==> dotnet publish (Release, win-x64, self-contained)
+  Determining projects to restore...
+  Restored H:\PRONTOPC_PRODUCTION\StoreApp\ProntoPC.csproj (in 279 ms).
+  ProntoPC -> H:\PRONTOPC_PRODUCTION\StoreApp\bin\Release\net8.0-windows10.0.19041.0\win-x64\ProntoPC.dll
+  ProntoPC -> H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\
+==> Removing .pdb symbols from the layout
+==> Staging AppxManifest.xml and Assets
+==> Staging VC++ runtime DLLs for ONNX Runtime
+==> Pruning non-shipped model: gemma-3-1b-analyzer
+==> Pruning non-shipped model: gemma-3-1b-analyzer-bidir-v0.1.0
+==> Pruning non-shipped model: gemma-3-1b-it
+==> makeappx pack
+Microsoft (R) MakeAppx Tool
+
+Copyright (C) 2013 Microsoft.  All rights reserved.
+
+
+
+The path (/p) parameter is: "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\ProntoPC.msix"
+
+The content directory (/d) parameter is: "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout"
+
+Enumerating files from directory "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout"
+
+Packing 504 file(s) in "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout" (content directory) to "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\ProntoPC.msix" (output file name).
+
+Memory limit defaulting to 34320875520 bytes.
+
+Using "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\AppxManifest.xml" as the manifest for the package.
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Management.dll" as a payload file.  Its path in the package will be "System.Management.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Numerics.Tensors.dll" as a payload file.  Its path in the package will be "System.Numerics.Tensors.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\WinRT.Runtime.dll" as a payload file.  Its path in the package will be "WinRT.Runtime.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.Windows.SDK.NET.dll" as a payload file.  Its path in the package will be "Microsoft.Windows.SDK.NET.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.DiaSymReader.Native.amd64.dll" as a payload file.  Its path in the package will be "Microsoft.DiaSymReader.Native.amd64.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.Extensions.AI.Abstractions.dll" as a payload file.  Its path in the package will be "Microsoft.Extensions.AI.Abstractions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\D3DCompiler_47_cor3.dll" as a payload file.  Its path in the package will be "D3DCompiler_47_cor3.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\MSVCP140.dll" as a payload file.  Its path in the package will be "MSVCP140.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\MSVCP140_1.dll" as a payload file.  Its path in the package will be "MSVCP140_1.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\VCRUNTIME140.dll" as a payload file.  Its path in the package will be "VCRUNTIME140.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\VCRUNTIME140_1.dll" as a payload file.  Its path in the package will be "VCRUNTIME140_1.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationNative_cor3.dll" as a payload file.  Its path in the package will be "PresentationNative_cor3.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\vcruntime140_cor3.dll" as a payload file.  Its path in the package will be "vcruntime140_cor3.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\msquic.dll" as a payload file.  Its path in the package will be "msquic.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\coreclr.dll" as a payload file.  Its path in the package will be "coreclr.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\clrjit.dll" as a payload file.  Its path in the package will be "clrjit.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\clrgc.dll" as a payload file.  Its path in the package will be "clrgc.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.EventLog.Messages.dll" as a payload file.  Its path in the package will be "System.Diagnostics.EventLog.Messages.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\createdump.exe" as a payload file.  Its path in the package will be "createdump.exe".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\clretwrc.dll" as a payload file.  Its path in the package will be "clretwrc.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\mscorrc.dll" as a payload file.  Its path in the package will be "mscorrc.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\mscordaccore_amd64_amd64_8.0.3026.36720.dll" as a payload file.  Its path in the package will be "mscordaccore_amd64_amd64_8.0.3026.36720.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\mscordaccore.dll" as a payload file.  Its path in the package will be "mscordaccore.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\mscordbi.dll" as a payload file.  Its path in the package will be "mscordbi.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Private.CoreLib.dll" as a payload file.  Its path in the package will be "System.Private.CoreLib.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\hostfxr.dll" as a payload file.  Its path in the package will be "hostfxr.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\hostpolicy.dll" as a payload file.  Its path in the package will be "hostpolicy.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.Compression.Native.dll" as a payload file.  Its path in the package will be "System.IO.Compression.Native.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.Pipes.AccessControl.dll" as a payload file.  Its path in the package will be "System.IO.Pipes.AccessControl.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.Serialization.Xml.dll" as a payload file.  Its path in the package will be "System.Runtime.Serialization.Xml.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.Win32.Primitives.dll" as a payload file.  Its path in the package will be "Microsoft.Win32.Primitives.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Reflection.Primitives.dll" as a payload file.  Its path in the package will be "System.Reflection.Primitives.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.Contracts.dll" as a payload file.  Its path in the package will be "System.Diagnostics.Contracts.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.Thread.dll" as a payload file.  Its path in the package will be "System.Threading.Thread.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Reflection.Emit.Lightweight.dll" as a payload file.  Its path in the package will be "System.Reflection.Emit.Lightweight.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.Intrinsics.dll" as a payload file.  Its path in the package will be "System.Runtime.Intrinsics.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.dll" as a payload file.  Its path in the package will be "System.Runtime.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.Tracing.dll" as a payload file.  Its path in the package will be "System.Diagnostics.Tracing.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Numerics.Vectors.dll" as a payload file.  Its path in the package will be "System.Numerics.Vectors.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Resources.ResourceManager.dll" as a payload file.  Its path in the package will be "System.Resources.ResourceManager.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.dll" as a payload file.  Its path in the package will be "System.IO.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.CompilerServices.Unsafe.dll" as a payload file.  Its path in the package will be "System.Runtime.CompilerServices.Unsafe.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.Debug.dll" as a payload file.  Its path in the package will be "System.Diagnostics.Debug.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Principal.dll" as a payload file.  Its path in the package will be "System.Security.Principal.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Text.Encoding.dll" as a payload file.  Its path in the package will be "System.Text.Encoding.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Resources.Reader.dll" as a payload file.  Its path in the package will be "System.Resources.Reader.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.Timer.dll" as a payload file.  Its path in the package will be "System.Threading.Timer.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Buffers.dll" as a payload file.  Its path in the package will be "System.Buffers.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.Tools.dll" as a payload file.  Its path in the package will be "System.Diagnostics.Tools.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Globalization.dll" as a payload file.  Its path in the package will be "System.Globalization.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.FileSystem.dll" as a payload file.  Its path in the package will be "System.IO.FileSystem.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.Compression.FileSystem.dll" as a payload file.  Its path in the package will be "System.IO.Compression.FileSystem.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.Primitives.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.Primitives.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.AppContext.dll" as a payload file.  Its path in the package will be "System.AppContext.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.OpenSsl.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.OpenSsl.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.Cng.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.Cng.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.Algorithms.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.Algorithms.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.Serialization.Json.dll" as a payload file.  Its path in the package will be "System.Runtime.Serialization.Json.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.Serialization.dll" as a payload file.  Its path in the package will be "System.Runtime.Serialization.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.ServiceModel.Web.dll" as a payload file.  Its path in the package will be "System.ServiceModel.Web.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Xml.XPath.dll" as a payload file.  Its path in the package will be "System.Xml.XPath.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Xml.XmlSerializer.dll" as a payload file.  Its path in the package will be "System.Xml.XmlSerializer.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.dll" as a payload file.  Its path in the package will be "System.Security.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Transactions.dll" as a payload file.  Its path in the package will be "System.Transactions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Xml.XDocument.dll" as a payload file.  Its path in the package will be "System.Xml.XDocument.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Configuration.dll" as a payload file.  Its path in the package will be "System.Configuration.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Xml.ReaderWriter.dll" as a payload file.  Its path in the package will be "System.Xml.ReaderWriter.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Web.dll" as a payload file.  Its path in the package will be "System.Web.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Xml.Linq.dll" as a payload file.  Its path in the package will be "System.Xml.Linq.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Reflection.Emit.ILGeneration.dll" as a payload file.  Its path in the package will be "System.Reflection.Emit.ILGeneration.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.ComponentModel.DataAnnotations.dll" as a payload file.  Its path in the package will be "System.ComponentModel.DataAnnotations.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Globalization.Extensions.dll" as a payload file.  Its path in the package will be "System.Globalization.Extensions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Globalization.Calendars.dll" as a payload file.  Its path in the package will be "System.Globalization.Calendars.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.Extensions.dll" as a payload file.  Its path in the package will be "System.Runtime.Extensions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Numerics.dll" as a payload file.  Its path in the package will be "System.Numerics.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Dynamic.Runtime.dll" as a payload file.  Its path in the package will be "System.Dynamic.Runtime.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Xml.Serialization.dll" as a payload file.  Its path in the package will be "System.Xml.Serialization.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Xml.dll" as a payload file.  Its path in the package will be "System.Xml.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.X509Certificates.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.X509Certificates.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.Encoding.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.Encoding.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.Csp.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.Csp.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Reflection.Extensions.dll" as a payload file.  Its path in the package will be "System.Reflection.Extensions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Reflection.dll" as a payload file.  Its path in the package will be "System.Reflection.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.ValueTuple.dll" as a payload file.  Its path in the package will be "System.ValueTuple.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.FileSystem.Primitives.dll" as a payload file.  Its path in the package will be "System.IO.FileSystem.Primitives.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.InteropServices.RuntimeInformation.dll" as a payload file.  Its path in the package will be "System.Runtime.InteropServices.RuntimeInformation.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.Tasks.Extensions.dll" as a payload file.  Its path in the package will be "System.Threading.Tasks.Extensions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.Handles.dll" as a payload file.  Its path in the package will be "System.Runtime.Handles.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Windows.dll" as a payload file.  Its path in the package will be "System.Windows.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.ServiceProcess.dll" as a payload file.  Its path in the package will be "System.ServiceProcess.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.Tasks.dll" as a payload file.  Its path in the package will be "System.Threading.Tasks.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Xml.XmlDocument.dll" as a payload file.  Its path in the package will be "System.Xml.XmlDocument.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.ThreadPool.dll" as a payload file.  Its path in the package will be "System.Threading.ThreadPool.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.Overlapped.dll" as a payload file.  Its path in the package will be "System.Threading.Overlapped.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Text.Encoding.Extensions.dll" as a payload file.  Its path in the package will be "System.Text.Encoding.Extensions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.SecureString.dll" as a payload file.  Its path in the package will be "System.Security.SecureString.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.UnmanagedMemoryStream.dll" as a payload file.  Its path in the package will be "System.IO.UnmanagedMemoryStream.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Data.DataSetExtensions.dll" as a payload file.  Its path in the package will be "System.Data.DataSetExtensions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.Loader.dll" as a payload file.  Its path in the package will be "System.Runtime.Loader.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.dll" as a payload file.  Its path in the package will be "System.Net.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Data.dll" as a payload file.  Its path in the package will be "System.Data.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.dll" as a payload file.  Its path in the package will be "System.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Core.dll" as a payload file.  Its path in the package will be "System.Core.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\mscorlib.dll" as a payload file.  Its path in the package will be "mscorlib.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\netstandard.dll" as a payload file.  Its path in the package will be "netstandard.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.CSharp.dll" as a payload file.  Its path in the package will be "Microsoft.CSharp.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.VisualBasic.Core.dll" as a payload file.  Its path in the package will be "Microsoft.VisualBasic.Core.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.Win32.Registry.dll" as a payload file.  Its path in the package will be "Microsoft.Win32.Registry.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Collections.Concurrent.dll" as a payload file.  Its path in the package will be "System.Collections.Concurrent.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Collections.dll" as a payload file.  Its path in the package will be "System.Collections.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Collections.Immutable.dll" as a payload file.  Its path in the package will be "System.Collections.Immutable.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Collections.NonGeneric.dll" as a payload file.  Its path in the package will be "System.Collections.NonGeneric.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Collections.Specialized.dll" as a payload file.  Its path in the package will be "System.Collections.Specialized.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.ComponentModel.Annotations.dll" as a payload file.  Its path in the package will be "System.ComponentModel.Annotations.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.ComponentModel.dll" as a payload file.  Its path in the package will be "System.ComponentModel.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.ComponentModel.EventBasedAsync.dll" as a payload file.  Its path in the package will be "System.ComponentModel.EventBasedAsync.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.ComponentModel.Primitives.dll" as a payload file.  Its path in the package will be "System.ComponentModel.Primitives.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.ComponentModel.TypeConverter.dll" as a payload file.  Its path in the package will be "System.ComponentModel.TypeConverter.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Console.dll" as a payload file.  Its path in the package will be "System.Console.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Data.Common.dll" as a payload file.  Its path in the package will be "System.Data.Common.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.DiagnosticSource.dll" as a payload file.  Its path in the package will be "System.Diagnostics.DiagnosticSource.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.FileVersionInfo.dll" as a payload file.  Its path in the package will be "System.Diagnostics.FileVersionInfo.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.Process.dll" as a payload file.  Its path in the package will be "System.Diagnostics.Process.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.StackTrace.dll" as a payload file.  Its path in the package will be "System.Diagnostics.StackTrace.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.TextWriterTraceListener.dll" as a payload file.  Its path in the package will be "System.Diagnostics.TextWriterTraceListener.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.TraceSource.dll" as a payload file.  Its path in the package will be "System.Diagnostics.TraceSource.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Drawing.Primitives.dll" as a payload file.  Its path in the package will be "System.Drawing.Primitives.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Formats.Asn1.dll" as a payload file.  Its path in the package will be "System.Formats.Asn1.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Formats.Tar.dll" as a payload file.  Its path in the package will be "System.Formats.Tar.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.Compression.Brotli.dll" as a payload file.  Its path in the package will be "System.IO.Compression.Brotli.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.Compression.dll" as a payload file.  Its path in the package will be "System.IO.Compression.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.Compression.ZipFile.dll" as a payload file.  Its path in the package will be "System.IO.Compression.ZipFile.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.FileSystem.AccessControl.dll" as a payload file.  Its path in the package will be "System.IO.FileSystem.AccessControl.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.FileSystem.DriveInfo.dll" as a payload file.  Its path in the package will be "System.IO.FileSystem.DriveInfo.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.FileSystem.Watcher.dll" as a payload file.  Its path in the package will be "System.IO.FileSystem.Watcher.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.IsolatedStorage.dll" as a payload file.  Its path in the package will be "System.IO.IsolatedStorage.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.MemoryMappedFiles.dll" as a payload file.  Its path in the package will be "System.IO.MemoryMappedFiles.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.Pipes.dll" as a payload file.  Its path in the package will be "System.IO.Pipes.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Linq.dll" as a payload file.  Its path in the package will be "System.Linq.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Linq.Expressions.dll" as a payload file.  Its path in the package will be "System.Linq.Expressions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Linq.Parallel.dll" as a payload file.  Its path in the package will be "System.Linq.Parallel.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Linq.Queryable.dll" as a payload file.  Its path in the package will be "System.Linq.Queryable.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Memory.dll" as a payload file.  Its path in the package will be "System.Memory.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.Http.dll" as a payload file.  Its path in the package will be "System.Net.Http.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.Http.Json.dll" as a payload file.  Its path in the package will be "System.Net.Http.Json.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.HttpListener.dll" as a payload file.  Its path in the package will be "System.Net.HttpListener.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.Mail.dll" as a payload file.  Its path in the package will be "System.Net.Mail.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.NameResolution.dll" as a payload file.  Its path in the package will be "System.Net.NameResolution.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.NetworkInformation.dll" as a payload file.  Its path in the package will be "System.Net.NetworkInformation.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.Ping.dll" as a payload file.  Its path in the package will be "System.Net.Ping.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.Primitives.dll" as a payload file.  Its path in the package will be "System.Net.Primitives.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.Quic.dll" as a payload file.  Its path in the package will be "System.Net.Quic.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.Requests.dll" as a payload file.  Its path in the package will be "System.Net.Requests.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.Security.dll" as a payload file.  Its path in the package will be "System.Net.Security.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.ServicePoint.dll" as a payload file.  Its path in the package will be "System.Net.ServicePoint.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.Sockets.dll" as a payload file.  Its path in the package will be "System.Net.Sockets.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.WebClient.dll" as a payload file.  Its path in the package will be "System.Net.WebClient.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.WebHeaderCollection.dll" as a payload file.  Its path in the package will be "System.Net.WebHeaderCollection.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.WebProxy.dll" as a payload file.  Its path in the package will be "System.Net.WebProxy.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.WebSockets.Client.dll" as a payload file.  Its path in the package will be "System.Net.WebSockets.Client.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Net.WebSockets.dll" as a payload file.  Its path in the package will be "System.Net.WebSockets.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.ObjectModel.dll" as a payload file.  Its path in the package will be "System.ObjectModel.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Private.DataContractSerialization.dll" as a payload file.  Its path in the package will be "System.Private.DataContractSerialization.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Private.Uri.dll" as a payload file.  Its path in the package will be "System.Private.Uri.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Private.Xml.dll" as a payload file.  Its path in the package will be "System.Private.Xml.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Private.Xml.Linq.dll" as a payload file.  Its path in the package will be "System.Private.Xml.Linq.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Reflection.DispatchProxy.dll" as a payload file.  Its path in the package will be "System.Reflection.DispatchProxy.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Reflection.Emit.dll" as a payload file.  Its path in the package will be "System.Reflection.Emit.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Reflection.Metadata.dll" as a payload file.  Its path in the package will be "System.Reflection.Metadata.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Reflection.TypeExtensions.dll" as a payload file.  Its path in the package will be "System.Reflection.TypeExtensions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Resources.Writer.dll" as a payload file.  Its path in the package will be "System.Resources.Writer.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.CompilerServices.VisualC.dll" as a payload file.  Its path in the package will be "System.Runtime.CompilerServices.VisualC.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.InteropServices.dll" as a payload file.  Its path in the package will be "System.Runtime.InteropServices.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.InteropServices.JavaScript.dll" as a payload file.  Its path in the package will be "System.Runtime.InteropServices.JavaScript.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.Numerics.dll" as a payload file.  Its path in the package will be "System.Runtime.Numerics.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.Serialization.Formatters.dll" as a payload file.  Its path in the package will be "System.Runtime.Serialization.Formatters.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Runtime.Serialization.Primitives.dll" as a payload file.  Its path in the package will be "System.Runtime.Serialization.Primitives.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.AccessControl.dll" as a payload file.  Its path in the package will be "System.Security.AccessControl.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Claims.dll" as a payload file.  Its path in the package will be "System.Security.Claims.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Principal.Windows.dll" as a payload file.  Its path in the package will be "System.Security.Principal.Windows.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Text.Encoding.CodePages.dll" as a payload file.  Its path in the package will be "System.Text.Encoding.CodePages.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Text.Encodings.Web.dll" as a payload file.  Its path in the package will be "System.Text.Encodings.Web.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Text.Json.dll" as a payload file.  Its path in the package will be "System.Text.Json.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Text.RegularExpressions.dll" as a payload file.  Its path in the package will be "System.Text.RegularExpressions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.Channels.dll" as a payload file.  Its path in the package will be "System.Threading.Channels.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.dll" as a payload file.  Its path in the package will be "System.Threading.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.Tasks.Dataflow.dll" as a payload file.  Its path in the package will be "System.Threading.Tasks.Dataflow.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.Tasks.Parallel.dll" as a payload file.  Its path in the package will be "System.Threading.Tasks.Parallel.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Transactions.Local.dll" as a payload file.  Its path in the package will be "System.Transactions.Local.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Web.HttpUtility.dll" as a payload file.  Its path in the package will be "System.Web.HttpUtility.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Xml.XPath.XDocument.dll" as a payload file.  Its path in the package will be "System.Xml.XPath.XDocument.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Accessibility.dll" as a payload file.  Its path in the package will be "Accessibility.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "pt-BR\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "it\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "tr\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "de\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "ja\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "fr\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "pl\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "ru\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "ko\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "es\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\System.Windows.Forms.Primitives.resources.dll" as a payload file.  Its path in the package will be "cs\System.Windows.Forms.Primitives.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "ko\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "ru\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "cs\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "de\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "pl\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "ja\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "fr\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "it\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "tr\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "pt-BR\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\System.Windows.Forms.resources.dll" as a payload file.  Its path in the package will be "es\System.Windows.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "pl\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "tr\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "es\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "pt-BR\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "de\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "ru\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "it\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "ko\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "fr\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "ja\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\Microsoft.VisualBasic.Forms.resources.dll" as a payload file.  Its path in the package will be "cs\Microsoft.VisualBasic.Forms.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "tr\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Design.dll" as a payload file.  Its path in the package will be "System.Design.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "cs\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Drawing.Design.dll" as a payload file.  Its path in the package will be "System.Drawing.Design.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "es\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "pl\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "de\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "pt-BR\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "ru\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.VisualBasic.dll" as a payload file.  Its path in the package will be "Microsoft.VisualBasic.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "it\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "fr\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "ja\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "ko\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\System.Windows.Forms.Design.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\System.Windows.Forms.Design.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Windows.Forms.Design.Editors.dll" as a payload file.  Its path in the package will be "System.Windows.Forms.Design.Editors.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Drawing.dll" as a payload file.  Its path in the package will be "System.Drawing.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "it\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "es\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "ja\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "tr\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "pl\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "de\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "ru\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "pt-BR\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "ko\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "fr\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\System.Windows.Input.Manipulations.resources.dll" as a payload file.  Its path in the package will be "cs\System.Windows.Input.Manipulations.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "es\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "it\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "ja\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "de\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "fr\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "ko\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "cs\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "tr\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "ru\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "pt-BR\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\System.Xaml.resources.dll" as a payload file.  Its path in the package will be "pl\System.Xaml.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "pl\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "cs\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "fr\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "tr\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "ru\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "ja\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "ko\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "es\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "de\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "it\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\WindowsBase.resources.dll" as a payload file.  Its path in the package will be "pt-BR\WindowsBase.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "it\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "cs\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "ko\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "de\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "es\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "pt-BR\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "tr\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "pl\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "ru\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "fr\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\UIAutomationTypes.resources.dll" as a payload file.  Its path in the package will be "ja\UIAutomationTypes.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "it\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "es\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "ja\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "fr\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "de\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "tr\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "ru\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "pt-BR\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "cs\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "pl\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\UIAutomationProvider.resources.dll" as a payload file.  Its path in the package will be "ko\UIAutomationProvider.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PenImc_cor3.dll" as a payload file.  Its path in the package will be "PenImc_cor3.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "pl\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "it\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "ja\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "fr\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "cs\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "tr\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "es\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "pt-BR\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "de\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "ko\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\PresentationCore.resources.dll" as a payload file.  Its path in the package will be "ru\PresentationCore.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "tr\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "pt-BR\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "cs\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "es\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "ko\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "ja\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "fr\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "pl\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "ru\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "de\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\UIAutomationClient.resources.dll" as a payload file.  Its path in the package will be "it\UIAutomationClient.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\wpfgfx_cor3.dll" as a payload file.  Its path in the package will be "wpfgfx_cor3.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "es\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "fr\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "pl\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "it\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "ja\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "ko\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "cs\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "ru\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "tr\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "pt-BR\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\UIAutomationClientSideProviders.resources.dll" as a payload file.  Its path in the package will be "de\UIAutomationClientSideProviders.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "ja\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "tr\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "de\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "pt-BR\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "ru\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "es\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "ko\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "cs\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "pl\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "it\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\ReachFramework.resources.dll" as a payload file.  Its path in the package will be "fr\ReachFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "it\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "cs\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "tr\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "ja\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "fr\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "de\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "pt-BR\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "ko\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "ru\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "pl\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\PresentationFramework.resources.dll" as a payload file.  Its path in the package will be "es\PresentationFramework.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "fr\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "ko\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "de\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "es\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "pt-BR\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "ja\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "cs\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "it\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "ru\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "tr\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "pl\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\WindowsFormsIntegration.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\WindowsFormsIntegration.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "pl\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "tr\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "ko\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "ja\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "it\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "fr\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "es\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "de\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "pt-BR\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "cs\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\PresentationUI.resources.dll" as a payload file.  Its path in the package will be "ru\PresentationUI.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ru\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "ru\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\tr\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "tr\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ko\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "ko\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pt-BR\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "pt-BR\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ja\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "ja\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\cs\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "cs\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hans\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "zh-Hans\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\it\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "it\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\zh-Hant\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "zh-Hant\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\de\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "de\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\fr\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "fr\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\es\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "es\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\pl\System.Windows.Controls.Ribbon.resources.dll" as a payload file.  Its path in the package will be "pl\System.Windows.Controls.Ribbon.resources.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.Win32.Registry.AccessControl.dll" as a payload file.  Its path in the package will be "Microsoft.Win32.Registry.AccessControl.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.EventLog.dll" as a payload file.  Its path in the package will be "System.Diagnostics.EventLog.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Diagnostics.PerformanceCounter.dll" as a payload file.  Its path in the package will be "System.Diagnostics.PerformanceCounter.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.Win32.SystemEvents.dll" as a payload file.  Its path in the package will be "Microsoft.Win32.SystemEvents.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Configuration.ConfigurationManager.dll" as a payload file.  Its path in the package will be "System.Configuration.ConfigurationManager.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.CodeDom.dll" as a payload file.  Its path in the package will be "System.CodeDom.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Threading.AccessControl.dll" as a payload file.  Its path in the package will be "System.Threading.AccessControl.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Windows.Extensions.dll" as a payload file.  Its path in the package will be "System.Windows.Extensions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.DirectoryServices.dll" as a payload file.  Its path in the package will be "System.DirectoryServices.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Permissions.dll" as a payload file.  Its path in the package will be "System.Security.Permissions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.Pkcs.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.Pkcs.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Resources.Extensions.dll" as a payload file.  Its path in the package will be "System.Resources.Extensions.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.ProtectedData.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.ProtectedData.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Security.Cryptography.Xml.dll" as a payload file.  Its path in the package will be "System.Security.Cryptography.Xml.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.IO.Packaging.dll" as a payload file.  Its path in the package will be "System.IO.Packaging.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.VisualBasic.Forms.dll" as a payload file.  Its path in the package will be "Microsoft.VisualBasic.Forms.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Drawing.Common.dll" as a payload file.  Its path in the package will be "System.Drawing.Common.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Windows.Forms.Design.dll" as a payload file.  Its path in the package will be "System.Windows.Forms.Design.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Windows.Forms.Primitives.dll" as a payload file.  Its path in the package will be "System.Windows.Forms.Primitives.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\DirectWriteForwarder.dll" as a payload file.  Its path in the package will be "DirectWriteForwarder.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Windows.Forms.dll" as a payload file.  Its path in the package will be "System.Windows.Forms.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework-SystemDrawing.dll" as a payload file.  Its path in the package will be "PresentationFramework-SystemDrawing.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationCore.dll" as a payload file.  Its path in the package will be "PresentationCore.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework-SystemXmlLinq.dll" as a payload file.  Its path in the package will be "PresentationFramework-SystemXmlLinq.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework-SystemData.dll" as a payload file.  Its path in the package will be "PresentationFramework-SystemData.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework.Aero.dll" as a payload file.  Its path in the package will be "PresentationFramework.Aero.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework-SystemCore.dll" as a payload file.  Its path in the package will be "PresentationFramework-SystemCore.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework.Aero2.dll" as a payload file.  Its path in the package will be "PresentationFramework.Aero2.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework-SystemXml.dll" as a payload file.  Its path in the package will be "PresentationFramework-SystemXml.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework.Classic.dll" as a payload file.  Its path in the package will be "PresentationFramework.Classic.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework.Royale.dll" as a payload file.  Its path in the package will be "PresentationFramework.Royale.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework.Luna.dll" as a payload file.  Its path in the package will be "PresentationFramework.Luna.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework.AeroLite.dll" as a payload file.  Its path in the package will be "PresentationFramework.AeroLite.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationFramework.dll" as a payload file.  Its path in the package will be "PresentationFramework.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Printing.dll" as a payload file.  Its path in the package will be "System.Printing.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\PresentationUI.dll" as a payload file.  Its path in the package will be "PresentationUI.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ReachFramework.dll" as a payload file.  Its path in the package will be "ReachFramework.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Windows.Presentation.dll" as a payload file.  Its path in the package will be "System.Windows.Presentation.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Windows.Input.Manipulations.dll" as a payload file.  Its path in the package will be "System.Windows.Input.Manipulations.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Windows.Controls.Ribbon.dll" as a payload file.  Its path in the package will be "System.Windows.Controls.Ribbon.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\System.Xaml.dll" as a payload file.  Its path in the package will be "System.Xaml.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\UIAutomationTypes.dll" as a payload file.  Its path in the package will be "UIAutomationTypes.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\UIAutomationProvider.dll" as a payload file.  Its path in the package will be "UIAutomationProvider.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\UIAutomationClient.dll" as a payload file.  Its path in the package will be "UIAutomationClient.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\WindowsBase.dll" as a payload file.  Its path in the package will be "WindowsBase.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\WindowsFormsIntegration.dll" as a payload file.  Its path in the package will be "WindowsFormsIntegration.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\UIAutomationClientSideProviders.dll" as a payload file.  Its path in the package will be "UIAutomationClientSideProviders.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\onnxruntime_providers_shared.lib" as a payload file.  Its path in the package will be "onnxruntime_providers_shared.lib".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\onnxruntime.lib" as a payload file.  Its path in the package will be "onnxruntime.lib".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\onnxruntime_providers_shared.dll" as a payload file.  Its path in the package will be "onnxruntime_providers_shared.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\onnxruntime.dll" as a payload file.  Its path in the package will be "onnxruntime.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.ML.OnnxRuntime.dll" as a payload file.  Its path in the package will be "Microsoft.ML.OnnxRuntime.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\onnxruntime-genai.lib" as a payload file.  Its path in the package will be "onnxruntime-genai.lib".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\onnxruntime-genai.dll" as a payload file.  Its path in the package will be "onnxruntime-genai.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Microsoft.ML.OnnxRuntimeGenAI.dll" as a payload file.  Its path in the package will be "Microsoft.ML.OnnxRuntimeGenAI.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\auditor.png" as a payload file.  Its path in the package will be "Assets\auditor.png".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\builder.png" as a payload file.  Its path in the package will be "Assets\builder.png".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\licenses\GEMMA-NOTICE.txt" as a payload file.  Its path in the package will be "Assets\licenses\GEMMA-NOTICE.txt".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\licenses\THIRD-PARTY-NOTICES.txt" as a payload file.  Its path in the package will be "Assets\licenses\THIRD-PARTY-NOTICES.txt".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\aegis\repair-nature-layer.json" as a payload file.  Its path in the package will be "Assets\aegis\repair-nature-layer.json".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\models\gemma-3-1b-it-formed-v0.2.1\model.onnx.data" as a payload file.  Its path in the package will be "Assets\models\gemma-3-1b-it-formed-v0.2.1\model.onnx.data".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\models\gemma-3-1b-it-formed-v0.2.1\model.onnx" as a payload file.  Its path in the package will be "Assets\models\gemma-3-1b-it-formed-v0.2.1\model.onnx".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\models\gemma-3-1b-it-formed-v0.2.1\genai_config.json" as a payload file.  Its path in the package will be "Assets\models\gemma-3-1b-it-formed-v0.2.1\genai_config.json".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\models\gemma-3-1b-it-formed-v0.2.1\chat_template.jinja" as a payload file.  Its path in the package will be "Assets\models\gemma-3-1b-it-formed-v0.2.1\chat_template.jinja".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\models\gemma-3-1b-it-formed-v0.2.1\tokenizer_config.json" as a payload file.  Its path in the package will be "Assets\models\gemma-3-1b-it-formed-v0.2.1\tokenizer_config.json".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\models\gemma-3-1b-it-formed-v0.2.1\special_tokens_map.json" as a payload file.  Its path in the package will be "Assets\models\gemma-3-1b-it-formed-v0.2.1\special_tokens_map.json".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\models\gemma-3-1b-it-formed-v0.2.1\added_tokens.json" as a payload file.  Its path in the package will be "Assets\models\gemma-3-1b-it-formed-v0.2.1\added_tokens.json".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\models\gemma-3-1b-it-formed-v0.2.1\tokenizer.model" as a payload file.  Its path in the package will be "Assets\models\gemma-3-1b-it-formed-v0.2.1\tokenizer.model".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\models\gemma-3-1b-it-formed-v0.2.1\tokenizer.json" as a payload file.  Its path in the package will be "Assets\models\gemma-3-1b-it-formed-v0.2.1\tokenizer.json".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\models\gemma-3-1b-it-formed-v0.2.1\aegis-formation-manifest.json" as a payload file.  Its path in the package will be "Assets\models\gemma-3-1b-it-formed-v0.2.1\aegis-formation-manifest.json".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\pronto-auditor.png" as a payload file.  Its path in the package will be "Assets\pronto-auditor.png".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\pronto-repair.png" as a payload file.  Its path in the package will be "Assets\pronto-repair.png".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\pronto-thumbsup.png" as a payload file.  Its path in the package will be "Assets\pronto-thumbsup.png".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\Square150x150Logo.png" as a payload file.  Its path in the package will be "Assets\Square150x150Logo.png".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\SplashScreen.png" as a payload file.  Its path in the package will be "Assets\SplashScreen.png".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\Square44x44Logo.png" as a payload file.  Its path in the package will be "Assets\Square44x44Logo.png".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\StoreLogo.png" as a payload file.  Its path in the package will be "Assets\StoreLogo.png".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\Assets\Wide310x150Logo.png" as a payload file.  Its path in the package will be "Assets\Wide310x150Logo.png".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ProntoPC.dll" as a payload file.  Its path in the package will be "ProntoPC.dll".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ProntoPC.exe" as a payload file.  Its path in the package will be "ProntoPC.exe".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ProntoPC.deps.json" as a payload file.  Its path in the package will be "ProntoPC.deps.json".
+
+Processing "\\?\H:\PRONTOPC_PRODUCTION\StoreApp\package-layout\ProntoPC.runtimeconfig.json" as a payload file.  Its path in the package will be "ProntoPC.runtimeconfig.json".
+
+Package creation succeeded.
+
+==> Creating Store upload container (.msixupload)
+
+Built ProntoPC.msix  version 1.2.25.0  736 MB  signed=False
+Built ProntoPC.msixupload  version 1.2.25.0  734.5 MB
+UNSIGNED - upload ProntoPC.msixupload to Partner Center; keep ProntoPC.msix for WACK/local inspection.

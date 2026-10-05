@@ -1,0 +1,75 @@
+H:\PRONTOPC_PRODUCTION\StoreApp\Repair.cs(246,25): warning CA1416: This call site is reachable on all platforms. 'RegistryKey.CreateSubKey(string)' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [H:\PRONTOPC_PRODUCTION\tests\PodEval\PodEval.csproj]
+H:\PRONTOPC_PRODUCTION\StoreApp\Repair.cs(247,9): warning CA1416: This call site is reachable on all platforms. 'RegistryKey.SetValue(string?, object, RegistryValueKind)' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [H:\PRONTOPC_PRODUCTION\tests\PodEval\PodEval.csproj]
+H:\PRONTOPC_PRODUCTION\StoreApp\Repair.cs(247,44): warning CA1416: This call site is reachable on all platforms. 'RegistryValueKind.DWord' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [H:\PRONTOPC_PRODUCTION\tests\PodEval\PodEval.csproj]
+H:\PRONTOPC_PRODUCTION\StoreApp\Repair.cs(246,25): warning CA1416: This call site is reachable on all platforms. 'Registry.CurrentUser' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [H:\PRONTOPC_PRODUCTION\tests\PodEval\PodEval.csproj]
+H:\PRONTOPC_PRODUCTION\StoreApp\Repair.cs(234,37): warning CA1416: This call site is reachable on all platforms. 'Registry.LocalMachine' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [H:\PRONTOPC_PRODUCTION\tests\PodEval\PodEval.csproj]
+H:\PRONTOPC_PRODUCTION\StoreApp\Repair.cs(238,21): warning CA1416: This call site is reachable on all platforms. 'RegistryKey.GetValue(string?)' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [H:\PRONTOPC_PRODUCTION\tests\PodEval\PodEval.csproj]
+H:\PRONTOPC_PRODUCTION\StoreApp\Repair.cs(238,48): warning CA1416: This call site is reachable on all platforms. 'RegistryKey.DeleteValue(string)' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [H:\PRONTOPC_PRODUCTION\tests\PodEval\PodEval.csproj]
+H:\PRONTOPC_PRODUCTION\StoreApp\Repair.cs(234,61): warning CA1416: This call site is reachable on all platforms. 'Registry.CurrentUser' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [H:\PRONTOPC_PRODUCTION\tests\PodEval\PodEval.csproj]
+H:\PRONTOPC_PRODUCTION\StoreApp\Repair.cs(237,29): warning CA1416: This call site is reachable on all platforms. 'RegistryKey.OpenSubKey(string, bool)' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [H:\PRONTOPC_PRODUCTION\tests\PodEval\PodEval.csproj]
+Envelope version 0.1.0
+
+== AdmissibleSet fixtures ==
+  PASS clean_healthy_pc: includes present
+  PASS clean_healthy_pc: excludes absent
+  PASS temp_and_recycle_clutter: includes present
+  PASS temp_and_recycle_clutter: excludes absent
+  PASS windows_old_present: includes present
+  PASS windows_old_present: excludes absent
+  PASS network_down: includes present
+  PASS network_down: excludes absent
+  PASS corruption_and_crashes: includes present
+  PASS corruption_and_crashes: excludes absent
+  PASS browser_cache_heavy: includes present
+  PASS browser_cache_heavy: excludes absent
+  PASS update_cache_large: includes present
+  PASS update_cache_large: excludes absent
+  PASS update_cache_small: includes present
+  PASS update_cache_small: excludes absent
+  PASS many_startup_items: includes present
+  PASS many_startup_items: excludes absent
+  PASS memory_pressure: includes present
+  PASS memory_pressure: excludes absent
+
+== Validate ==
+  PASS clear_temp_files mb set to true measure 5 -> 500 (under-claim corrected up)
+  PASS remove_windows_old risk stamped low -> medium
+  PASS remove_windows_old mb clamped 99999 -> 8192 (gb->mb)
+  PASS reset_network_stack dropped (false precondition)
+  PASS frobnicate dropped (not in catalogue)
+  PASS clear_chrome_cache dropped (subsumed by umbrella)
+
+== Validate: completeness backstop ==
+  PASS empty_recycle_bin ADDED with measured 1024 MB (model omitted it)
+  PASS added action carries plain-English label + envelope risk
+  PASS completeness_added lists both measured omissions
+  PASS added umbrella carries measured 300 MB
+  PASS added umbrella subsumes the model's bare member (no double-count)
+  PASS model-authored measured action is NOT re-added
+
+== GemmaLocalPlanner (fake inference) ==
+  PASS assembled diagnostics form a complete, valid audit
+  PASS author returns provider=local-model
+  PASS author parsed prose-wrapped JSON into a plan
+  PASS authored plan survives envelope validation
+
+== System Audit precondition ==
+  PASS complete 25/25 diagnostics -> VALID audit
+  PASS valid audit carries a SHA-256 evidence hash
+  PASS missing a section -> INVALID (incomplete_audit)
+  PASS SystemAudit.Failed() is invalid with no evidence
+  PASS FAILED audit -> author declines with ZERO model invocations
+  PASS decline reason == system_audit_invalid
+  PASS INCOMPLETE audit -> author declines, still ZERO model invocations
+  PASS VALID audit -> author proceeds to the local model
+  PASS valid audit invoked the model exactly once
+
+== Orchestrator transient retry settle ==
+  PASS transient local completion miss recovers on automatic retry
+  PASS automatic retry waits through the model-load cooldown before retrying
+
+== Repair tool timeout ==
+  PASS RunExe reports timeout honestly
+  PASS RunExe returns promptly instead of waiting for child exit
+
+ALL PASS

@@ -1,0 +1,61 @@
+==========================================================================
+ProntoPC � MICROSOFT STORE CERTIFICATION PRE-FLIGHT  v3.4  (mode=store)
+==========================================================================
+
+[0] Historical rejection references (regressed against; NOT current-policy text)
+  [HIST] 10.3.1     reviewer could not test: primary functionality required a server/test account, and the app hit 'co
+  [HIST] 10.8.4     purchase types/prices missing or inaccurate (fixed: single one-time Store base price $9.99, no ext
+  [HIST] 10.1.2.10  'repair plan built by AI' � on-device authoring, no cloud fallback (still in force)
+  [NOTE] Re-check the CURRENT Microsoft Store policy text at submission time.
+
+[1] No external payment/server gate remains in shipping surfaces  (10.3.1)
+  [PASS] served site has no Stripe/checkout/token gate    clean
+  [PASS] app has no Stripe/checkout/token/Cloud-Run gate  clean
+
+[2] "AI-powered repair plan" model bundled in source  (10.1.2.10)
+  [PASS] on-device model bundled (genai_config + weights) H:\PRONTOPC_PRODUCTION\StoreApp\Assets\models\gemma-3-1b-it-formed-v0.2.1
+  [PASS] formed responder carries formation provenance    H:\PRONTOPC_PRODUCTION\StoreApp\Assets\models\gemma-3-1b-it-formed-v0.2.1\aegis-formation-manifest.j
+
+[2b] ModelSmoke EXECUTES real on-device authoring  (AI-001)
+  [PASS] ModelSmoke PASS (on-device plan + admissible act exit=0 45s � MODEL SMOKE PASS
+
+[3] Countable listing claims match the code
+  [PASS] diagnostic categories >= 25 claimed              95 categories found
+  [PASS] repair capabilities >= 18 claimed                33 candidate action IDs in Envelope.cs
+
+[4] Certification notes match the one-time-paid, no-account, offline flow
+  [PASS] notes state no account/sign-in/test-account requ no-account + test-account addressed
+  [PASS] notes state on-device AI + offline (no server/ne on-device + offline stated
+  [PASS] notes state one-time paid Store purchase (10.8.4 one-time $9.99 via Microsoft Store
+  [PASS] notes state no subscription/in-app/add-on/trial  no subscription/IAP/add-on/trial stated
+  [PASS] notes give launch -> scan -> repair-time UAC flo reviewer flow present
+  [PASS] reviewer paste (CERT_NOTES_SHORT) carries NO sta clean
+
+[5] The final SUBMISSION PACKAGE is inspected directly  (PKG-001)
+  [PASS] candidate submission package found               ProntoPC.msixupload (787.5 MB)
+         path: StoreApp\ProntoPC.msixupload
+         sha256: CB46C09815EA32CEE526BE9970219050FADFF4C0857E8BF0F77FDC747E2F17D1
+  [PASS] package version matches source manifest          package=1.2.23.0 source=1.2.23.0
+  [PASS] Store package version leaves fourth section rese package=1.2.23.0; Windows 10/11 Store packages must end in .0
+  [PASS] model genai_config.json inside package           found
+  [PASS] model weights (>100MB) inside package            822 MB
+  [PASS] WPF compiled resources contain declared images   found 6 declared resource path(s) in H:\PRONTOPC_PRODUCTION\StoreApp\obj\Release\net8.0-windows10.0.
+  [PASS] ONNX native VC++ runtime dependency covered      VC runtime DLLs packaged: MSVCP140.DLL, MSVCP140_1.DLL, VCRUNTIME140.DLL, VCRUNTIME140_1.DLL
+
+[6] Windows App Certification Kit (WACK)
+  [PASS] WACK run against the package                     wack-report-current.xml: OVERALL_RESULT=PASS; APP_VERSION=1.2.23.0; sha256=A23FE37EE30F5598F4CD18D34
+
+[7] Live generative AI disclosure and content reporting (11.16)
+  [PASS] AI disclosure, reporting instructions and develo ai-aegis.html + CERT_NOTES_SHORT + AI_CONTENT_REPORTING_PROCEDURE
+  [MANL] AI reporting installed flow, support receipt and Follow docs/AI_CONTENT_REPORTING_PROCEDURE.md; record observed results and exact upload hash in H:\P
+
+==========================================================================
+22/23 checks passed
+
+MANUAL VERIFICATION REQUIRED (blocking until done):
+  ! AI reporting installed flow, support receipt and live explanation verified
+      Follow docs/AI_CONTENT_REPORTING_PROCEDURE.md; record observed results and exact upload hash in H:\PRONTOPC_PRODUCTION\docs\AI_CONTENT_REPORT_VERIFICATION.json
+
+Evidence: docs/CERT_PREFLIGHT_12230.json
+FINAL STATUS: DO_NOT_SUBMIT
+==========================================================================

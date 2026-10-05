@@ -25,7 +25,8 @@ public partial class MainWindow : Window
     readonly Orchestrator _orch;
     readonly ILocalInference _localInference;
     readonly bool _modelPresent;
-    int _modelWarmupStarted;
+    Task<ModelWarmupResult>? _modelWarmup;
+    readonly CancellationTokenSource _warmupCancellation = new();
 
     // ── Technician → Communications relay seam (append-only, hash-bound) ───────
     // The inter-Orb seam made an APPEND-ONLY message rather than a mutable call. The
@@ -62,6 +63,7 @@ public partial class MainWindow : Window
     public MainWindow(string repairRequestPath = "")
     {
         InitializeComponent();
+        Closed += (_, __) => _warmupCancellation.Cancel();
         _repairRequestPath = repairRequestPath;
         // The Orchestrator holds the Action Envelope, keys the plan Umbilical to it, and
         // sequences the phases. The bundled local-model Satellite is the only desktop
@@ -214,20 +216,8 @@ public partial class MainWindow : Window
 
     void StartModelWarmupDuringScan()
     {
-        if (!_localInference.Available) return;
-        if (Interlocked.Exchange(ref _modelWarmupStarted, 1) != 0) return;
-
-        var thread = new Thread(() =>
-        {
-            try { _localInference.WarmUp(CancellationToken.None); }
-            catch { }
-        })
-        {
-            IsBackground = true,
-            Name = "ProntoPC model warm-up",
-            Priority = ThreadPriority.BelowNormal
-        };
-        thread.Start();
+        if (_modelWarmup is not null) return;
+        _modelWarmup = ModelWarmup.PrepareAsync(_localInference, null, _warmupCancellation.Token);
     }
 
     // Plan phase (retryable): the bundled local model authors a plan from the validated audit and
@@ -241,8 +231,18 @@ public partial class MainWindow : Window
             return;
         }
 
-        Cust.SetState(CustodianState.Thinking, "Building your personalized repair plan… This can take a few minutes — the AI runs entirely on your PC.");
         CollapseAllPanels();
+        StartModelWarmupDuringScan();
+        ModelWarmupResult ready;
+        try { ready = await _modelWarmup!; }
+        catch (OperationCanceledException) { return; }
+        if (_warmupCancellation.IsCancellationRequested) return;
+        if (!ready.IsReady)
+        {
+            ShowError(ready.Reason);
+            return;
+        }
+        Cust.SetState(CustodianState.Thinking, "AI ready. Building your personalized repair plan… The AI runs entirely on your PC.");
         ShowWorkingArt("pronto-auditor.png");
 
         var outcome = await _orch.AuthorPlanAsync(_lastAudit);
@@ -842,13 +842,30 @@ public partial class MainWindow : Window
             // RBC / Prism outbound: apply Reflective Boundary Conditions before the reply is shown.
             reply = _gov.ApplyBoundary(reply);
             _gov.LogTurn("model", reply);
-            AppendChat("Technician", reply);
+            AppendChat("Technician", reply, reportable: true);
         }
         finally { ChatSendButton.IsEnabled = true; }
     }
 
 
-    void AppendChat(string who, string text)
+    void OpenAiAegis_Click(object sender, RoutedEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo(AiContentReport.ExplanationUrl) { UseShellExecute = true }); }
+        catch
+        {
+            MessageBox.Show(this, "Open this address in your browser:\n" + AiContentReport.ExplanationUrl,
+                "About AI & AEGIS", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    void ReportAiContent_Click(object sender, RoutedEventArgs e) => ShowAiContentReport("");
+
+    void ReportRepairPlan_Click(object sender, RoutedEventArgs e) => ShowAiContentReport(FindingsSummary.Text ?? "");
+
+    void ShowAiContentReport(string response) => new AiContentReportWindow(response,
+        typeof(MainWindow).Assembly.GetName().Version?.ToString() ?? "unknown") { Owner = this }.ShowDialog();
+
+    void AppendChat(string who, string text, bool reportable = false)
     {
         var block = new TextBlock
         {
@@ -859,6 +876,18 @@ public partial class MainWindow : Window
         block.Inlines.Add(new System.Windows.Documents.Run(who + ": ") { FontWeight = FontWeights.Bold });
         block.Inlines.Add(new System.Windows.Documents.Run(text));
         ChatLog.Children.Add(block);
+        if (reportable)
+        {
+            var report = new TextBlock { FontSize = 12, Margin = new Thickness(0, 0, 0, 12) };
+            var link = new System.Windows.Documents.Hyperlink
+            {
+                Foreground = new SolidColorBrush(Color.FromRgb(0xc4, 0xb5, 0xfd))
+            };
+            link.Inlines.Add("Report this response");
+            link.Click += (_, _) => ShowAiContentReport(text);
+            report.Inlines.Add(link);
+            ChatLog.Children.Add(report);
+        }
         ChatScroll.ScrollToEnd();
     }
 
@@ -919,6 +948,3 @@ public partial class MainWindow : Window
         List<Dictionary<string, object?>> ApprovedActions,
         string Hostname);
 }
-
-
-

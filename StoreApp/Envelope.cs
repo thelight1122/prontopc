@@ -178,8 +178,22 @@ sealed class Envelope
                         if (idx >= 0) { kept.RemoveAt(idx); dropped.Add($"{mem}: subsumed by {umbrella}"); }
                     }
 
+        // Suppress zero-recovery cleanup after merging, preserving non-space repairs.
+        for (int i = kept.Count - 1; i >= 0; i--)
+        {
+            var action = (JsonObject)kept[i]!;
+            string id = action["id"]!.GetValue<string>();
+            var def = ActionDef(id);
+            if (def.TryGetProperty("outcome", out var outcome) && outcome.GetString() == "freed"
+                && action["estimated_mb_recovered"]!.GetValue<int>() <= 0)
+            {
+                kept.RemoveAt(i);
+                dropped.Add($"{id}: no measured space to recover");
+            }
+        }
+
         // enforce max_actions
-        while (kept.Count > _maxActions)
+        while (kept.Count > Math.Min(_maxActions, 8))
         {
             int last = kept.Count - 1;
             dropped.Add($"{(kept[last] as JsonObject)?["id"]?.GetValue<string>()}: over max_actions ({_maxActions})");

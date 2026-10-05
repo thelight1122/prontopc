@@ -22,7 +22,6 @@ sealed class OnnxGenAiInference : ILocalInference
     readonly object _lock = new();
     Model? _model;
     Tokenizer? _tokenizer;
-    DateTime _lastLoadFailureUtc = DateTime.MinValue;
 
     OnnxGenAiInference(string dir, string modelName) { _dir = dir; _modelName = modelName; }
 
@@ -49,8 +48,8 @@ sealed class OnnxGenAiInference : ILocalInference
 
     public void WarmUp(CancellationToken ct)
     {
-        if (ct.IsCancellationRequested) return;
-        try { EnsureLoaded(); } catch { }
+        ct.ThrowIfCancellationRequested();
+        EnsureLoaded();
     }
 
     public string? Complete(string prompt, string jsonSchema, CancellationToken ct)
@@ -81,7 +80,7 @@ sealed class OnnxGenAiInference : ILocalInference
             // is also unavailable, sends a paid customer to make-good.  Greedy decoding
             // keeps the local plan repeatable and parseable on every supported device.
             gp.SetSearchOption("do_sample", false);
-            gp.SetSearchOption("max_length", (double)(inputLen + 768));
+            gp.SetSearchOption("max_length", (double)(inputLen + 1536));
             if (!string.IsNullOrEmpty(jsonSchema))
             {
                 // Guided decoding: constrain the output to the JSON schema (which pins
@@ -182,23 +181,24 @@ sealed class OnnxGenAiInference : ILocalInference
 
     void EnsureLoaded()
     {
-        if (_model != null) return;
+        if (_model != null && _tokenizer != null) return;
         lock (_lock)
         {
-            if (_model != null) return;
+            if (_model != null && _tokenizer != null) return;
 
             // A first load can fail under temporary memory pressure. Do not mark the
-            // bundled model permanently unavailable; the retry UI asks the customer to
-            // close heavy apps, and the next attempt must be able to load again.
-            if ((DateTime.UtcNow - _lastLoadFailureUtc) < TimeSpan.FromSeconds(2)) return;
+            // bundled model permanently unavailable. The awaited preparation phase owns
+            // bounded retries and reports its real state before plan generation begins.
             try { GC.Collect(); GC.WaitForPendingFinalizers(); _model = new Model(_dir); _tokenizer = new Tokenizer(_model); }
-            catch
+            catch (Exception ex)
             {
-                _lastLoadFailureUtc = DateTime.UtcNow;
+                LastError = ex.GetType().Name;
+                _tokenizer?.Dispose();
                 _model?.Dispose();
                 _model = null;
                 _tokenizer = null;
                 GC.Collect();
+                throw;
             }
         }
     }

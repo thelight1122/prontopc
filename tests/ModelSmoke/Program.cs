@@ -27,6 +27,14 @@ if (!inf.Available)
     return;
 }
 
+var preparation = await ModelWarmup.PrepareAsync(inf, null, CancellationToken.None);
+if (!preparation.IsReady)
+{
+    Console.Error.WriteLine("FAIL: model preparation: " + preparation.Reason);
+    Environment.ExitCode = 1;
+    return;
+}
+Console.WriteLine($"Model preparation PASS: {preparation.DurationMs}ms, {preparation.Attempts} attempt(s).");
 var env = Envelope.FromJson(File.ReadAllText(Path.Combine(root, "pod/orbs/repair-engine/action-envelope.json")));
 
 // The System Audit precondition (TOTEM-X-0074): the on-device author receives ONLY a
@@ -76,6 +84,7 @@ if (r != null)
     var (plan, _) = env.Validate(r.Plan, diag);
     Check(plan["actions"]!.AsArray().Count > 0, "plan has >=1 admissible action after validation");
     string summary = r.Plan.TryGetProperty("summary", out var s) ? (s.GetString() ?? "") : "";
+    Console.WriteLine("Generated summary: " + summary);
     Check(summary.Length > 0, "plan carries a non-empty summary");
     Check(summary.Contains("91", StringComparison.Ordinal) || summary.Contains("740", StringComparison.Ordinal)
           || summary.Contains("1300", StringComparison.Ordinal) || summary.Contains("22", StringComparison.Ordinal),
@@ -110,6 +119,51 @@ if (cleanResult != null)
     var (cleanPlan, _) = env.Validate(cleanResult.Plan, cleanDiag);
     Check(cleanPlan["actions"]!.AsArray().Count > 0, "clean reviewer-style plan has >=1 admissible action after validation");
 }
+
+// Reconstructed reported failure shape: multiple cache entries, including zero MB.
+// This is not the exact guest scan, which has not been supplied as a fixture.
+var cacheReplay = new Dictionary<string, object?>(cleanDiagDict);
+cacheReplay["browser_caches"] = new[] {
+    new { browser = "Edge", size_mb = 0 }, new { browser = "Chrome", size_mb = 0 },
+    new { browser = "Firefox", size_mb = 15 }, new { browser = "Brave", size_mb = 23 },
+    new { browser = "Opera", size_mb = 0 }, new { browser = "Chrome Profile 2", size_mb = 5 }
+};
+var replayAudit = SystemAuditor.Assess(cacheReplay);
+var replayPlanner = new GemmaLocalPlanner(inf);
+var replay = await replayPlanner.AuthorAsync(replayAudit, env.AdmissibleSet(replayAudit.Diagnostics),
+    new CancellationTokenSource(TimeSpan.FromSeconds(180)).Token);
+Check(replay != null, "many-cache regression: valid model JSON on first attempt: " + replayPlanner.LastDeclineReason);
+if (inf is OnnxGenAiInference replayInference)
+    Console.WriteLine($"Regression tokens: {replayInference.LastGeneratedTokens}; generation ms: {replayInference.LastGenerateMs}");
+if (replay != null)
+{
+    Check(replay.Plan.GetProperty("actions").GetArrayLength() <= 8, "many-cache model plan bounded to eight actions");
+    var (replayPlan, _) = env.Validate(replay.Plan, replayAudit.Diagnostics);
+    var replayActions = replayPlan["actions"]!.AsArray(); 
+    Check(replayActions.Count <= 8, "many-cache rendered plan bounded to eight actions after measured additions");
+    File.WriteAllText(Path.Combine(root, "docs", "many-cache-regression-12250.json"),
+        JsonSerializer.Serialize(new { fixture_kind = "reconstructed reported shape; not exact guest scan", diagnostics = replayAudit.Diagnostics,
+            authored = replay.Plan, validated = replayPlan, first_attempt = true,
+            generated_tokens = (inf as OnnxGenAiInference)?.LastGeneratedTokens }, new JsonSerializerOptions { WriteIndented = true }));
+
+    Check(replayActions.Count(a => a!["id"]!.GetValue<string>() == "clear_all_browser_caches") == 1,
+        "many-cache plan contains one combined browser cleanup");
+    Check(!replayActions.Any(a => new[] { "clear_chrome_cache", "clear_edge_cache", "clear_firefox_cache", "clear_brave_cache", "clear_opera_cache" }.Contains(a!["id"]!.GetValue<string>())),
+        "many-cache plan omits individual browser cleanup duplicates");
+    Check(!replayActions.Any(a => a!["id"]!.GetValue<string>() == "clear_all_browser_caches" && a["estimated_mb_recovered"]!.GetValue<int>() <= 0),
+        "many-cache cleanup has positive measured recovery");
+}
+using var zeroPlan = JsonDocument.Parse("{\"actions\":[{\"id\":\"clear_all_browser_caches\",\"estimated_mb_recovered\":99},{\"id\":\"flush_dns\",\"estimated_mb_recovered\":0}],\"summary\":\"Test\"}");
+var zeroCache = new Dictionary<string, object?>(cleanDiagDict);
+zeroCache["dns_cache"] = new { entries = 10 };
+zeroCache["browser_caches"] = new[] { new { browser = "Edge", size_mb = 0 } };
+var zeroAudit = SystemAuditor.Assess(zeroCache);
+var (zeroValidated, _) = env.Validate(zeroPlan.RootElement, zeroAudit.Diagnostics);
+Check(!zeroValidated["actions"]!.AsArray().Any(a => a!["id"]!.GetValue<string>() == "clear_all_browser_caches"),
+    "zero measured cleanup is suppressed after envelope clamp");
+
+Check(zeroValidated["actions"]!.AsArray().Any(a => a!["id"]!.GetValue<string>() == "flush_dns"),
+    "non-space repair remains available at zero MB");
 
 // ── Phase 2: conversational Custodian — prove a 2-turn on-device exchange ──
 Console.WriteLine("\nCUSTODIAN CHAT (Phase 2 — multi-turn inference):");
