@@ -141,7 +141,7 @@ if (replay != null)
     var (replayPlan, _) = env.Validate(replay.Plan, replayAudit.Diagnostics);
     var replayActions = replayPlan["actions"]!.AsArray(); 
     Check(replayActions.Count <= 8, "many-cache rendered plan bounded to eight actions after measured additions");
-    File.WriteAllText(Path.Combine(root, "docs", "many-cache-regression-12250.json"),
+    File.WriteAllText(Path.Combine(root, "docs", "many-cache-regression-12260.json"),
         JsonSerializer.Serialize(new { fixture_kind = "reconstructed reported shape; not exact guest scan", diagnostics = replayAudit.Diagnostics,
             authored = replay.Plan, validated = replayPlan, first_attempt = true,
             generated_tokens = (inf as OnnxGenAiInference)?.LastGeneratedTokens }, new JsonSerializerOptions { WriteIndented = true }));

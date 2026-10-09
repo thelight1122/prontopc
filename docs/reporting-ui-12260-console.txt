@@ -1,0 +1,3 @@
+PASS editable selected response, empty-report prevention, redaction reflected, small-window scrolling
+Rendered actual WPF reporting dialog: H:\PRONTOPC_PRODUCTION\docs\reporting-dialog-12260.png
+PASS actual packaged report summary: observed completion count,14MB, no unsupported benefits

@@ -1,0 +1,18 @@
+{
+  "recorded_utc": "2026-10-03T07:36:12.288417+00:00",
+  "source": "Owner fresh Get-AppxPackage transcript in PS C:\\Users\\PreFlight>",
+  "observation": "Installed baseline identity confirmed; reporting candidate absent from this account",
+  "name": "5DServiceSolutionsGlobal.ProntoPC",
+  "version": "1.2.20.0",
+  "package_full_name": "5DServiceSolutionsGlobal.ProntoPC_1.2.20.0_x64__cne6wjsv6stbm",
+  "package_family_name": "5DServiceSolutionsGlobal.ProntoPC_cne6wjsv6stbm",
+  "install_location": "C:\\Program Files\\WindowsApps\\5DServiceSolutionsGlobal.ProntoPC_1.2.20.0_x64__cne6wjsv6stbm",
+  "archived_reporting_candidate_version": "1.2.21.0",
+  "archived_reporting_upload_sha256": "8D2FF6B1867FE22BE1612A239B906F80E931EBD9BBB6ED48993DC1B36CFD82C3",
+  "installed_candidate_identity_gate": "not satisfied: installed 1.2.20.0",
+  "installed_candidate_reporting": "untested",
+  "support_receipt": "unverified",
+  "support_monitoring": "unverified",
+  "qualification": "Identity confirms baseline version, not full baseline payload equivalence or runtime success. Prior assembly version/hash observation remains separate.",
+  "status": "DO_NOT_SUBMIT"
+}

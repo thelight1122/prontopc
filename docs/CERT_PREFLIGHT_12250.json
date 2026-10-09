@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-05T12:58:43.328387+00:00",
+  "timestamp": "2026-10-05T22:30:32.559920+00:00",
   "preflight_version": "3.4",
   "mode": "store",
   "package_path": "StoreApp\\ProntoPC.msixupload",
@@ -158,22 +158,6 @@
       "manual": false
     },
     {
-      "claim": "AI disclosure, reporting instructions and developer procedure present",
-      "ok": true,
-      "evidence": "ai-aegis.html + CERT_NOTES_SHORT + AI_CONTENT_REPORTING_PROCEDURE",
-      "blocking": true,
-      "state": "pass",
-      "manual": false
-    },
-    {
-      "claim": "AI reporting installed flow, support receipt and live explanation verified",
-      "ok": false,
-      "evidence": "Follow docs/AI_CONTENT_REPORTING_PROCEDURE.md; record observed results and exact upload hash in H:\\PRONTOPC_PRODUCTION\\docs\\AI_CONTENT_REPORT_VERIFICATION.json",
-      "blocking": true,
-      "state": "manual",
-      "manual": true
-    },
-    {
       "claim": "ModelSmoke PASS (on-device plan + admissible action)",
       "ok": true,
       "evidence": "docs/model-smoke-12250-console.txt MODEL SMOKE PASS; source/hash bindings and reconstructed many-cache first-attempt replay in docs/MODEL_REGRESSION_VERIFICATION_12250.json",
@@ -188,12 +172,26 @@
       "blocking": true,
       "state": "pass",
       "manual": false
+    },
+    {
+      "claim": "AI disclosure, reporting instructions and developer procedure present",
+      "ok": true,
+      "evidence": "ai-aegis.html + CERT_NOTES_SHORT + AI_CONTENT_REPORTING_PROCEDURE",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
+    },
+    {
+      "claim": "AI reporting installed flow, support receipt and live explanation verified",
+      "ok": true,
+      "evidence": "H:\\PRONTOPC_PRODUCTION\\docs\\AI_CONTENT_REPORT_VERIFICATION.json",
+      "blocking": true,
+      "state": "pass",
+      "manual": false
     }
   ],
   "blocking_failures": [],
   "warnings": [],
-  "manual_required": [
-    "AI reporting installed flow, support receipt and live explanation verified"
-  ],
-  "final_status": "DO_NOT_SUBMIT"
+  "manual_required": [],
+  "final_status": "CERT_READY"
 }

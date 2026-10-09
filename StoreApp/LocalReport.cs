@@ -52,12 +52,18 @@ public static class LocalReport
         string badgeText = hasRepairs ? "Repair Complete" : "Diagnostic Report";
         string badgeColor = hasRepairs ? "#7C5CFF" : "#3B82F6";
 
-        string summary = S(plan, "summary", "Your PC was scanned. See the details below.");
+        // A pre-repair model prediction is not evidence of completed repair benefits.
+        // The completion report describes only recorded executor outcomes.
+        string summary = results.Count == 0
+            ? "Your PC was scanned. No repair actions were run. See the diagnostic details below."
+            : $"{results.Count(r => S(r, "status") == "done")} of {results.Count} selected actions completed. "
+              + $"Recorded space recovered: {FmtMb(results.Where(r => S(r, "status") == "done").Sum(r => Math.Max(0, I(r, "mb_freed"))))}. "
+              + "See each action's result below. Drive usage is a scan measurement; changes in speed or power consumption were not measured.";
         string hwNotes = S(plan, "hardware_notes");
         string secAssess = S(plan, "security_assessment");
 
         JsonElement mem = G(diag, "memory");
-        int totalFreed = results.Sum(r => I(r, "mb_freed"));
+        int totalFreed = results.Where(r => S(r, "status") == "done").Sum(r => Math.Max(0, I(r, "mb_freed")));
         int completedCount = results.Count(r => S(r, "status") == "done");
 
         var sec = new StringBuilder();

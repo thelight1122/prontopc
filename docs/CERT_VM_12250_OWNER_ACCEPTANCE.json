@@ -1,0 +1,22 @@
+{
+  "version": "1.2.25.0",
+  "upload_sha256": "0B437B154E39401E872ED7BD019C77573536D2EA1388228EE46F06B67FCBA1E8",
+  "recorded_utc": "2026-10-05T22:30:32.556911+00:00",
+  "provenance": "Owner-provided files and explicit All three YES in conversation",
+  "source_zip_sha256": "A44C47E5C3B1CEA965DAA12AFBB030DC6B7607CF8BEC0E26886D7B9756F97E62",
+  "source_zip_path": "C:/Users/TraceyPrutch/Downloads/ProntoPC_Successful_Outputs.zip",
+  "first_plan_without_retry": true,
+  "copy_report_works": true,
+  "save_report_export_observed": true,
+  "support_receipt_confirmed": true,
+  "mailbox_monitoring_confirmed": true,
+  "repair_report_completed_actions": 5,
+  "space_recovered_mb": 14,
+  "network_report": "Connected",
+  "independent_codex_guest_observation": false,
+  "summary_accuracy_issue": {
+    "status": "open",
+    "observation": "AI summary associates23% driveusage with repair effects; actual recoveredspace14MB. DNS/power numerical benefit wording unsupported."
+  },
+  "submission": "not performed"
+}

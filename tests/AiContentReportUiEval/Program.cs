@@ -49,6 +49,18 @@ internal static class Program
         if (scroll.ExtentHeight <= scroll.ViewportHeight) throw new Exception("Small viewport must scroll to the reporting controls.");
         Console.WriteLine("PASS editable selected response, empty-report prevention, redaction reflected, small-window scrolling");
         Console.WriteLine("Rendered actual WPF reporting dialog: " + args[0]);
+        if (args.Length > 1)
+        {
+            var reportClass = reportType.Assembly.GetType("ProntoPC.LocalReport", throwOnError: true)!;
+            var generate = reportClass.GetMethod("Generate", BindingFlags.Public | BindingFlags.Static)!;
+            var diagnostic = System.Text.Json.JsonDocument.Parse("{\"disk\":[{\"device\":\"C:\",\"percent_used\":23}]}").RootElement;
+            var plan = System.Text.Json.JsonDocument.Parse("{\"summary\":\"Invented23percent power savings\"}").RootElement;
+            var results = System.Text.Json.JsonDocument.Parse("[{\"status\":\"done\",\"mb_freed\":6},{\"status\":\"done\",\"mb_freed\":8},{\"status\":\"error\",\"mb_freed\":999}]").RootElement;
+            string html = (string)generate.Invoke(null, new object?[] { diagnostic, plan, results, "Regression PC", null, null, null, null })!;
+            if (!html.Contains("2 of 3 selected actions completed.") || !html.Contains("Recorded space recovered: 14 MB.") || html.Contains("Invented23percent"))
+                throw new Exception("Packaged report must use observed outcomes, not the model's benefit claims.");
+            Console.WriteLine("PASS actual packaged report summary: observed completion count,14MB, no unsupported benefits");
+        }
         return 0;
     }
 }

@@ -1,0 +1,20 @@
+{
+  "recorded_utc": "2026-10-03T07:40:21.563699+00:00",
+  "source": "Owner PreFlight redirected plan-authoring.log transcript",
+  "installed_package_version_from_prior_fresh_query": "1.2.20.0",
+  "ordinary_log_path": "not found",
+  "redirected_log_path": "C:/Users/PreFlight/AppData/Local/Packages/5DServiceSolutionsGlobal.ProntoPC_cne6wjsv6stbm/LocalCache/Local/ProntoPC/logs/plan-authoring.log",
+  "latest_reported_entry": "2026-10-03T07:28:44.2527106+00:00|version=1.0.0.0|reason=local_completion_empty;tokens_in=0;tokens_out=0;ms=0;error=model_not_loaded;preview=empty|model_present=False",
+  "observation": "Recent model_not_loaded decline; zero generation tokens/time; underlying loader exception absent",
+  "qualifications": [
+    "Logged version is assembly version, separate from package identity.",
+    "model_present=False uses known obsolete logger path; not evidence that packaged model files are absent.",
+    "Shared package-family log includes older1.2.21 entries; do not attribute every entry to current baseline."
+  ],
+  "archived_reporting_upload_sha256": "8D2FF6B1867FE22BE1612A239B906F80E931EBD9BBB6ED48993DC1B36CFD82C3",
+  "reporting_gate": "untested for exact1.2.21 candidate",
+  "mailbox": "unverified",
+  "status": "DO_NOT_SUBMIT",
+  "diagnostic_unsigned_msix_sha256": "471BACCE2A94750092EC66C254DBC31126D4E7B5BD33CB0D73D92FBC5590859B",
+  "diagnostic_next_step": "Separate owner authorization for signing test copy/VM transfer/current-account diagnostic update; not executed."
+}

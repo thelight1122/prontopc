@@ -19,6 +19,10 @@
     "estimated_mb_recovered_cap": "Each action's estimated_mb_recovered is clamped to [0, measured cap from its mb.source]. The plan total may never exceed the sum of measured reclaimable space in the diagnostics.",
     "subsumption": [
       {
+        "umbrella": "disk_cleanup",
+        "members": ["clear_temp_files", "clear_windows_caches", "clean_delivery_optimization"]
+      },
+      {
         "umbrella": "clear_all_browser_caches",
         "members": [
           "clear_chrome_cache",
@@ -177,7 +181,7 @@
       "mb": {
         "source": "zero"
       },
-      "notes": "cleanmgr /sagerun:1 — amount not pre-measurable."
+      "notes": "Repair.cs runs bounded cleanup of TEMP, Windows Temp, Windows caches and DeliveryOptimization directly. Subsumes their individual cleanup actions; recovered MB are measured during execution."
     },
     "clear_windows_store_cache": {
       "kind": "maintenance",

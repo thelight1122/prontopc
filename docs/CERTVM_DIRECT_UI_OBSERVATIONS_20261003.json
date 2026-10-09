@@ -1,0 +1,26 @@
+{
+  "recorded_utc": "2026-10-03T08:33:16.837885+00:00",
+  "surface": "Computer Use @oai/sky vmconnect window ProntoPC-CertVM on DMTAI-DEV",
+  "installed_version_provenance": "Owner prior fresh package query1.2.22.0; app process path not independently queried",
+  "observations": [
+    "VM desktop and ProntoPC retry screen directly observed.",
+    "Clicked Yes, Attempt Again once; app transitioned to Building your personalized repair plan.",
+    "Guest redirected logs folder showed only plan-authoring.log; opened read-only in Notepad.",
+    "Notepad showed1.2.22.0 model_not_loaded zero-token entries2026-10-03T08:18:39.3405977Z and08:20:51.5886384Z.",
+    "Retry subsequently reached Findings Ready: eight items, about318MB, one item measured directly and added by scan.",
+    "Recommended actions visible: clean safe temporary files, balanced power plan, browser caches. No repair started."
+  ],
+  "qualifications": [
+    "Findings UI does not independently establish AI provenance or repeated/cold-start reliability.",
+    "Successful retry does not erase earlier load declines.",
+    "No terminal commands entered through UI; Computer Use skill prohibits terminal automation."
+  ],
+  "reporting_candidate_upload_sha256": "8D2FF6B1867FE22BE1612A239B906F80E931EBD9BBB6ED48993DC1B36CFD82C3",
+  "status": "DO_NOT_SUBMIT; reporting and mailbox gate remain unverified",
+  "no_actions": [
+    "repair execution",
+    "mail send",
+    "Partner Center submission",
+    "security/trust modification"
+  ]
+}

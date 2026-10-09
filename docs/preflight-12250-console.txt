@@ -72,3 +72,10 @@ Refresh WACK after fresh completion against unchanged candidate bytes.
 [6] Windows App Certification Kit (WACK)
   [PASS] WACK run against the package                     wack-report-current.xml: OVERALL_RESULT=PASS; APP_VERSION=1.2.25.0; sha256=FE03ED2AC5CD69CA2D4954091
 22/23 PASS; DO_NOT_SUBMIT
+
+Refresh reporting gate from uploaded evidence and explicit owner acceptance. Retain unchanged completed build/model/WACK checks. Known summary wording remains open outside checklist coverage.
+
+[7] Live generative AI disclosure and content reporting (11.16)
+  [PASS] AI disclosure, reporting instructions and develo ai-aegis.html + CERT_NOTES_SHORT + AI_CONTENT_REPORTING_PROCEDURE
+  [PASS] AI reporting installed flow, support receipt and H:\PRONTOPC_PRODUCTION\docs\AI_CONTENT_REPORT_VERIFICATION.json
+23/23 PASS; CERT_READY

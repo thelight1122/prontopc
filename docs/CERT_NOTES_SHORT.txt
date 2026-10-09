@@ -17,7 +17,7 @@ PRICING (policy 10.8.4): one-time purchase, $9.99, via the Microsoft Store. No s
 
 GENERATIVE AI: the repair-plan summary and the Technician's replies are written by a generative AI model bundled in the app that runs on the device. It explains the deterministic scan results; it does not decide what was found.
 
-Package candidate: ProntoPC.msixupload version 1.2.25.0. Exact package hashes and current validation results are in docs/CERT_RELEASE_12250.json. No Microsoft certification approval is claimed.
+Package candidate: ProntoPC.msixupload version 1.2.26.0. Exact package hashes and current validation results are in docs/CERT_RELEASE_12260.json. No Microsoft certification approval is claimed.
 
 Support: support@prontopc.online
 

@@ -1,0 +1,37 @@
+{
+  "version": "1.2.26.0",
+  "upload_sha256": "B25026F529249CC32734A85E34C0F2446EE2EB8126D9D0B1D63F6DA35025A4AD",
+  "recorded_utc": "2026-10-05T23:00:35.095673+00:00",
+  "provenance": "Owner-provided ZIP plus explicit Yes,both worked confirming firstscan withoutRetry andCopy/Save",
+  "source_zip_path": "C:\\Users\\TraceyPrutch\\Downloads\\1.2.26_Run_reports.zip",
+  "source_zip_sha256": "FDD8B74171E4AFC15BE05AE2062AD8BE3731FCAADD5E4A128CBD0DD8A719B24E",
+  "members": [
+    {
+      "name": "Pronto PC \u2014 Repair Complete.pdf",
+      "sha256": "B92F5B6B654AAC6466D32C862BDB3C1E5D5F9C5AADF3025700B08C3CCEB332D5"
+    },
+    {
+      "name": "ProntoPC-AI-content-report.txt",
+      "sha256": "C847318CF84B54E7DC9953E81A05FF4072EA9B269FCD2E919FACB4230B598DC8"
+    },
+    {
+      "name": "ProntoPC_Report_20261005_225535.html",
+      "sha256": "DA4C5909B442372C4062DE62E6062EFD80AC77C1F54CAF80DBCA55A1A7986768"
+    }
+  ],
+  "first_plan_without_retry": true,
+  "copy_report_works": true,
+  "save_report_export_observed": true,
+  "completed_actions": 4,
+  "space_recovered_mb": 12,
+  "recovery_breakdown_mb": {
+    "safe_temporary_files": 4,
+    "browser_caches": 8
+  },
+  "drive_usage_percent": 24,
+  "summary_accuracy": "PASS:4of4completed,12MBrecorded,driveusage distinct from benefits;speed/power unmeasured explicitly",
+  "overlapping_temp_cleanup": "PASS:no duplicate temp cleanup alongside broader cleanup in report",
+  "support_receipt_monitoring": "Owner confirmed earlier same-day and same mailbox;no new email sent or observed for126",
+  "independent_codex_guest_observation": false,
+  "submission": "not performed"
+}

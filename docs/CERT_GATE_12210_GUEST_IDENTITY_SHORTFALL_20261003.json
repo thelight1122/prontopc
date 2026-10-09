@@ -1,0 +1,20 @@
+{
+  "recorded_utc": "2026-10-03T07:33:35.545199+00:00",
+  "source": "Owner-pasted PowerShell transcript; PS C:\\Users\\PreFlight>",
+  "candidate_version": "1.2.21.0",
+  "candidate_upload_sha256": "8D2FF6B1867FE22BE1612A239B906F80E931EBD9BBB6ED48993DC1B36CFD82C3",
+  "observed_version_guard": "Stop: this account does not have the 1.2.21.0 reporting candidate.",
+  "reported_dll_assembly_version": "1.0.0.0",
+  "reported_dll_sha256": "B26623FFC22836EAA5EF8E7D60E5EC6592AB2F841F0066634F101865A6FFFB55",
+  "expected_dll_sha256": "9DD5B9E8E9646BDCDCF145A229E098F9B95CA1642628DE8FF3B92E0EA240AF68",
+  "dll_binding": "shortfall: mismatch",
+  "installed_package_version": null,
+  "installed_package_full_name": null,
+  "installed_location": null,
+  "qualification": "Transcript omits fresh Get-AppxPackage assignment and identity table; cannot exclude stale $pkg. AssemblyVersion is distinct from MSIX package version. Execution time not supplied.",
+  "installed_reporting_flow": "untested for exact candidate",
+  "support_receipt": "unverified",
+  "support_monitoring": "unverified",
+  "status": "DO_NOT_SUBMIT",
+  "next_step": "Fresh self-contained package identity query in PreFlight; no install/downgrade/sign/trust action."
+}

@@ -213,6 +213,18 @@ sealed class Envelope
         }
 
         outPlan["actions"] = kept;
+        // The model chooses the repairs; customer-facing facts must remain measured.
+        // Do not carry its speculative benefits into reports or conversation context.
+        string scanSummary = "The scan is complete.";
+        if (diag.TryGetProperty("disk", out var disks) && disks.ValueKind == JsonValueKind.Array
+            && disks.GetArrayLength() > 0)
+        {
+            var drive = disks[0];
+            if (drive.TryGetProperty("device", out var device) && device.ValueKind == JsonValueKind.String
+                && drive.TryGetProperty("percent_used", out var used) && used.TryGetDouble(out var percent))
+                scanSummary = $"At scan time, {device.GetString()} was {percent.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}% used.";
+        }
+        outPlan["summary"] = scanSummary + $" {kept.Count} actions are available for your review; repairs have not run yet.";
         return (outPlan, dropped);
     }
 

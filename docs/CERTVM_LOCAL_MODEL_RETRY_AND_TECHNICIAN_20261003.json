@@ -1,0 +1,31 @@
+{
+  "recorded_utc": "2026-10-03T08:39:00.182234+00:00",
+  "surface": "Direct Computer Use vmconnect + guest Notepad",
+  "diagnostic_installed_version": "1.2.22.0 from owner fresh identity",
+  "successful_findings_relay": {
+    "utc": "2026-10-03T08:31:44.7121259+00:00",
+    "provider": "local-model",
+    "model": "gemma-3-1b-it-formed-v0.2.1",
+    "record_id": "5bdc9317f954401b987c39dbba5f0d8",
+    "file": "C:/Users/PreFlight/AppData/Local/Packages/5DServiceSolutionsGlobal.ProntoPC_cne6wjsv6stbm/LocalCache/Local/ProntoPC/relay/findings.jsonl",
+    "observed_plan_summary": "Clears free space, adjusts power plan, clears browser/system caches/temp files/Windows.old cache, includes startup programs.",
+    "qualification": "Record visually read in Notepad; append-chain hashes not recomputed in this turn."
+  },
+  "source_route_review": "AuthorPlanAndProceed only calls ShowFindings for outcome.IsOk; GemmaLocalPlanner returns provider local-model after nonempty inference output and valid JSON; orchestrator validates envelope before OK. Source review separate from runtime record.",
+  "technician_test": {
+    "question": "Which finding in this scan explains the recommendation to clean safe temporary files? Please explain only; do not perform repairs.",
+    "observed_reply": "The Technician attributed recommendation to Clean safe temporary files finding and around304MB safe temporary files.",
+    "qualification": "Reply visible and responsive, approximate value differs from305MB relay estimate; not a comprehensive quality assessment."
+  },
+  "earlier_diagnostic_failures_preserved": [
+    "2026-10-03T08:18:39.3405977Z model_not_loaded",
+    "2026-10-03T08:20:51.5886384Z model_not_loaded"
+  ],
+  "cold_start_reliability": "unverified; successful manual retry does not close earlier loader shortfall",
+  "archived_reporting_upload_sha256": "8D2FF6B1867FE22BE1612A239B906F80E931EBD9BBB6ED48993DC1B36CFD82C3",
+  "reporting_controls": "not in diagnostic baseline; archived1.2.21 installed reporting remains untested",
+  "support_receipt_monitoring": "unverified",
+  "status": "DO_NOT_SUBMIT",
+  "repairs_executed": false,
+  "partner_center_action": false
+}

@@ -171,6 +171,21 @@ timeoutWatch.Stop();
 Check(timedOut, "RunExe reports timeout honestly");
 Check(timeoutWatch.ElapsedMilliseconds < 5000, "RunExe returns promptly instead of waiting for child exit");
 
+Console.WriteLine("\n== Owner report regression ==");
+var reportDiag = JsonDocument.Parse("{\"disk\":[{\"device\":\"C:\",\"percent_used\":23}]} ").RootElement;
+var badSummary = JsonDocument.Parse("{\"summary\":\"This action clears the C drive, clears DNS, and saves power by23percent\",\"actions\":[]}").RootElement;
+var reportResults = JsonDocument.Parse("[{\"action\":\"disk_cleanup\",\"status\":\"done\",\"mb_freed\":6},{\"action\":\"flush_dns\",\"status\":\"done\"},{\"action\":\"optimize_power_plan\",\"status\":\"done\"},{\"action\":\"clear_all_browser_caches\",\"status\":\"done\",\"mb_freed\":8},{\"action\":\"sfc_scan\",\"status\":\"error\",\"mb_freed\":999}]").RootElement;
+string report = LocalReport.Generate(reportDiag, badSummary, reportResults, "Regression PC");
+Check(report.Contains("4 of 5 selected actions completed.") && report.Contains("Recorded space recovered: 14 MB."), "report uses completed executor results, excludes failed recovery");
+Check(!report.Contains("saves power by23percent") && report.Contains("power consumption were not measured"), "report cannot reuse unsupported AI benefit claims");
+string noRepairs = LocalReport.Generate(reportDiag, badSummary, JsonDocument.Parse("[]").RootElement, "Regression PC");
+Check(noRepairs.Contains("No repair actions were run") && !noRepairs.Contains("saves power by23percent"), "diagnostic report does not claim repairs completed");
+var duplicateCleanup = JsonDocument.Parse("{\"actions\":[{\"id\":\"disk_cleanup\"},{\"id\":\"clear_temp_files\"},{\"id\":\"clear_windows_caches\"},{\"id\":\"clean_delivery_optimization\"}]}").RootElement;
+var (dedupedCleanup, _) = env.Validate(duplicateCleanup, messy);
+var cleanupIds = dedupedCleanup["actions"]!.AsArray().Select(a => a!["id"]!.GetValue<string>()).ToList();
+Check(cleanupIds.Contains("disk_cleanup") && !cleanupIds.Any(id => new[] { "clear_temp_files", "clear_windows_caches", "clean_delivery_optimization" }.Contains(id)), "bounded disk cleanup subsumes overlapping individual cleanups");
+var (groundedPlan, _) = env.Validate(badSummary, reportDiag);
+Check(groundedPlan["summary"]!.GetValue<string>().Contains("C: was 23% used") && !groundedPlan["summary"]!.GetValue<string>().Contains("saves power"), "validated plan summary separates measured usage from speculative model benefits");
 Console.WriteLine($"\n{(failures == 0 ? "ALL PASS" : failures + " FAILURE(S)")}");
 Environment.Exit(failures == 0 ? 0 : 1);
 

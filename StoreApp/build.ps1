@@ -115,7 +115,9 @@ if (-not $Sign) {
     New-Item -ItemType Directory -Path $uploadStage | Out-Null
     $uploadPackageName = "ProntoPC_${ver}_x64.msix"
     Copy-Item $msix (Join-Path $uploadStage $uploadPackageName) -Force
-    Compress-Archive -Path (Join-Path $uploadStage '*') -DestinationPath $upload -CompressionLevel Optimal -Force
+    # Windows PowerShell Compress-Archive rejects the required .msixupload suffix.
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [IO.Compression.ZipFile]::CreateFromDirectory($uploadStage, $upload, [IO.Compression.CompressionLevel]::Optimal, $false)
     Remove-Item $uploadStage -Recurse -Force
 }
 

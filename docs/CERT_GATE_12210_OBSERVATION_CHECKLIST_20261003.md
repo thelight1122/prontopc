@@ -127,3 +127,27 @@ Read-only guest capture script: tests/CertVM/capture-12210-reporting-identity.ps
 (PowerShell syntax PASS; not executed in the guest). Host observations saved in
 docs/CERT_GATE_12210_HOST_OBSERVATIONS_20261003.json. All reporting/receipt/
 monitoring results remain unverified. No WACK rerun or Partner Center action.
+
+
+### Owner guest identity shortfall — recorded 2026-10-03
+
+Owner PreFlight transcript: candidate version guard failed; DLL AssemblyVersion
+1.0.0.0; SHA-256 B26623FFC22836EAA5EF8E7D60E5EC6592AB2F841F0066634F101865A6FFFB55
+differs from archived candidate DLL. Actual package version/location and fresh
+Get-AppxPackage assignment were omitted, so installed package version is unknown
+and stale variable state cannot be excluded. AssemblyVersion is not package
+version. See CERT_GATE_12210_GUEST_IDENTITY_SHORTFALL_20261003.json. Stop exact
+candidate reporting test; obtain fresh identity. No installation authorized or
+performed by this observation. Reporting/mailbox flags remain unverified.
+
+
+### Fresh owner package identity — recorded 2026-10-03
+
+Fresh PreFlight Get-AppxPackage confirms installed package version 1.2.20.0,
+full name 5DServiceSolutionsGlobal.ProntoPC_1.2.20.0_x64__cne6wjsv6stbm,
+family 5DServiceSolutionsGlobal.ProntoPC_cne6wjsv6stbm, under the matching
+C:/Program Files/WindowsApps package directory. This is consistent with rollback
+X-0176/X-0177, not an unexpected 1.2.21 payload change. Reporting candidate
+1.2.21 is absent from this account; its installed reporting checks remain
+untested. Identity alone does not establish baseline runtime success. See
+CERT_GATE_12210_GUEST_PACKAGE_IDENTITY_20261003.json. No package update performed.

@@ -1,0 +1,20 @@
+{
+  "recorded_utc": "2026-10-03T08:20:05.390494+00:00",
+  "source": "Owner guest PreFlight PowerShell transcript",
+  "install_script_result": "UPDATE VERIFIED: ProntoPC 1.2.22.0 for the current account.",
+  "fresh_package_query": {
+    "name": "5DServiceSolutionsGlobal.ProntoPC",
+    "version": "1.2.22.0",
+    "package_full_name": "5DServiceSolutionsGlobal.ProntoPC_1.2.22.0_x64__cne6wjsv6stbm",
+    "install_location": "C:/Program Files/WindowsApps/5DServiceSolutionsGlobal.ProntoPC_1.2.22.0_x64__cne6wjsv6stbm"
+  },
+  "ordinary_model_load_log": "Not found",
+  "redirected_model_load_log": "result not supplied in transcript",
+  "app_reproduction": "not confirmed in supplied transcript",
+  "loader_exception": "not observed",
+  "host_preparation": "direct host transcript not supplied; guest installation success does not substitute for full preparation evidence",
+  "diagnostic_unsigned_sha256": "471BACCE2A94750092EC66C254DBC31126D4E7B5BD33CB0D73D92FBC5590859B",
+  "archived_reporting_upload_sha256": "8D2FF6B1867FE22BE1612A239B906F80E931EBD9BBB6ED48993DC1B36CFD82C3",
+  "certification_status": "DO_NOT_SUBMIT",
+  "reporting_receipt_monitoring": "unverified; diagnostic does not satisfy archived candidate gate"
+}

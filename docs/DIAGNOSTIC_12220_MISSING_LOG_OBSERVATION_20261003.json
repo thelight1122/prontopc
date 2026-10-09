@@ -1,0 +1,14 @@
+{
+  "recorded_utc": "2026-10-03T08:22:15.118375+00:00",
+  "source": "Owner PreFlight PowerShell transcript",
+  "installed_diagnostic_from_prior_query": "1.2.22.0",
+  "ordinary_model_load_log": "not found",
+  "redirected_model_load_log": "not found",
+  "actual_app_launch_and_scan": "not confirmed in transcript",
+  "loader_exception": "not observed",
+  "source_inspection": "EnsureLoaded logs only exceptions caught around Model/Tokenizer construction; logging I/O errors are swallowed. WarmUp outer catch and Complete outer catch can also prevent this logger from observing some failures.",
+  "interpretation": "Absence cannot distinguish successful loading, unexercised code, error outside inner catch, or failed log write. No root cause or runtime PASS established.",
+  "archived_reporting_upload_sha256": "8D2FF6B1867FE22BE1612A239B906F80E931EBD9BBB6ED48993DC1B36CFD82C3",
+  "status": "DO_NOT_SUBMIT",
+  "next_step": "Confirm diagnostic process after Start launch and fresh scan, collect latest plan-authoring log timestamp/result; no repeated install."
+}

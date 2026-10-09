@@ -110,7 +110,7 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         sb.AppendLine("Keep action names short. Omit cleanup actions with zero measured recovery; non-space repairs can still be recommended.");
         sb.AppendLine("Reply with ONE JSON object and nothing after it. List the actions FIRST:");
         sb.AppendLine("{\"actions\": [{\"id\": string, \"category\": string, \"friendly_name\": string, \"estimated_mb_recovered\": integer}], \"summary\": string}.");
-        sb.AppendLine("Keep \"summary\" to a single short sentence that references one or two of the machine's real numbers.");
+        sb.AppendLine("Keep \"summary\" to one short sentence about measured scan findings. Repairs have not run yet: never describe scan percentages as space recovered, speed improvement, or power savings.");
         sb.AppendLine();
         sb.Append(NatureLayerContext.ForPlan());
         sb.AppendLine();
@@ -122,7 +122,7 @@ sealed class GemmaLocalPlanner : IPlanAuthor, IPlanAuthorDiagnostics
         {
             var drive = disks[0];
             sb.AppendLine();
-            sb.AppendLine($"In the summary, explicitly include this measured fact: {Str(drive, "device")} is {Num(drive, "percent_used")}% used. Then briefly explain the selected repairs. Do not replace this fact with generic storage advice.");
+            sb.AppendLine($"In the summary, explicitly include this scan fact: {Str(drive, "device")} is {Num(drive, "percent_used")}% used. This is current drive usage, not a repair benefit. Do not claim any repair has already completed.");
         }
 
         return sb.ToString();

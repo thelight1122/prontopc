@@ -1,3 +1,15 @@
+## 1.2.26.0 owner acceptance complete
+
+Owner ZIP HTML and PDF agree:4of4actions completed,12MBrecovered(4MBtemp+8MBbrowser),24percentdriveusage separately shown;summary says speed/power changes unmeasured. No duplicate tempcleanup. SavedAIcontentreport identifies1.2.26.0 andselectedfindings. Owner explicitly confirms firstscan withoutRetry andCopy/Save. WACKPASS andlocalpreflight23/23CERT_READY for exactuploadB25026F5. See docs/CERT_VM_12260_OWNER_ACCEPTANCE.json and docs/CERT_RELEASE_12260.json. No Microsoftapproval or submission claimed. Earlier sections are historical snapshots.
+
+## 1.2.26.0 repair-summary correction
+
+The completed report now summarizes recorded executor outcomes, excludes failed-action recovery, and states that speed/power changes were not measured. The validated plan summary labels drive usage as a scan measurement and states repairs have not run. Bounded disk cleanup subsumes its overlapping individual cleanup actions. PodEval, real local-model plan/chat smoke, and actual packaged-DLL report/reporting-dialog regressions PASS. Exact artifact bindings: `docs/CERT_RELEASE_12260.json`; source/regression bindings: `docs/SUMMARY_ACCURACY_VERIFICATION_12260.json`. WACK PASS for exact1.2.26 artifact. Signed testcopy staged in existingVM and payload equivalence PASS. Preflight22/23; installed1.2.26 reporting acceptance remains unobserved. Prior 1.2.25 acceptance is historical evidence, not a test of the new package. No Partner Center submission, new commit or push.
+
+## Owner acceptance update for1.2.25
+
+Owner uploaded completed CertVM repair PDF/HTML and savedAI report, then confirmed first plan withoutRetry, Copy report works, and support report receipt/mailbox monitoring. Exact unchanged upload0B437B15. Reporting checklist refreshed:23/23 CERT_READY. Source observations in docs/CERT_VM_12250_OWNER_ACCEPTANCE.json. This checklist does not resolve the identified AI summary accuracy defect:23% driveusage was incorrectly associated with cleanup benefit;14MB was actually recovered. That issue remains explicitly OPEN. No PartnerCenter submission or new build.
+
 ## Current candidate: 1.2.25.0
 
 Plan output cap raised from768 to1536; prompt/schema allow at most8 actions; per-browser choices replaced by existing combined browser action. Envelope caps rendered actions at8 and drops zero measured recovery after merging, preserving non-space repairs. Summary prompt explicitly grounds a drive measurement. No video/reporting UI behavior changed. Release, ModelSmoke (normal, clean, reconstructed many-cache first attempt, genuine2-turn chat), PodEval, reporting/retry and packaged dialog PASS. Many-cache final run used111tokens. Exact guest scan fixture unavailable, so original VM first-use acceptance remains pending. Fresh exact-package WACKPASS; preflight22/23 final installed reporting/support receipt-monitoring gate remains pending. Signed payload-equivalent test copy staged; no guest install observed. Hashes docs/CERT_RELEASE_12250.json; instructions docs/CERT_VM_12250_ACCEPTANCE.md. No Partner Center submission.

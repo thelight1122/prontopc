@@ -1,0 +1,77 @@
+{
+  "version": "1.2.26.0",
+  "utc": "2026-10-05T22:37:40.888270+00:00",
+  "fixes": [
+    "Completion report summary uses executor outcomes, excludes failed recovery, and states speed/power benefits unmeasured",
+    "Validated plan summary uses measured drive usage and labels repairs not yet run",
+    "Bounded disk_cleanup subsumes temp, Windows-cache and DeliveryOptimization cleanup actions"
+  ],
+  "pod_eval": "ALL PASS",
+  "local_model_smoke": "PASS; genuine local-model plans and two-turn chat",
+  "owner_fixture": "23 percent usage and14MB recovery reconstructed from supplied output; no repairs executed by test",
+  "bindings": [
+    {
+      "path": "StoreApp/Envelope.cs",
+      "sha256": "AE690D95CEA6F77BFADE08817DE4C972908F4EE8DA7640B66F7DBF2C7D0D5123"
+    },
+    {
+      "path": "StoreApp/LocalPlanner.cs",
+      "sha256": "9C6609217D705C2111179247E7E74CC93254827E17EF440823A41FEC06DE6E65"
+    },
+    {
+      "path": "StoreApp/LocalReport.cs",
+      "sha256": "81A603CA24E077D1309DD23DB18DD1E61E3F87E080E3F98DBDB23673F9E8B5E0"
+    },
+    {
+      "path": "pod/orbs/repair-engine/action-envelope.json",
+      "sha256": "062638D27E8B4AD2DEE01EC1EC13EB885F055356AB8B80480E52A0D4F458BF62"
+    },
+    {
+      "path": "tests/PodEval/Program.cs",
+      "sha256": "55ADA101901BA2ED120427E06EBADC372D665AC2A73AABB5C802DFC0E9B7952A"
+    },
+    {
+      "path": "tests/PodEval/PodEval.csproj",
+      "sha256": "B801AE85B1776405A167DB3F60D3A1C7C4E8167CC60D02EF5ACE4BAFE7CC5D8D"
+    },
+    {
+      "path": "tests/ModelSmoke/Program.cs",
+      "sha256": "3EC7E700AEB095E63ED3D9B0C41C0D744CE7063346CB63FD192320DF2387594F"
+    },
+    {
+      "path": "StoreApp/ProntoPC.csproj",
+      "sha256": "C8B1E174322A6583542F9D460264FD58EFAF0FFBB35B25BF4E5A0B73A4FEDEB2"
+    },
+    {
+      "path": "StoreApp/Package.appxmanifest",
+      "sha256": "B36F75E9004701BEF4DC40E37127D3A1211CA8028525EACDCF892987E25DFE6B"
+    },
+    {
+      "path": "docs/pod-eval-12260-console.txt",
+      "sha256": "32AAE3D2FB857B5DA288AB109158A4696A84CB76E2C3F70315CAF7CDE2725A3C"
+    },
+    {
+      "path": "docs/model-smoke-12260-console.txt",
+      "sha256": "CECE121CDB163542ACCF762BA30451E33FE6BE5F963A9200A548B51479538DF7"
+    },
+    {
+      "path": "docs/many-cache-regression-12260.json",
+      "sha256": "69310C6A7BD0504DDCF1C46B30F5FC0D8CBBF1F4488588299BF2E82C466769BD"
+    },
+    {
+      "path": "StoreApp/build.ps1",
+      "sha256": "F50F21278F24E66B0BAFAF18982B44C319D5CB750E477163E4F39305B23F6709"
+    },
+    {
+      "path": "tests/AiContentReportUiEval/Program.cs",
+      "sha256": "9CAFD39A46BFA83DF8482176AADA610D96657805800E501A9872A9458D961E42"
+    },
+    {
+      "path": "docs/reporting-ui-12260-console.txt",
+      "sha256": "30D1501E69DC0082F16016D9B996F287291A14B23988DF1288C7A9DC413679AE"
+    }
+  ],
+  "installed_guest_acceptance": "pending for new artifact;1.2.25 owner confirmation is retained separately",
+  "submission": "not performed",
+  "package_dll_sha256": "8859A2F94D75242CEF9BC0A3066D5B6D138BA0DD947B14EDFD2A700C5CF99572"
+}

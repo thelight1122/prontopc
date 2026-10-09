@@ -23,6 +23,7 @@
     <Compile Include="..\..\StoreApp\NatureLayerContext.cs" />
     <Compile Include="..\..\StoreApp\Orchestrator.cs" />
     <Compile Include="..\..\StoreApp\Repair.cs" />
+    <Compile Include="..\..\StoreApp\LocalReport.cs" />
     <Compile Include="..\..\StoreApp\CustodianChat.cs" />
     <EmbeddedResource Include="..\..\pod\orbs\repair-engine\action-envelope.json" Link="action-envelope.json" />
   </ItemGroup>

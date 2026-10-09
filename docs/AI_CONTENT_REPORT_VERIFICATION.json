@@ -1,9 +1,11 @@
 {
-  "package_version": "1.2.25.0",
-  "package_sha256": "0B437B154E39401E872ED7BD019C77573536D2EA1388228EE46F06B67FCBA1E8",
-  "installed_reporting_flow_pass": false,
-  "support_receipt_and_monitoring_confirmed": false,
+  "package_version": "1.2.26.0",
+  "package_sha256": "B25026F529249CC32734A85E34C0F2446EE2EB8126D9D0B1D63F6DA35025A4AD",
+  "installed_reporting_flow_pass": true,
+  "support_receipt_and_monitoring_confirmed": true,
   "live_explanation_url_pass": true,
   "live_explanation_url": "https://prontopc.online/ai-aegis",
-  "observations": "1.2.25 packaged reporting dialog PASS. Installed first-attempt many-cache flow/reporting and support receipt-monitoring remain pending."
+  "observations": "Owner supplied126 HTML+matchingPDF:4completedactions12MB,no duplicate tempcleanup,no fabricatedbenefits. Saved AIcontentreport identifies1.2.26.0 and selectedfindings. Owner explicitly confirms firstscan withoutRetry andCopyreport as well asSave. Same supportmailbox receipt+monitoring already ownerconfirmed;no new126email claim. ActualpackagedDLL UI regressionPASS. Owner evidence,not independentCodex guest run.",
+  "confirmed_utc": "2026-10-05T23:00:35.095673+00:00",
+  "evidence_file": "docs/CERT_VM_12260_OWNER_ACCEPTANCE.json"
 }

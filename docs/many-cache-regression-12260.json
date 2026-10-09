@@ -1,0 +1,137 @@
+{
+  "fixture_kind": "reconstructed reported shape; not exact guest scan",
+  "diagnostics": {
+    "os": {
+      "edition": "Windows 11 Pro",
+      "build": "26200",
+      "hostname": "CERT-VM"
+    },
+    "memory": {
+      "used_gb": 3,
+      "total_gb": 8,
+      "percent_used": 37
+    },
+    "disk": [
+      {
+        "device": "C:",
+        "percent_used": 22,
+        "free_gb": 180,
+        "total_gb": 256
+      }
+    ],
+    "temp_files": [],
+    "browser_caches": [
+      {
+        "browser": "Edge",
+        "size_mb": 0
+      },
+      {
+        "browser": "Chrome",
+        "size_mb": 0
+      },
+      {
+        "browser": "Firefox",
+        "size_mb": 15
+      },
+      {
+        "browser": "Brave",
+        "size_mb": 23
+      },
+      {
+        "browser": "Opera",
+        "size_mb": 0
+      },
+      {
+        "browser": "Chrome Profile 2",
+        "size_mb": 5
+      }
+    ],
+    "recycle_bin": {
+      "size_mb": 0
+    },
+    "update_leftovers": {
+      "windows_old_present": false,
+      "windows_old_gb": 0,
+      "windows_update_cache_mb": 0,
+      "delivery_optimization_mb": 0
+    },
+    "network": {
+      "connectivity": {
+        "internet_reachable": true
+      }
+    },
+    "dns_cache": {
+      "entries": 0
+    },
+    "bsod_history": [],
+    "device_errors": [],
+    "startup_programs": [],
+    "uptime": {},
+    "cpu": {},
+    "smart_health": {},
+    "windows_caches": {},
+    "drivers": {},
+    "security": {},
+    "activation": {},
+    "services": {},
+    "installed_programs": {},
+    "user_accounts": {},
+    "power_plan": {},
+    "visual_effects": {},
+    "battery": {}
+  },
+  "authored": {
+    "actions": [
+      {
+        "id": "disk_cleanup",
+        "category": "storage",
+        "friendly_name": "clear the disk",
+        "estimated_mb_recovered": 22
+      },
+      {
+        "id": "optimize_power_plan",
+        "category": "performance",
+        "friendly_name": "tune power",
+        "estimated_mb_recovered": 0
+      }
+    ],
+    "summary": "The scan shows 22 GB of disk space used and a cleanups of 18 GB free. Power-saving adjustments are planned."
+  },
+  "validated": {
+    "actions": [
+      {
+        "id": "disk_cleanup",
+        "category": "storage",
+        "friendly_name": "clear the disk",
+        "estimated_mb_recovered": 0,
+        "risk": "low",
+        "requires_restart": false,
+        "kind": "maintenance"
+      },
+      {
+        "id": "optimize_power_plan",
+        "category": "performance",
+        "friendly_name": "tune power",
+        "estimated_mb_recovered": 0,
+        "risk": "low",
+        "requires_restart": false,
+        "kind": "repair"
+      },
+      {
+        "id": "clear_all_browser_caches",
+        "category": "Cleanup",
+        "friendly_name": "Clear browser caches",
+        "risk": "low",
+        "requires_restart": false,
+        "kind": "maintenance",
+        "estimated_mb_recovered": 43
+      }
+    ],
+    "summary": "At scan time, C: was 22% used. 3 actions are available for your review; repairs have not run yet.",
+    "completeness_added": [
+      "clear_all_browser_caches"
+    ]
+  },
+  "first_attempt": true,
+  "generated_tokens": 108
+}
