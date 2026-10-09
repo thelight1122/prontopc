@@ -1,0 +1,20 @@
+﻿{
+    "utc":  "2026-10-09T01:18:29.2039051Z",
+    "status":  "prepared",
+    "clone_name":  "ProntoPC-UAC-125-20261008",
+    "clone_id":  "ce492ab9-1f23-4d22-bc0c-5e186cfde352",
+    "source_vm":  "ProntoPC-CertVM",
+    "source_vm_id":  "3c854fe3-df43-4657-8f10-f4391277d5ef",
+    "source_checkpoint":  "Cert_User_added",
+    "source_checkpoint_id":  "f998fe5c-6447-44fd-aee6-3477dc92e89c",
+    "source_checkpoint_restored":  false,
+    "source_vm_mutated":  false,
+    "network":  "disconnected on diagnostic copy",
+    "root":  "G:\\AEGIS_RECOVERY_BACKUPS\\ProntoPC-20261009T005215Z\\cross-account-125-vm",
+    "guest_directory":  "C:\\CertTest\\CrossAccount-125",
+    "signed_test_package_sha256":  "22C455096294D59F88CF5DE3198748DE3AD5652E7E5FC1791378BEA92C9BAB77",
+    "signing_performed":  false,
+    "trust_changed":  false,
+    "guest_install_observed":  false,
+    "uac_reproduction":  "not yet observed"
+}

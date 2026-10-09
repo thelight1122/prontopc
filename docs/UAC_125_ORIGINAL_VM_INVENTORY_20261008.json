@@ -1,0 +1,86 @@
+{
+  "observed_utc": "2026-10-09T01:04:22.7631770Z",
+  "source": "Read-only PowerShell Direct query of original ProntoPC-CertVM",
+  "authenticated_user": "ProntoPC-CertVM\\PreFlight",
+  "authenticated_user_is_admin": true,
+  "users": [
+    {
+      "Name": "Administrator",
+      "Disabled": true,
+      "SID": "S-1-5-21-3734561114-3482093839-2948661394-500"
+    },
+    {
+      "Name": "CertUser",
+      "Disabled": false,
+      "SID": "S-1-5-21-3734561114-3482093839-2948661394-1002"
+    },
+    {
+      "Name": "DefaultAccount",
+      "Disabled": true,
+      "SID": "S-1-5-21-3734561114-3482093839-2948661394-503"
+    },
+    {
+      "Name": "Guest",
+      "Disabled": true,
+      "SID": "S-1-5-21-3734561114-3482093839-2948661394-501"
+    },
+    {
+      "Name": "PreFlight",
+      "Disabled": false,
+      "SID": "S-1-5-21-3734561114-3482093839-2948661394-1001"
+    },
+    {
+      "Name": "WDAGUtilityAccount",
+      "Disabled": true,
+      "SID": "S-1-5-21-3734561114-3482093839-2948661394-504"
+    }
+  ],
+  "administrators": [
+    {
+      "Name": "Administrator",
+      "Domain": "ProntoPC-CertVM",
+      "SID": "S-1-5-21-3734561114-3482093839-2948661394-500"
+    },
+    {
+      "Name": "PreFlight",
+      "Domain": "ProntoPC-CertVM",
+      "SID": "S-1-5-21-3734561114-3482093839-2948661394-1001"
+    }
+  ],
+  "os": {
+    "ubr": 9457,
+    "build": "26300",
+    "display_version": "26H2"
+  },
+  "uac": {
+    "EnableLUA": 1,
+    "ConsentPromptBehaviorAdmin": 5,
+    "ConsentPromptBehaviorUser": 3,
+    "PromptOnSecureDesktop": 1
+  },
+  "packages": [
+    {
+      "version": "1.2.26.0",
+      "package_full_name": "5DServiceSolutionsGlobal.ProntoPC_1.2.26.0_x64__cne6wjsv6stbm",
+      "install_location": "C:\\Program Files\\WindowsApps\\5DServiceSolutionsGlobal.ProntoPC_1.2.26.0_x64__cne6wjsv6stbm",
+      "dll_sha256": "8859A2F94D75242CEF9BC0A3066D5B6D138BA0DD947B14EDFD2A700C5CF99572",
+      "exe_sha256": "148D853A875C8F33AE6619F03C44F2E158E34078A18C10D5D33D9D839748229C"
+    }
+  ],
+  "qualifications": [
+    "AllUsers package query establishes package presence, not its registration for a particular account. The first collector serialized registration SID objects incorrectly; those fields are omitted here.",
+    "quser reported No User exists for *; interactive-session inventory was not established. Other queries returned evidence.",
+    "Original guest build26300.9457 differs from reviewer build26200 reported by Verus.",
+    "CertUser exists and is absent from the direct local Administrators membership returned by CIM. Actual test must verify its token and package registration."
+  ],
+  "partial_query_errors": [
+    {
+      "query": "interactive_sessions",
+      "message": "No User exists for *",
+      "position": "At line:38 char:59\r\n+ ... essions = Read-Fact 'interactive_sessions' { & quser.exe 2>&1 | Out-S ...\r\n+                                                  ~~~~~~~~~~~~~~~~",
+      "id": "NativeCommandError"
+    }
+  ],
+  "mutations": [],
+  "reproduction": "not observed"
+}
